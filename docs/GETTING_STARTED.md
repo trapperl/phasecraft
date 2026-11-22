@@ -47,8 +47,19 @@ completion: `redstone_wire`, `minecraft:redstone_wire` and
 `/phasecraft layer hidden` takes you to the same spot in the hidden layer
 (Creative or Spectator only: it has no ground), where you can see and build
 hidden circuits with normal blocks and commands; `layer visible` brings you
-back. Hidden redstone runs by vanilla rules but nothing reaches across
-layers yet.
+back. Hidden redstone runs by vanilla rules.
+
+To connect the layers, use a phase port: it outputs, in its own layer, the
+power reaching its spot in the other layer.
+
+```text
+/setblock 12 64 10 minecraft:lever[face=floor,powered=false]
+/phasecraft set 12 63 10 minecraft:stone
+/phasecraft set 12 64 10 phasecraft:phase_port
+/phasecraft set 13 64 10 minecraft:redstone_lamp
+```
+
+Flip the (visible) lever and the hidden lamp next to the hidden port lights.
 
 Save and exit your test world, reopen it, and run `/phasecraft get` again to
 manually inspect persistence. The same check runs automatically as
@@ -56,10 +67,10 @@ manually inspect persistence. The same check runs automatically as
 
 ## Current limitations
 
-Nothing crosses between layers yet: no cross-layer power, no phase pistons,
-no overlay. Hidden chunks only run while loaded (for example while you are
-in the hidden layer); keeping them loaded with the visible world is not done
-yet. Commands require operator permission level 2. Worlds from earlier builds
+Power crosses only through **phase ports** (Redstone tab, or
+`/give @s phasecraft:phase_port`); see docs/ARCHITECTURE.md. Moving visible
+blocks from the hidden layer (phase pistons) and the overlay are not done
+yet. Hidden machinery runs wherever the visible world around it runs. Commands require operator permission level 2. Worlds from earlier builds
 are upgraded automatically at server start.
 
 Use a **new test world**, not your personal saves: the storage format has

@@ -10,6 +10,7 @@
       "dev.phasecraft.test.PhaseLayerGameTests",
       "dev.phasecraft.test.PhaseCraftCommandGameTests",
       "dev.phasecraft.test.PhaseCraftLayerSwitchGameTests",
+      "dev.phasecraft.test.PhaseCraftCrossLayerGameTests",
       "dev.phasecraft.test.PhaseLayerRestartPhases"
     ]
   },

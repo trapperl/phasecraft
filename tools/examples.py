@@ -19,6 +19,7 @@ Add a station here whenever a milestone adds something worth seeing.
 import importlib.util
 import pathlib
 import sys
+import time
 
 _rcon_spec = importlib.util.spec_from_file_location("rcon", pathlib.Path(__file__).with_name("rcon.py"))
 rcon = importlib.util.module_from_spec(_rcon_spec)
@@ -74,6 +75,25 @@ STATIONS = [
             ("minecraft:overworld", (30, Y, 1), "minecraft:redstone_block"),
         ],
     },
+    {
+        "x": 36,
+        "sign": ["7. Phase port", "Lever (on) here,", "hidden port at", "its spot: lamp on"],
+        "visible": [((36, Y, 0), "minecraft:lever[face=floor,facing=north,powered=true]")],
+        "hidden": [
+            ("minecraft:overworld", (36, Y, 1), "minecraft:redstone_lamp[lit=false]", "minecraft:redstone_lamp[lit=true]"),
+            ("minecraft:overworld", (36, Y, 0), "phasecraft:phase_port", "phasecraft:phase_port[power=15]"),
+        ],
+    },
+    {
+        "x": 42,
+        "sign": ["8. Hidden piston", "Flip the lever,", "then look with", "/phasecraft layer"],
+        "visible": [((42, Y, 0), "minecraft:lever[face=floor,facing=north,powered=false]")],
+        "hidden": [
+            ("minecraft:overworld", (42, Y, 2), "minecraft:oak_planks"),
+            ("minecraft:overworld", (42, Y, 1), "minecraft:piston[facing=south]", "minecraft:piston[extended=false,facing=south]"),
+            ("minecraft:overworld", (42, Y, 0), "phasecraft:phase_port", "phasecraft:phase_port[power=0]"),
+        ],
+    },
 ]
 
 HIDDEN_OVERWORLD = "phasecraft:hidden_overworld"
@@ -100,15 +120,15 @@ def build_commands():
         "gamerule advance_time false",
         "time set noon",
         "weather clear 1000000",
-        "forceload add -8 -8 39 8",
-        in_dimension(HIDDEN_OVERWORLD, "forceload add -8 -8 39 8"),
+        "forceload add -8 -8 51 8",
+        in_dimension(HIDDEN_OVERWORLD, "forceload add -8 -8 51 8"),
         # Clear the area (visible) and lay a path of andesite under the stations.
-        "fill -4 -60 -8 36 -55 4 minecraft:air",
-        "fill -4 -61 -8 36 -61 4 minecraft:grass_block",
-        "fill -2 -61 -1 32 -61 1 minecraft:polished_andesite",
+        "fill -4 -60 -8 48 -55 4 minecraft:air",
+        "fill -4 -61 -8 48 -61 4 minecraft:grass_block",
+        "fill -2 -61 -1 44 -61 1 minecraft:polished_andesite",
         # The hidden layer: clear it, then hidden ground under the stations.
-        in_dimension(HIDDEN_OVERWORLD, "fill -4 -60 -8 36 -40 4 minecraft:air"),
-        in_dimension(HIDDEN_OVERWORLD, "fill -4 -61 -8 36 -61 4 minecraft:smooth_stone"),
+        in_dimension(HIDDEN_OVERWORLD, "fill -4 -60 -8 48 -40 4 minecraft:air"),
+        in_dimension(HIDDEN_OVERWORLD, "fill -4 -61 -8 48 -61 4 minecraft:smooth_stone"),
         sign((0, Y, -6), WELCOME),
     ]
     for station in STATIONS:
@@ -136,6 +156,7 @@ def main():
         for command, reply in failures:
             print(f"FAILED: {command}\n  {reply}")
 
+        time.sleep(1)  # let cross-layer updates (one tick) settle before checking
         checks = [(cell[0], cell[1], cell[-1]) for s in STATIONS for cell in s["hidden"]]
         answers = rcon.send_commands([in_dimension(d, f"phasecraft get {coords(pos)}") for d, pos, _ in checks])
     except rcon.RconError as error:

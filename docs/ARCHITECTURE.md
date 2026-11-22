@@ -19,8 +19,41 @@ rules, including the inconvenient ones (redstone wire with nothing under it
 breaks, as it would anywhere).
 
 `HiddenLayer.of(level)` gives the visible/hidden pair for either side.
-Writing through it never touches the visible world. Nothing crosses between
-the layers yet: cross-layer power and pistons are the next milestones.
+Writing through it never touches the visible world.
+
+## Crossing between layers: only where you put a crossing block
+
+The layers are independent except at blocks made for crossing. So far there
+is one; phase pistons (movement) are next.
+
+**Phase port** (`phasecraft:phase_port`, Redstone tab). A port gives out, in
+its own layer and to every side like a redstone block, the power that reaches
+its position in the *other* layer: from a signal source standing there (a
+lever, torch, wire, repeater...), or from that position's neighbours there.
+To send power down into the hidden layer, put the port in the hidden layer
+under the visible lever; to send it up, put it in the visible layer.
+
+- **Ports ignore other ports**, at the same spot or next to it, so two ports
+  cannot pass power back and forth or hold each other on.
+- **Crossing takes up to one game tick.** A change near a position queues a
+  refresh of any port at that position in the other layer, delivered at the
+  end of the tick (`PhaseUpdateQueue`). A loop through both layers therefore
+  advances one hop per tick, like a clock, instead of recursing.
+- A change counts if a signal source or conductor changes within two blocks
+  (direct power, or power through a conductor).
+
+**Hidden chunks tick with the visible world.** A chunk ticket (`phasecraft:phase_link`)
+in the hidden layer follows each visible chunk's ticking status, so hidden
+machinery runs wherever the world around it runs, and nowhere else. The
+hidden layer's own chunks around a player standing in it also tick, as usual.
+
+### Decision: explicit crossing points (decided 2026-11-22)
+
+A first version let power cross at every position (any block heard a source
+at its own spot in the other layer). The person preferred power to cross
+only where wanted, and movement to cross only through special pistons. Ports
+make every connection visible and deliberate, and the rest of the world pays
+nothing for the hidden layer.
 
 `/phasecraft layer hidden|visible` moves a player to the other layer at the
 same position. Only Creative or Spectator players may enter: the hidden layer
@@ -60,14 +93,10 @@ handling of missing blocks applies, as for any world.
 
 ## Open work and decisions
 
-- **Cross-layer power** (next): a lever in the visible world powers hidden
-  redstone at the same spot, and back, with explicit feedback-loop
-  protection. Acceptance target: the hidden piston door (below).
-- **Phase pistons:** a hidden piston moves visible blocks by vanilla push
-  rules (push limit 12, obsidian immovable). Decide whether they act at their
-  own location or through an actuator port, and what counts as an obstruction.
-- **Chunk loading:** hidden chunks only tick when loaded. They must load and
-  tick together with the visible chunks they shadow.
+- **Phase pistons** (next): a special piston in the hidden layer that moves
+  visible blocks by vanilla push rules (push limit 12, obsidian immovable).
+  Ordinary pistons stay in their own layer. Decide what counts as an
+  obstruction across layers.
 - **Keeping players out:** portals built in the hidden layer, and deaths or
   logouts while in it.
 - **Overlay:** hidden blocks drawn over the visible world; server state must
@@ -76,8 +105,8 @@ handling of missing blocks applies, as for any world.
 ### Acceptance targets
 
 1. **Hidden piston door:** a visible lever opens a 2x2 door whose pistons and
-   wiring are all in the hidden layer. Needs cross-layer power and phase
-   pistons.
+   wiring are all in the hidden layer. Power half done (lever, hidden port,
+   hidden piston moves); needs phase pistons to move the visible door blocks.
 2. **Flying machine (stretch):** a hidden slime/observer engine carrying
    visible blocks. Needs phase pistons to move mixed-layer structures.
 3. **Mob farm:** not a target; the hidden layer does not interact with mobs.
@@ -101,7 +130,14 @@ All of these run on every `./gradlew build`, locally and in CI:
     `/setblock` syntax, refuse unknown blocks and out-of-range positions, and
     require op level 2;
   - `/phasecraft layer` moves a Creative player there and back at the same
-    position, and refuses Survival players.
+    position, and refuses Survival players;
+  - without a port nothing crosses; a visible lever through a hidden port
+    lights a hidden lamp and drives a hidden piston out and back; a hidden
+    lever through a visible port lights a visible lamp; ports next to or at
+    the same spot as other ports stay off; hidden chunks tick exactly where
+    the visible world does.
+- **JUnit** also checks the update queue: work added while a batch runs waits
+  for the next tick.
 - **Restart test** (`./gradlew restartTest`): two separate server processes
   on one world folder. The first places hidden blocks in all three hidden
   dimensions (one far away and unloaded) and stores some cells the old way;

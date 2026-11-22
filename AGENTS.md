@@ -34,14 +34,15 @@ blocks, with future vanilla-compatible cross-layer redstone and pistons.
 
 ## Next work
 The hidden layer is a real dimension per visible dimension (see
-docs/ARCHITECTURE.md); vanilla runs it. Acceptance target for 1 and 2: the
+docs/ARCHITECTURE.md); vanilla runs it. Acceptance target for 1: the
 hidden piston door.
-1. Cross-layer power: visible redstone powers hidden redstone at the same
-   spot and back, with feedback-loop protection; hidden chunks load and tick
-   with the visible chunks they shadow.
-2. Phase pistons: a hidden piston moves visible blocks by vanilla push rules.
-3. Keep players out of the hidden layer by accident (portals, death, logout).
-4. Overlay rendering, only after server behaviour is sound.
+Power crosses only through phase ports (done). The person wants every
+crossing explicit: a dedicated block, never every position.
+1. Phase pistons: a special piston in the hidden layer moves visible blocks
+   by vanilla push rules; ordinary pistons stay in their layer. Finish the
+   hidden piston door (2x2, visible lever) as a GameTest and example station.
+2. Keep players out of the hidden layer by accident (portals, death, logout).
+3. Overlay rendering, only after server behaviour is sound.
 
 Open questions for the person (do not decide alone): what to do with old
 list cells whose block no longer exists.

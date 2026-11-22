@@ -2,6 +2,7 @@ package dev.phasecraft;
 
 import dev.phasecraft.command.PhaseCraftCommands;
 import dev.phasecraft.layer.LegacyLayerMigration;
+import dev.phasecraft.link.PhaseLink;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.api.ModInitializer;
 import org.slf4j.Logger;
@@ -14,8 +15,10 @@ public final class PhaseCraft implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        PhaseCraftBlocks.register();
         PhaseCraftCommands.register();
         ServerLifecycleEvents.SERVER_STARTED.register(LegacyLayerMigration::migrateAll);
+        PhaseLink.register();
         LOGGER.info("PhaseCraft prototype initialized: hidden layer dimensions enabled");
     }
 }
