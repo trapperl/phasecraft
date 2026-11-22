@@ -40,7 +40,8 @@ second should report visible stone and hidden air. Redstone wire is stored as
 **data only**; it will not render, tick, or power anything.
 
 Save and exit your test world, reopen it, and run `/phasecraft get` again to
-manually inspect persistence. **In-game save/reload has not been GameTest-verified.**
+manually inspect persistence. Save-to-disk and reload is covered by a GameTest
+(see below); a full restart is still checked by hand.
 
 ## Current limitations
 
@@ -48,5 +49,17 @@ Only one hidden layer exists; it stores block registry IDs, not full block
 states. No overlay, block ticking, cross-layer redstone, or piston movement.
 Commands require operator permission level 2.
 
-Use a **new test world**, not your personal saves, until runtime GameTests
-and save/reload tests are implemented.
+Use a **new test world**, not your personal saves: the storage format has
+no migration path yet.
+
+## Running the in-game tests
+
+```sh
+./gradlew runGameTest
+```
+
+This starts a headless 26.3 server with PhaseCraft and the test mod in
+`src/gametest`, runs every `@GameTest`, writes
+`build/reports/gametest/TEST-gametest.xml` and fails the build if a required
+test fails. Fabric API's GameTest mode does not read `eula.txt`, so nothing
+needs accepting; a server you run yourself (for example for RCON) still does.

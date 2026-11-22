@@ -1,7 +1,6 @@
 package dev.phasecraft.layer;
 
 import java.util.List;
-import java.util.Map;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -10,6 +9,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
+import net.minecraft.world.level.storage.SavedDataStorage;
 
 /**
  * Persistent, per-dimension hidden-layer block IDs.
@@ -55,7 +55,12 @@ public final class PhaseLayerData extends SavedData {
     }
 
     public static PhaseLayerData get(ServerLevel level) {
-        return level.getDataStorage().computeIfAbsent(TYPE);
+        return get(level.getDataStorage());
+    }
+
+    /** Loads (or creates) the hidden layer held by a specific storage, e.g. a fresh one in tests. */
+    public static PhaseLayerData get(SavedDataStorage storage) {
+        return storage.computeIfAbsent(TYPE);
     }
 
     public String getBlock(BlockPos position) {

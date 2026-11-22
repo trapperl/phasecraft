@@ -22,6 +22,28 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
+// In-game GameTests live in src/gametest as a separate test mod
+// (phasecraft-test). Run them with ./gradlew runGameTest: a headless
+// server starts, runs every @GameTest, writes a JUnit-style report and exits
+// non-zero if a required test fails.
+fabricApi {
+    configureTests {
+        createSourceSet = true
+        modId = 'phasecraft-test'
+        enableGameTests = true
+        enableClientGameTests = false
+        eula = false
+    }
+}
+
+loom {
+    runs {
+        gameTest {
+            vmArg "-Dfabric-api.gametest.report-file=${layout.buildDirectory.file('reports/gametest/TEST-gametest.xml').get().asFile}"
+        }
+    }
+}
+
 processResources {
     inputs.property 'version', project.version
     filesMatching('fabric.mod.json') {

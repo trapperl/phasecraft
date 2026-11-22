@@ -7,8 +7,10 @@ hidden-layer cells for each dimension. A cell key is the packed 64-bit position
 from `BlockPos.asLong()`; its value is a Minecraft block registry ID.
 `PhaseLayerData` uses Minecraft 26.3's Codec-backed `SavedDataType`, storing
 one independently scoped collection per dimension. Its identifier is
-`phasecraft:layer_1`, saved as `data/phasecraft/layer_1.dat`. It declares no
-`DataFixTypes`; Fabric API skips data fixing when that is null. Editing the map does **not** call
+`phasecraft:layer_1`, saved in each dimension's own data folder, e.g.
+`<world>/dimensions/minecraft/overworld/data/phasecraft/layer_1.dat`. It
+declares no `DataFixTypes`; Fabric API skips data fixing when that is null.
+Editing the map does **not** call
 `ServerLevel.setBlock` and therefore does not alter visible terrain.
 
 The map currently stores **block IDs only**. A saved piston is not yet a
@@ -41,6 +43,13 @@ world without immediately creating another player-accessible dimension.
 
 ## Validation status
 
-The pure Java `LayerCellStore` has JUnit tests for map invariants. The GitHub
-Actions workflow will check compilation and unit tests when the branch is
-pushed. No in-game GameTests or save/reload verification have run yet.
+- **JUnit** (`src/test`, `./gradlew build`): `LayerCellStore` map invariants.
+- **GameTests** (`src/gametest`, `./gradlew runGameTest`), run on a headless
+  26.3 server in CI on every push:
+  - a hidden block and a visible block coexist at the same XYZ;
+  - breaking the visible block leaves the hidden cell intact;
+  - hidden cells written to disk are read back by a fresh `SavedDataStorage`
+    (real codec, NBT file and null-`DataFixTypes` path).
+- **Not yet automated:** a full server restart (GameTests cannot restart the
+  server), other dimensions, unloaded chunks and multiplayer. A manual
+  save/quit/reopen in a 26.3 client world kept the hidden cell on disk.

@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "phasecraft-test",
+  "version": "1.0.0",
+  "name": "PhaseCraft GameTests",
+  "description": "In-game GameTests for PhaseCraft. Not shipped with the mod.",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-gametest": ["dev.phasecraft.test.PhaseLayerGameTests"]
+  },
+  "depends": {
+    "phasecraft": "*",
+    "fabric-gametest-api-v1": "*"
+  }
+}

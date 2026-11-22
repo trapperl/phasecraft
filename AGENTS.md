@@ -18,15 +18,14 @@ blocks, with future vanilla-compatible cross-layer redstone and pistons.
 - Minecraft Java **26.3** / Fabric / Java **25** / Gradle **9.8.2**.
 - Mojang-mapped source as provided by Fabric 26.3 (no `mappings` declaration).
 - New unobfuscated Loom plugin ID: `net.fabricmc.fabric-loom`.
-- Tests under src/test/java use JUnit 5.
-- An in-game GameTest harness for cross-layer behavior and save/reload is a
-  **next milestone**, not something the current unit tests prove.
+- Tests under src/test/java use JUnit 5 (`./gradlew build`).
+- In-game GameTests live in src/gametest (test mod `phasecraft-test`) and run
+  with `./gradlew runGameTest`; CI runs both. New behaviour needs a GameTest,
+  and a new test should be shown to fail when the behaviour is broken.
 
 ## Next work
-1. Confirm 26.3 Gradle build succeeds in GitHub Actions and fix failures.
-2. Add repeatable GameTests for hidden/visible coexistence and world reload.
-3. Preserve complete BlockState properties, not just block registry IDs.
-4. Design hidden-layer ticking and cross-layer power transport with explicit
+1. Preserve complete BlockState properties, not just block registry IDs.
+2. Design hidden-layer ticking and cross-layer power transport with explicit
    feedback-loop protection.
-5. Prototype one phase piston using vanilla push rules.
-6. Add client rendering and editing only after server behavior is sound.
+3. Prototype one phase piston using vanilla push rules.
+4. Add client rendering and editing only after server behavior is sound.

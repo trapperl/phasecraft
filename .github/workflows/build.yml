@@ -22,6 +22,15 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
       - name: Compile and run unit tests
         run: ./gradlew --no-daemon clean build
+      - name: Run in-game GameTests
+        run: ./gradlew --no-daemon runGameTest
+      - name: Upload GameTest report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gametest-report
+          path: build/reports/gametest/
+          if-no-files-found: ignore
       - name: Upload development mod JAR
         if: success()
         uses: actions/upload-artifact@v4
