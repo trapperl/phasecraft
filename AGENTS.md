@@ -19,9 +19,18 @@ blocks, with future vanilla-compatible cross-layer redstone and pistons.
 - Mojang-mapped source as provided by Fabric 26.3 (no `mappings` declaration).
 - New unobfuscated Loom plugin ID: `net.fabricmc.fabric-loom`.
 - Tests under src/test/java use JUnit 5 (`./gradlew build`).
-- In-game GameTests live in src/gametest (test mod `phasecraft-test`) and run
-  with `./gradlew runGameTest`; CI runs both. New behaviour needs a GameTest,
-  and a new test should be shown to fail when the behaviour is broken.
+- In-game GameTests live in src/gametest (test mod `phasecraft-test`).
+  `./gradlew build` runs JUnit, `runGameTest` and `restartTest`; CI runs it.
+  - Name ordinary test classes `*GameTests` (the runGameTest filter is
+    `phasecraft-test:*_game_tests_*`) and list every test class under the
+    `fabric-gametest` entrypoint in src/gametest/resources/fabric.mod.json,
+    or it is silently not run.
+  - Behaviour that must survive a restart goes in `PhaseLayerRestartPhases`
+    (write phase, then verify phase in a new server process).
+- New behaviour needs a GameTest, and a new test should be shown to fail when
+  the behaviour is broken (break the code on purpose, run, restore).
+- `./gradlew installToMinecraft` installs a passing build into the local
+  Minecraft mods folder set in git-ignored `local.properties`.
 
 ## Next work
 1. Preserve complete BlockState properties, not just block registry IDs.

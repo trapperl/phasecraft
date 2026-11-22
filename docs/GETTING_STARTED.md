@@ -40,8 +40,8 @@ second should report visible stone and hidden air. Redstone wire is stored as
 **data only**; it will not render, tick, or power anything.
 
 Save and exit your test world, reopen it, and run `/phasecraft get` again to
-manually inspect persistence. Save-to-disk and reload is covered by a GameTest
-(see below); a full restart is still checked by hand.
+manually inspect persistence. The same check runs automatically as
+`./gradlew restartTest` (see below).
 
 ## Current limitations
 
@@ -52,14 +52,22 @@ Commands require operator permission level 2.
 Use a **new test world**, not your personal saves: the storage format has
 no migration path yet.
 
-## Running the in-game tests
+## Tests and the build-to-play loop
 
-```sh
-./gradlew runGameTest
+| Command | What it does |
+| --- | --- |
+| `./gradlew build` | Compiles, then runs **every** test below (CI runs this). |
+| `./gradlew runGameTest` | In-game tests: every class named `*GameTests` in `src/gametest`. |
+| `./gradlew restartTest` | Full restart: one server writes hidden cells and shuts down, a second server process loads the same world and checks them. |
+| `./gradlew installToMinecraft` | `build`, then (only if everything passed) replaces PhaseCraft in your Minecraft mods folder. Restart Minecraft afterwards. |
+
+`installToMinecraft` reads your mods folder from `local.properties`
+(git-ignored), for example:
+
+```properties
+minecraftModsDir=/mnt/c/Users/<you>/AppData/Roaming/.minecraft/mods
 ```
 
-This starts a headless 26.3 server with PhaseCraft and the test mod in
-`src/gametest`, runs every `@GameTest`, writes
-`build/reports/gametest/TEST-gametest.xml` and fails the build if a required
-test fails. Fabric API's GameTest mode does not read `eula.txt`, so nothing
-needs accepting; a server you run yourself (for example for RCON) still does.
+Reports are written to `build/reports/gametest/TEST-*.xml`. Test servers run
+headless; Fabric API's GameTest mode does not read `eula.txt`, so nothing needs
+accepting. A server you run yourself (for example for RCON) still does.

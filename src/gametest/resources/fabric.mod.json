@@ -6,7 +6,11 @@
   "description": "In-game GameTests for PhaseCraft. Not shipped with the mod.",
   "environment": "*",
   "entrypoints": {
-    "fabric-gametest": ["dev.phasecraft.test.PhaseLayerGameTests"]
+    "fabric-gametest": [
+      "dev.phasecraft.test.PhaseLayerGameTests",
+      "dev.phasecraft.test.PhaseCraftCommandGameTests",
+      "dev.phasecraft.test.PhaseLayerRestartPhases"
+    ]
   },
   "depends": {
     "phasecraft": "*",

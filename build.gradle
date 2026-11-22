@@ -23,9 +23,13 @@ dependencies {
 }
 
 // In-game GameTests live in src/gametest as a separate test mod
-// (phasecraft-test). Run them with ./gradlew runGameTest: a headless
-// server starts, runs every @GameTest, writes a JUnit-style report and exits
-// non-zero if a required test fails.
+// (phasecraft-test). Each run starts a headless server, runs the selected
+// @GameTests, writes a JUnit-style report and exits non-zero on failure.
+//
+//   ./gradlew runGameTest   ordinary tests: classes named *GameTests
+//   ./gradlew restartTest   two server processes on one world folder:
+//                           PhaseLayerRestartPhases write, then verify
+//   ./gradlew check         unit tests + both of the above (build runs it)
 fabricApi {
     configureTests {
         createSourceSet = true
@@ -36,12 +40,50 @@ fabricApi {
     }
 }
 
+def gameTestArgs = { String report, String filter ->
+    ["-Dfabric-api.gametest.report-file=${layout.buildDirectory.file("reports/gametest/TEST-${report}.xml").get().asFile}",
+     "-Dfabric-api.gametest.filter=${filter}"]
+}
+def restartRunDir = 'build/run/restartTest'
+
 loom {
     runs {
+        // Declared before gameTest's own arguments are added, so they inherit
+        // only what Loom set up (server side, gametest source set, Fabric flags).
+        restartWrite {
+            inherit gameTest
+            configName = 'GameTest: restart, write phase'
+            runDir = restartRunDir
+            vmArgs gameTestArgs('restart-write', 'phasecraft-test:phase_layer_restart_phases_write*')
+        }
+        restartVerify {
+            inherit gameTest
+            configName = 'GameTest: restart, verify phase'
+            runDir = restartRunDir
+            vmArgs gameTestArgs('restart-verify', 'phasecraft-test:phase_layer_restart_phases_verify*')
+        }
         gameTest {
-            vmArg "-Dfabric-api.gametest.report-file=${layout.buildDirectory.file('reports/gametest/TEST-gametest.xml').get().asFile}"
+            vmArgs gameTestArgs('gametest', 'phasecraft-test:*_game_tests_*')
         }
     }
+}
+
+tasks.register('cleanRestartTest', Delete) {
+    delete restartRunDir
+}
+tasks.named('runRestartWrite') {
+    dependsOn 'cleanRestartTest'
+}
+tasks.named('runRestartVerify') {
+    dependsOn 'runRestartWrite'
+}
+tasks.register('restartTest') {
+    group = 'verification'
+    description = 'Writes hidden cells, stops the server, starts a new one and verifies them.'
+    dependsOn 'runRestartVerify'
+}
+tasks.named('check') {
+    dependsOn 'runGameTest', 'restartTest'
 }
 
 processResources {
@@ -63,4 +105,45 @@ java {
     withSourcesJar()
     sourceCompatibility = JavaVersion.VERSION_25
     targetCompatibility = JavaVersion.VERSION_25
+}
+
+// Build-to-play: ./gradlew installToMinecraft runs the full build (unit tests,
+// GameTests, restart test) and, only if all pass, replaces PhaseCraft in your
+// Minecraft mods folder. Set the folder in local.properties (git-ignored):
+//   minecraftModsDir=/mnt/c/Users/<you>/AppData/Roaming/.minecraft/mods
+def localProps = new Properties()
+def localPropsFile = file('local.properties')
+if (localPropsFile.exists()) {
+    localPropsFile.withInputStream { localProps.load(it) }
+}
+
+tasks.register('installToMinecraft') {
+    group = 'phasecraft'
+    description = 'Builds and tests the mod, then installs it into your Minecraft mods folder.'
+    dependsOn 'build'
+    def modsPath = localProps.getProperty('minecraftModsDir') ?: System.getenv('MINECRAFT_MODS_DIR')
+    def remapJar = tasks.named('jar').flatMap { it.archiveFile }
+    def apiVersion = project.fabric_api_version
+    doLast {
+        if (!modsPath) {
+            throw new GradleException('Set minecraftModsDir in local.properties (or MINECRAFT_MODS_DIR) to your Minecraft mods folder.')
+        }
+        def mods = new File(modsPath)
+        if (!mods.isDirectory()) {
+            throw new GradleException("Mods folder not found: ${mods}")
+        }
+        def built = remapJar.get().asFile
+        mods.listFiles().findAll { it.name ==~ /phasecraft-.*\.jar/ }.each { old ->
+            if (!old.delete()) {
+                throw new GradleException("Could not remove ${old.name}: close Minecraft first, then rerun.")
+            }
+            logger.lifecycle("Removed old ${old.name}")
+        }
+        java.nio.file.Files.copy(built.toPath(), new File(mods, built.name).toPath())
+        logger.lifecycle("Installed ${built.name} into ${mods}")
+        if (!mods.listFiles().any { it.name == "fabric-api-${apiVersion}.jar" }) {
+            logger.warn("Warning: fabric-api-${apiVersion}.jar is not in the mods folder; PhaseCraft needs it.")
+        }
+        logger.lifecycle('Restart Minecraft (Fabric 26.3 profile) to load the new build.')
+    }
 }

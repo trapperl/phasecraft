@@ -11,6 +11,8 @@ import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.storage.SavedDataStorage;
 
@@ -23,6 +25,8 @@ import net.minecraft.world.level.storage.SavedDataStorage;
 public class PhaseLayerGameTests {
     private static final String REDSTONE_WIRE = "minecraft:redstone_wire";
     private static final String PISTON = "minecraft:piston";
+    private static final String OBSIDIAN = "minecraft:obsidian";
+    private static final String AIR = "minecraft:air";
 
     /** A hidden-layer block and an overworld block can coexist at the same XYZ. */
     @GameTest
@@ -93,6 +97,51 @@ public class PhaseLayerGameTests {
         } finally {
             deleteRecursively(folder);
         }
+        helper.succeed();
+    }
+
+    /** The Overworld, Nether and End each keep their own hidden layer at the same XYZ. */
+    @GameTest
+    public void dimensionsHaveIndependentLayers(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        BlockPos pos = helper.absolutePos(new BlockPos(4, 2, 4));
+        PhaseLayerData overworld = PhaseLayerData.get(server.getLevel(Level.OVERWORLD));
+        PhaseLayerData nether = PhaseLayerData.get(server.getLevel(Level.NETHER));
+        PhaseLayerData end = PhaseLayerData.get(server.getLevel(Level.END));
+        helper.assertFalse(overworld == nether || overworld == end || nether == end,
+                "dimensions share one layer object");
+
+        overworld.setBlock(pos, REDSTONE_WIRE);
+        helper.assertValueEqual(nether.getBlock(pos), AIR, "nether cell after overworld write");
+        helper.assertValueEqual(end.getBlock(pos), AIR, "end cell after overworld write");
+
+        nether.setBlock(pos, PISTON);
+        end.setBlock(pos, OBSIDIAN);
+        helper.assertValueEqual(overworld.getBlock(pos), REDSTONE_WIRE, "overworld cell");
+        helper.assertValueEqual(nether.getBlock(pos), PISTON, "nether cell");
+        helper.assertValueEqual(end.getBlock(pos), OBSIDIAN, "end cell");
+
+        overworld.removeBlock(pos);
+        nether.removeBlock(pos);
+        end.removeBlock(pos);
+        helper.succeed();
+    }
+
+    /** Hidden cells can be set and read in chunks that are not loaded, without loading them. */
+    @GameTest
+    public void unloadedChunksCanHoldHiddenCells(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        BlockPos far = helper.absolutePos(new BlockPos(0, 1, 0)).offset(1_000_000, 0, 1_000_000);
+        int chunkX = far.getX() >> 4;
+        int chunkZ = far.getZ() >> 4;
+        helper.assertFalse(level.getChunkSource().hasChunk(chunkX, chunkZ), "far chunk was already loaded");
+
+        PhaseLayerData layer = PhaseLayerData.get(level);
+        layer.setBlock(far, REDSTONE_WIRE);
+        helper.assertValueEqual(layer.getBlock(far), REDSTONE_WIRE, "far hidden cell");
+        helper.assertFalse(level.getChunkSource().hasChunk(chunkX, chunkZ), "hidden-layer access loaded the chunk");
+
+        layer.removeBlock(far);
         helper.succeed();
     }
 

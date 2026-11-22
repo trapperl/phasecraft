@@ -43,13 +43,25 @@ world without immediately creating another player-accessible dimension.
 
 ## Validation status
 
-- **JUnit** (`src/test`, `./gradlew build`): `LayerCellStore` map invariants.
-- **GameTests** (`src/gametest`, `./gradlew runGameTest`), run on a headless
-  26.3 server in CI on every push:
+All of these run on every `./gradlew build`, locally and in CI:
+
+- **JUnit** (`src/test`): `LayerCellStore` map invariants.
+- **GameTests** (`src/gametest`, headless 26.3 server):
   - a hidden block and a visible block coexist at the same XYZ;
   - breaking the visible block leaves the hidden cell intact;
-  - hidden cells written to disk are read back by a fresh `SavedDataStorage`
-    (real codec, NBT file and null-`DataFixTypes` path).
-- **Not yet automated:** a full server restart (GameTests cannot restart the
-  server), other dimensions, unloaded chunks and multiplayer. A manual
-  save/quit/reopen in a 26.3 client world kept the hidden cell on disk.
+  - Overworld, Nether and End keep independent layers at the same XYZ;
+  - hidden cells in unloaded chunks can be set and read without loading them;
+  - hidden cells written to disk are read back by a fresh `SavedDataStorage`;
+  - `/phasecraft set|get|clear` give the documented output, unknown blocks
+    are refused, and op level 2 is required.
+- **Restart test** (`./gradlew restartTest`): two separate server processes
+  on one world folder. The first saves empty layers, edits all three
+  dimensions (including a far, unloaded position) and shuts down normally;
+  the second checks every cell.
+
+Each was checked by breaking the code on purpose (dropping loaded cells,
+never marking edits dirty, sharing one layer across dimensions, lowering
+the permission) and seeing the matching test fail.
+
+**Not yet automated:** multiplayer (needs a second client), and anything
+about hidden-layer behaviour beyond storage, which does not exist yet.

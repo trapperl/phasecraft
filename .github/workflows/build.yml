@@ -20,10 +20,8 @@ jobs:
           java-version: '25'
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
-      - name: Compile and run unit tests
+      - name: Build and run all tests (JUnit, GameTests, restart test)
         run: ./gradlew --no-daemon clean build
-      - name: Run in-game GameTests
-        run: ./gradlew --no-daemon runGameTest
       - name: Upload GameTest report
         if: always()
         uses: actions/upload-artifact@v4

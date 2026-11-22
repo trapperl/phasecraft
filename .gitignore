@@ -12,3 +12,6 @@ out/
 # OS
 .DS_Store
 Thumbs.db
+
+# Personal machine settings (e.g. minecraftModsDir)
+local.properties
