@@ -9,11 +9,18 @@ import java.util.Comparator;
 import java.util.stream.Stream;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtIo;
+import net.minecraft.nbt.NbtUtils;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.storage.SavedDataStorage;
 
 /**
@@ -23,10 +30,14 @@ import net.minecraft.world.level.storage.SavedDataStorage;
  * absolute position, so every test clears the cells it set before finishing.</p>
  */
 public class PhaseLayerGameTests {
-    private static final String REDSTONE_WIRE = "minecraft:redstone_wire";
-    private static final String PISTON = "minecraft:piston";
-    private static final String OBSIDIAN = "minecraft:obsidian";
-    private static final String AIR = "minecraft:air";
+    private static final BlockState REDSTONE_WIRE = Blocks.REDSTONE_WIRE.defaultBlockState();
+    private static final BlockState PISTON = Blocks.PISTON.defaultBlockState()
+            .setValue(BlockStateProperties.FACING, Direction.UP);
+    private static final BlockState REPEATER = Blocks.REPEATER.defaultBlockState()
+            .setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.EAST)
+            .setValue(BlockStateProperties.DELAY, 3);
+    private static final BlockState OBSIDIAN = Blocks.OBSIDIAN.defaultBlockState();
+    private static final BlockState AIR = Blocks.AIR.defaultBlockState();
 
     /** A hidden-layer block and an overworld block can coexist at the same XYZ. */
     @GameTest
@@ -76,12 +87,14 @@ public class PhaseLayerGameTests {
         MinecraftServer server = helper.getLevel().getServer();
         BlockPos wire = new BlockPos(10, 64, 10);
         BlockPos piston = new BlockPos(-5, -32, 7);
+        BlockPos repeater = new BlockPos(3, 70, -3);
         Path folder = createTempFolder();
         try {
             SavedDataStorage first = new SavedDataStorage(folder, server.getFixerUpper(), server.registryAccess());
             PhaseLayerData written = PhaseLayerData.get(first);
             written.setBlock(wire, REDSTONE_WIRE);
             written.setBlock(piston, PISTON);
+            written.setBlock(repeater, REPEATER);
             first.close();
 
             helper.assertTrue(Files.isRegularFile(folder.resolve("phasecraft").resolve("layer_1.dat")),
@@ -90,14 +103,72 @@ public class PhaseLayerGameTests {
             SavedDataStorage second = new SavedDataStorage(folder, server.getFixerUpper(), server.registryAccess());
             PhaseLayerData reloaded = PhaseLayerData.get(second);
             helper.assertFalse(reloaded == written, "reload returned the in-memory instance");
-            helper.assertValueEqual(reloaded.size(), 2, "reloaded cell count");
+            helper.assertValueEqual(reloaded.size(), 3, "reloaded cell count");
             helper.assertValueEqual(reloaded.getBlock(wire), REDSTONE_WIRE, "reloaded wire cell");
-            helper.assertValueEqual(reloaded.getBlock(piston), PISTON, "reloaded piston cell");
+            helper.assertValueEqual(reloaded.getBlock(piston), PISTON, "reloaded piston cell (facing up)");
+            helper.assertValueEqual(reloaded.getBlock(repeater), REPEATER, "reloaded repeater cell (east, delay 3)");
             second.close();
         } finally {
             deleteRecursively(folder);
         }
         helper.succeed();
+    }
+
+    /** Block-state properties (facing, delay, ...) are stored, not just the block type. */
+    @GameTest
+    public void blockStatePropertiesAreKept(GameTestHelper helper) {
+        BlockPos pos = helper.absolutePos(new BlockPos(5, 1, 5));
+        PhaseLayerData layer = PhaseLayerData.get(helper.getLevel());
+
+        layer.setBlock(pos, REPEATER);
+        helper.assertValueEqual(layer.getBlock(pos), REPEATER, "hidden repeater");
+        helper.assertFalse(layer.getBlock(pos).equals(Blocks.REPEATER.defaultBlockState()),
+                "repeater lost its properties");
+
+        layer.removeBlock(pos);
+        helper.succeed();
+    }
+
+    /**
+     * A layer file saved before block states were stored ({@code block} IDs
+     * only) still loads, each cell becoming that block's default state.
+     */
+    @GameTest
+    public void legacyBlockIdFilesStillLoad(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        BlockPos wire = new BlockPos(10, 64, 10);
+        BlockPos piston = new BlockPos(-5, -32, 7);
+        Path folder = createTempFolder();
+        try {
+            ListTag cells = new ListTag();
+            cells.add(legacyCell(wire, "minecraft:redstone_wire"));
+            cells.add(legacyCell(piston, "minecraft:piston"));
+            CompoundTag root = new CompoundTag();
+            root.put("data", cells);
+            NbtUtils.addCurrentDataVersion(root);
+            Path file = folder.resolve("phasecraft").resolve("layer_1.dat");
+            Files.createDirectories(file.getParent());
+            NbtIo.writeCompressed(root, file);
+
+            SavedDataStorage storage = new SavedDataStorage(folder, server.getFixerUpper(), server.registryAccess());
+            PhaseLayerData loaded = PhaseLayerData.get(storage);
+            helper.assertValueEqual(loaded.size(), 2, "legacy cell count");
+            helper.assertValueEqual(loaded.getBlock(wire), REDSTONE_WIRE, "legacy wire cell");
+            helper.assertValueEqual(loaded.getBlock(piston), Blocks.PISTON.defaultBlockState(), "legacy piston cell");
+            storage.close();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        } finally {
+            deleteRecursively(folder);
+        }
+        helper.succeed();
+    }
+
+    private static CompoundTag legacyCell(BlockPos pos, String blockId) {
+        CompoundTag cell = new CompoundTag();
+        cell.putLong("pos", pos.asLong());
+        cell.putString("block", blockId);
+        return cell;
     }
 
     /** The Overworld, Nether and End each keep their own hidden layer at the same XYZ. */

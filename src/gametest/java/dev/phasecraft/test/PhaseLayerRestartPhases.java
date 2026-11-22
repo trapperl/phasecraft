@@ -4,11 +4,15 @@ import dev.phasecraft.layer.PhaseLayerData;
 import java.util.List;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 /**
  * A full server restart, split across two separate server processes that
@@ -25,14 +29,19 @@ import net.minecraft.world.level.Level;
  * ordinary {@code runGameTest} filter skips these phases.</p>
  */
 public class PhaseLayerRestartPhases {
-    private record Expected(ResourceKey<Level> dimension, BlockPos pos, String block) {}
+    private record Expected(ResourceKey<Level> dimension, BlockPos pos, BlockState block) {}
 
     /** Same XYZ in every dimension, plus a cell far outside any loaded chunk. */
     private static final List<Expected> CELLS = List.of(
-            new Expected(Level.OVERWORLD, new BlockPos(10, 64, 10), "minecraft:redstone_wire"),
-            new Expected(Level.OVERWORLD, new BlockPos(1_000_000, -40, -1_000_000), "minecraft:piston"),
-            new Expected(Level.NETHER, new BlockPos(10, 64, 10), "minecraft:sticky_piston"),
-            new Expected(Level.END, new BlockPos(10, 64, 10), "minecraft:obsidian"));
+            new Expected(Level.OVERWORLD, new BlockPos(10, 64, 10), Blocks.REDSTONE_WIRE.defaultBlockState()),
+            new Expected(Level.OVERWORLD, new BlockPos(1_000_000, -40, -1_000_000), Blocks.PISTON.defaultBlockState()
+                    .setValue(BlockStateProperties.FACING, Direction.DOWN)),
+            new Expected(Level.OVERWORLD, new BlockPos(11, 64, 10), Blocks.REPEATER.defaultBlockState()
+                    .setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.WEST)
+                    .setValue(BlockStateProperties.DELAY, 4)),
+            new Expected(Level.NETHER, new BlockPos(10, 64, 10), Blocks.STICKY_PISTON.defaultBlockState()
+                    .setValue(BlockStateProperties.FACING, Direction.EAST)),
+            new Expected(Level.END, new BlockPos(10, 64, 10), Blocks.OBSIDIAN.defaultBlockState()));
 
     @GameTest
     public void writeBeforeRestart(GameTestHelper helper) {
@@ -51,7 +60,7 @@ public class PhaseLayerRestartPhases {
         }
         for (Expected cell : CELLS) {
             PhaseLayerData layer = PhaseLayerData.get(server.getLevel(cell.dimension()));
-            helper.assertValueEqual(layer.getBlock(cell.pos()), "minecraft:air",
+            helper.assertValueEqual(layer.getBlock(cell.pos()), Blocks.AIR.defaultBlockState(),
                     "cell before write in " + cell.dimension().identifier() + " (stale world folder?)");
             layer.setBlock(cell.pos(), cell.block());
         }
@@ -67,7 +76,7 @@ public class PhaseLayerRestartPhases {
                     "cell " + cell.pos().toShortString() + " in " + cell.dimension().identifier() + " after restart");
         }
         PhaseLayerData overworld = PhaseLayerData.get(server.getLevel(Level.OVERWORLD));
-        helper.assertValueEqual(overworld.size(), 2, "overworld cell count after restart");
+        helper.assertValueEqual(overworld.size(), 3, "overworld cell count after restart");
         helper.succeed();
     }
 }

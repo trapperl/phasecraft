@@ -33,11 +33,13 @@ blocks, with future vanilla-compatible cross-layer redstone and pistons.
   Minecraft mods folder set in git-ignored `local.properties`.
 
 ## Next work
-1. Preserve complete BlockState properties, not just block registry IDs.
-2. Design hidden-layer ticking and cross-layer power transport with explicit
+1. Design hidden-layer ticking and cross-layer power transport with explicit
    feedback-loop protection.
-3. Prototype one phase piston using vanilla push rules.
-4. Add client rendering and editing only after server behavior is sound.
+2. Prototype one phase piston using vanilla push rules.
+3. Add client rendering and editing only after server behavior is sound.
+
+Open questions for the person (do not decide alone): what to do with cells
+whose block no longer exists; whether to store block-entity data.
 
 ## Local dev server (RCON)
 - `./gradlew runServer` runs a local server in run/ (git-ignored) with RCON

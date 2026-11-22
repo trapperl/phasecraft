@@ -5,27 +5,32 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Mapping of world-space block coordinates (BlockPos.asLong()) to block IDs.
+ * Mapping of world-space block coordinates (BlockPos.asLong()) to cell values.
  *
- * <p>This is deliberately independent of Minecraft classes so it can be tested
- * without starting a game. It does not currently simulate blocks, ticks,
- * redstone, block entities, or block-state properties.</p>
+ * <p>Deliberately independent of Minecraft classes so it can be tested without
+ * starting a game; in the mod the values are full BlockStates. A cell holding
+ * the {@code empty} value (air) is not stored at all.</p>
+ *
+ * @param <T> cell value type
  */
-public final class LayerCellStore {
-    public static final String AIR = "minecraft:air";
+public final class LayerCellStore<T> {
+    private final T empty;
+    private final Map<Long, T> cells = new HashMap<>();
 
-    private final Map<Long, String> cells = new HashMap<>();
-
-    public String get(long position) {
-        return cells.getOrDefault(position, AIR);
+    public LayerCellStore(T empty) {
+        this.empty = Objects.requireNonNull(empty, "empty");
     }
 
-    public void put(long position, String blockId) {
-        Objects.requireNonNull(blockId, "blockId");
-        if (blockId.isBlank() || AIR.equals(blockId)) {
+    public T get(long position) {
+        return cells.getOrDefault(position, empty);
+    }
+
+    public void put(long position, T value) {
+        Objects.requireNonNull(value, "value");
+        if (empty.equals(value)) {
             cells.remove(position);
         } else {
-            cells.put(position, blockId);
+            cells.put(position, value);
         }
     }
 
@@ -37,7 +42,7 @@ public final class LayerCellStore {
         return cells.size();
     }
 
-    public Map<Long, String> snapshot() {
+    public Map<Long, T> snapshot() {
         return Map.copyOf(cells);
     }
 }

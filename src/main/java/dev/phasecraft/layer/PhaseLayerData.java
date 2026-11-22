@@ -5,25 +5,40 @@ import java.util.List;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 import net.minecraft.world.level.storage.SavedDataStorage;
 
 /**
- * Persistent, per-dimension hidden-layer block IDs.
+ * Persistent, per-dimension hidden-layer block states.
  *
- * <p>This is data only. It deliberately does not call ServerLevel.setBlock,
+ * <p>Each cell stores a full BlockState (block plus properties such as facing
+ * or delay); block-entity data is not stored yet. This is data only. It deliberately does not call ServerLevel.setBlock,
  * schedule block ticks, or replace the visible world.</p>
  */
 public final class PhaseLayerData extends SavedData {
-    private record Cell(long pos, String block) {
-        private static final Codec<Cell> CODEC = RecordCodecBuilder.create(instance ->
+    private record Cell(long pos, BlockState state) {
+        /** Current format: {pos, state}, state as Minecraft writes block states. */
+        private static final Codec<Cell> STATE_CODEC = RecordCodecBuilder.create(instance ->
                 instance.group(
                         Codec.LONG.fieldOf("pos").forGetter(Cell::pos),
-                        Codec.STRING.fieldOf("block").forGetter(Cell::block)
+                        BlockState.CODEC.fieldOf("state").forGetter(Cell::state)
                 ).apply(instance, Cell::new));
+
+        /** First prototype format: {pos, block} with a block ID only; read as the default state. */
+        private static final Codec<Cell> LEGACY_BLOCK_ID_CODEC = RecordCodecBuilder.create(instance ->
+                instance.group(
+                        Codec.LONG.fieldOf("pos").forGetter(Cell::pos),
+                        BuiltInRegistries.BLOCK.byNameCodec().fieldOf("block").forGetter(cell -> cell.state().getBlock())
+                ).apply(instance, (pos, block) -> new Cell(pos, block.defaultBlockState())));
+
+        /** Writes the current format; reads either. */
+        private static final Codec<Cell> CODEC = Codec.withAlternative(STATE_CODEC, LEGACY_BLOCK_ID_CODEC);
     }
 
     // Modern Minecraft SavedData uses codecs rather than overriding NBT save().
@@ -37,14 +52,14 @@ public final class PhaseLayerData extends SavedData {
             null
     );
 
-    private final LayerCellStore cells = new LayerCellStore();
+    private final LayerCellStore<BlockState> cells = new LayerCellStore<>(Blocks.AIR.defaultBlockState());
 
     public PhaseLayerData() {
     }
 
     private PhaseLayerData(List<Cell> entries) {
         for (Cell cell : entries) {
-            cells.put(cell.pos(), cell.block());
+            cells.put(cell.pos(), cell.state());
         }
     }
 
@@ -63,12 +78,14 @@ public final class PhaseLayerData extends SavedData {
         return storage.computeIfAbsent(TYPE);
     }
 
-    public String getBlock(BlockPos position) {
+    /** The hidden block state at a position; air if nothing is stored there. */
+    public BlockState getBlock(BlockPos position) {
         return cells.get(position.asLong());
     }
 
-    public void setBlock(BlockPos position, String blockId) {
-        cells.put(position.asLong(), blockId);
+    /** Stores a hidden block state; storing air clears the cell. */
+    public void setBlock(BlockPos position, BlockState state) {
+        cells.put(position.asLong(), state);
         setDirty();
     }
 

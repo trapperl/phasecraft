@@ -27,17 +27,22 @@ In a creative world with cheats enabled, run the first storage experiment:
 
 ```text
 /setblock 10 64 10 minecraft:stone
-/phasecraft set 10 64 10 redstone_wire
+/phasecraft set 10 64 10 minecraft:redstone_wire
 /phasecraft get 10 64 10
 /phasecraft clear 10 64 10
 /phasecraft get 10 64 10
 ```
 
-At present the prototype's command uses an unquoted word argument for the
-block name, so **use `redstone_wire`, not `minecraft:redstone_wire`**.
-The first `get` should report visible stone and hidden redstone wire; the
-second should report visible stone and hidden air. Redstone wire is stored as
-**data only**; it will not render, tick, or power anything.
+The block argument uses the same syntax as `/setblock`, with tab completion:
+`redstone_wire`, `minecraft:redstone_wire` and
+`minecraft:repeater[facing=east,delay=3]` all work. Block-entity data in
+`{...}` is accepted by the parser but not stored.
+
+The first `get` should report visible stone and hidden
+`minecraft:redstone_wire[east=none,north=none,power=0,south=none,west=none]`
+(the full block state); the second should report visible stone and hidden
+air. Hidden blocks are **data only**: they do not render, tick, or power
+anything.
 
 Save and exit your test world, reopen it, and run `/phasecraft get` again to
 manually inspect persistence. The same check runs automatically as
@@ -45,8 +50,8 @@ manually inspect persistence. The same check runs automatically as
 
 ## Current limitations
 
-Only one hidden layer exists; it stores block registry IDs, not full block
-states. No overlay, block ticking, cross-layer redstone, or piston movement.
+Only one hidden layer exists; it stores full block states but no block-entity
+data (chest contents, sign text and the like). No overlay, block ticking, cross-layer redstone, or piston movement.
 Commands require operator permission level 2.
 
 Use a **new test world**, not your personal saves: the storage format has
