@@ -95,3 +95,12 @@ other machines. `tools/rcon.py` reads the host, port and password from that
 file. Join from the Fabric 26.3 profile at `localhost`; to use `/phasecraft`
 in game, make yourself an operator with
 `python3 tools/rcon.py "op <your name>"`.
+
+### Examples world
+
+`python3 tools/examples.py` builds a row of example stations near spawn on
+the running server (best on a flat world: `level-type=minecraft\:flat`),
+then reads every hidden cell back and exits 1 if one is wrong. Each station
+has a sign; hidden blocks are invisible for now, so inspect them with
+`/phasecraft get <x> -60 0` (or `execute in minecraft:the_nether run ...`
+for station 5). Rerunning it rebuilds the area from scratch.

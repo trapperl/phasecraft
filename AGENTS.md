@@ -46,3 +46,5 @@ whose block no longer exists; whether to store block-entity data.
   bound to 127.0.0.1; `python3 tools/rcon.py "<command>"` sends commands.
 - Use it for real-world checks (restart, joining with a client). It does not
   replace GameTests: anything worth checking twice belongs in a test.
+- `python3 tools/examples.py` rebuilds and verifies the examples area. When a
+  milestone adds something a person can see or try, add a station for it.
