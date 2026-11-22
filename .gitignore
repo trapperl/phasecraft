@@ -1,0 +1,14 @@
+# Gradle / Loom
+.gradle/
+build/
+run/
+out/
+.idea/
+*.iml
+# VS Code user files (keep team configuration)
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+# OS
+.DS_Store
+Thumbs.db
