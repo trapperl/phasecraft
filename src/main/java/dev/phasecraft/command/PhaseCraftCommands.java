@@ -16,7 +16,7 @@ import net.minecraft.server.permissions.Permissions;
 /**
  * Operator-only developer commands.
  *
- * <p>Use /phasecraft set x y z minecraft:redstone_wire to store a virtual
+ * <p>Use /phasecraft set x y z redstone_wire to store a virtual
  * block without touching the actual overworld block at those coordinates.</p>
  */
 public final class PhaseCraftCommands {
@@ -25,7 +25,7 @@ public final class PhaseCraftCommands {
     public static void register() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
                 dispatcher.register(Commands.literal("phasecraft")
-                        .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_MODERATOR))
+                        .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
                         .then(Commands.literal("set")
                                 .then(Commands.argument("pos", BlockPosArgument.blockPos())
                                         .then(Commands.argument("block", StringArgumentType.word())

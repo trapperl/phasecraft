@@ -20,10 +20,8 @@ jobs:
           java-version: '25'
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '9.8.2'
       - name: Compile and run unit tests
-        run: gradle --no-daemon clean build
+        run: ./gradlew --no-daemon clean build
       - name: Upload development mod JAR
         if: success()
         uses: actions/upload-artifact@v4

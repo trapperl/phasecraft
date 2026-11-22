@@ -4,7 +4,7 @@
 - **Minecraft Java Edition 26.3** (stable, not the 26.4 snapshot)
 - Fabric Loader for 26.3 and a **Fabric API JAR for 26.3**
 - Java Development Kit 25 (for local builds)
-- Git and Gradle 9.8.2
+- Git (Gradle 9.8.2 is fetched by the committed wrapper, `./gradlew`)
 - Visual Studio Code with Java and Gradle extensions, or IntelliJ IDEA
 
 The project targets 26.3; the older 1.21.1 PhaseCraft build **will not load**
@@ -12,16 +12,15 @@ under Minecraft 26.3. Download a fresh artifact from the latest successful
 GitHub Actions run and put the mod JAR (not the artifact ZIP) into the
 instance's `mods` folder together with the Fabric API for 26.3.
 
-The Gradle wrapper has **not** yet been committed. GitHub Actions installs
-Gradle 9.8.2. To generate the wrapper locally, run
-`gradle wrapper --gradle-version 9.8.2` and commit the actual Gradle wrapper
-scripts, properties, and JAR. Do not handwrite or omit the wrapper JAR.
+The Gradle wrapper is committed and pins Gradle 9.8.2; use `./gradlew`
+(or `gradlew.bat` on Windows) rather than a system Gradle. Only `JAVA_HOME`
+pointing at a JDK 25 is needed.
 
 ## Build and run
 
 ```sh
-gradle build
-gradle runClient
+./gradlew build
+./gradlew runClient
 ```
 
 In a creative world with cheats enabled, run the first storage experiment:

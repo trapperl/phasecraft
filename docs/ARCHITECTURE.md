@@ -7,7 +7,8 @@ hidden-layer cells for each dimension. A cell key is the packed 64-bit position
 from `BlockPos.asLong()`; its value is a Minecraft block registry ID.
 `PhaseLayerData` uses Minecraft 26.3's Codec-backed `SavedDataType`, storing
 one independently scoped collection per dimension. Its identifier is
-`phasecraft:layer_1`. Editing the map does **not** call
+`phasecraft:layer_1`, saved as `data/phasecraft/layer_1.dat`. It declares no
+`DataFixTypes`; Fabric API skips data fixing when that is null. Editing the map does **not** call
 `ServerLevel.setBlock` and therefore does not alter visible terrain.
 
 The map currently stores **block IDs only**. A saved piston is not yet a
