@@ -38,3 +38,9 @@ blocks, with future vanilla-compatible cross-layer redstone and pistons.
    feedback-loop protection.
 3. Prototype one phase piston using vanilla push rules.
 4. Add client rendering and editing only after server behavior is sound.
+
+## Local dev server (RCON)
+- `./gradlew runServer` runs a local server in run/ (git-ignored) with RCON
+  bound to 127.0.0.1; `python3 tools/rcon.py "<command>"` sends commands.
+- Use it for real-world checks (restart, joining with a client). It does not
+  replace GameTests: anything worth checking twice belongs in a test.

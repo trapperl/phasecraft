@@ -71,3 +71,22 @@ minecraftModsDir=/mnt/c/Users/<you>/AppData/Roaming/.minecraft/mods
 Reports are written to `build/reports/gametest/TEST-*.xml`. Test servers run
 headless; Fabric API's GameTest mode does not read `eula.txt`, so nothing needs
 accepting. A server you run yourself (for example for RCON) still does.
+
+## Local dev server with RCON
+
+For checks in a real (non-test) world, run a local dedicated server from this
+project and drive it over RCON:
+
+```sh
+./gradlew runServer                      # first run creates run/; accept the EULA in run/eula.txt
+python3 tools/rcon.py "phasecraft get 10 64 10"
+python3 tools/rcon.py "stop"
+```
+
+`run/` is git-ignored. Set these in `run/server.properties` before the first
+real start: `enable-rcon=true`, a random `rcon.password`, and
+`server-ip=127.0.0.1` so neither the game port nor RCON is reachable from
+other machines. `tools/rcon.py` reads the host, port and password from that
+file. Join from the Fabric 26.3 profile at `localhost`; to use `/phasecraft`
+in game, make yourself an operator with
+`python3 tools/rcon.py "op <your name>"`.
