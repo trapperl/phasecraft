@@ -6,10 +6,12 @@ Usage:
     python3 tools/examples.py
 
 Builds a row of example stations near spawn on a flat world (ground at
-y=-61, stations at y=-60), each with a sign explaining it. Hidden blocks are
-data only for now: they are invisible in game, and you inspect them with
-/phasecraft get. After building, every hidden cell is read back over RCON and
-the script exits 1 if any does not match.
+y=-61, stations at y=-60), each with a sign explaining it. The hidden layer is
+a real dimension at the same coordinates (phasecraft:hidden_overworld); the
+script lays hidden ground under the stations, since hidden redstone follows
+vanilla rules. Inspect hidden blocks with /phasecraft get, or go and look with
+/phasecraft layer hidden (Creative). After building, every hidden cell is read
+back over RCON and the script exits 1 if any does not match.
 
 Add a station here whenever a milestone adds something worth seeing.
 """
@@ -26,7 +28,7 @@ Y = -60          # first air block above the flat world's grass
 SIGN_Z = -2      # signs stand north of each station, readable from the north
 
 # Each station: title, visible blocks, hidden cells, sign lines (max ~15 chars each).
-# Positions are (x, y, z); hidden cells may name a dimension.
+# Positions are (x, y, z). Hidden cells are (dimension, pos, block[, expected after placing]).
 STATIONS = [
     {
         "x": 0,
@@ -54,16 +56,29 @@ STATIONS = [
     },
     {
         "x": 24,
-        "sign": ["5. Dimensions", "Here: a lever.", "Nether, same", "XYZ: glowstone"],
+        "sign": ["5. Dimensions", "Here: a lever.", "The Nether has", "its own: 24 64 0"],
         "visible": [((24, Y, 0), "minecraft:polished_andesite")],
         "hidden": [
             ("minecraft:overworld", (24, Y, 0), "minecraft:lever[face=floor,facing=north]"),
-            ("minecraft:the_nether", (24, Y, 0), "minecraft:glowstone"),
+            ("minecraft:the_nether", (24, 64, 0), "minecraft:glowstone"),
+        ],
+    },
+    {
+        "x": 30,
+        "sign": ["6. Hidden lamp", "lit by hidden", "power. See it:", "/phasecraft layer"],
+        "visible": [],
+        "hidden": [
+            # Placed unlit; the check expects lit=true, so it passes only if vanilla
+            # redstone in the hidden layer lit it.
+            ("minecraft:overworld", (30, Y, 0), "minecraft:redstone_lamp[lit=false]", "minecraft:redstone_lamp[lit=true]"),
+            ("minecraft:overworld", (30, Y, 1), "minecraft:redstone_block"),
         ],
     },
 ]
 
-WELCOME = ["PhaseCraft", "examples", "/phasecraft get", "x -60 0"]
+HIDDEN_OVERWORLD = "phasecraft:hidden_overworld"
+
+WELCOME = ["PhaseCraft examples", "/phasecraft get", "x -60 0, or go:", "/phasecraft layer"]
 
 
 def coords(pos):
@@ -85,19 +100,23 @@ def build_commands():
         "gamerule advance_time false",
         "time set noon",
         "weather clear 1000000",
-        "forceload add -8 -8 31 8",
+        "forceload add -8 -8 39 8",
+        in_dimension(HIDDEN_OVERWORLD, "forceload add -8 -8 39 8"),
         # Clear the area (visible) and lay a path of andesite under the stations.
-        "fill -4 -60 -8 30 -55 4 minecraft:air",
-        "fill -4 -61 -8 30 -61 4 minecraft:grass_block",
-        "fill -2 -61 -1 26 -61 1 minecraft:polished_andesite",
+        "fill -4 -60 -8 36 -55 4 minecraft:air",
+        "fill -4 -61 -8 36 -61 4 minecraft:grass_block",
+        "fill -2 -61 -1 32 -61 1 minecraft:polished_andesite",
+        # The hidden layer: clear it, then hidden ground under the stations.
+        in_dimension(HIDDEN_OVERWORLD, "fill -4 -60 -8 36 -40 4 minecraft:air"),
+        in_dimension(HIDDEN_OVERWORLD, "fill -4 -61 -8 36 -61 4 minecraft:smooth_stone"),
         sign((0, Y, -6), WELCOME),
     ]
     for station in STATIONS:
-        for dimension, pos, _ in station["hidden"]:
+        for dimension, pos, *_ in station["hidden"]:
             commands.append(in_dimension(dimension, f"phasecraft clear {coords(pos)}"))
         for pos, block in station["visible"]:
             commands.append(f"setblock {coords(pos)} {block} replace")
-        for dimension, pos, block in station["hidden"]:
+        for dimension, pos, block, *_ in station["hidden"]:
             commands.append(in_dimension(dimension, f"phasecraft set {coords(pos)} {block}"))
         commands.append(sign((station["x"], Y, SIGN_Z), station["sign"]))
     return commands
@@ -117,7 +136,7 @@ def main():
         for command, reply in failures:
             print(f"FAILED: {command}\n  {reply}")
 
-        checks = [(d, pos, block) for s in STATIONS for d, pos, block in s["hidden"]]
+        checks = [(cell[0], cell[1], cell[-1]) for s in STATIONS for cell in s["hidden"]]
         answers = rcon.send_commands([in_dimension(d, f"phasecraft get {coords(pos)}") for d, pos, _ in checks])
     except rcon.RconError as error:
         print(error, file=sys.stderr)

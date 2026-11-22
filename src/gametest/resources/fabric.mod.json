@@ -9,11 +9,15 @@
     "fabric-gametest": [
       "dev.phasecraft.test.PhaseLayerGameTests",
       "dev.phasecraft.test.PhaseCraftCommandGameTests",
+      "dev.phasecraft.test.PhaseCraftLayerSwitchGameTests",
       "dev.phasecraft.test.PhaseLayerRestartPhases"
     ]
   },
   "depends": {
     "phasecraft": "*",
     "fabric-gametest-api-v1": "*"
-  }
+  },
+  "mixins": [
+    "phasecraft-test.mixins.json"
+  ]
 }

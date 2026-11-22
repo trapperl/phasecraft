@@ -1,6 +1,9 @@
 package dev.phasecraft.layer;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -15,11 +18,13 @@ import net.minecraft.world.level.saveddata.SavedDataType;
 import net.minecraft.world.level.storage.SavedDataStorage;
 
 /**
- * Persistent, per-dimension hidden-layer block states.
+ * Legacy hidden-layer storage: the per-dimension block list used before the
+ * hidden layer became a real dimension (see {@link HiddenLayer}).
  *
- * <p>Each cell stores a full BlockState (block plus properties such as facing
- * or delay); block-entity data is not stored yet. This is data only. It deliberately does not call ServerLevel.setBlock,
- * schedule block ticks, or replace the visible world.</p>
+ * <p>Kept only so existing worlds can be read and moved over by
+ * {@link LegacyLayerMigration}. New hidden blocks are never stored here.
+ * Cells hold full BlockStates; files from the first prototype
+ * ({@code {pos, block}}) are read as default states.</p>
  */
 public final class PhaseLayerData extends SavedData {
     private record Cell(long pos, BlockState state) {
@@ -96,5 +101,17 @@ public final class PhaseLayerData extends SavedData {
 
     public int size() {
         return cells.size();
+    }
+
+    /** Every stored cell, by position. */
+    public Map<BlockPos, BlockState> cells() {
+        Map<BlockPos, BlockState> result = new HashMap<>();
+        cells.snapshot().forEach((pos, state) -> result.put(BlockPos.of(pos), state));
+        return result;
+    }
+
+    /** The legacy layer for a storage, only if one exists: never creates a file. */
+    public static Optional<PhaseLayerData> existing(SavedDataStorage storage) {
+        return Optional.ofNullable(storage.get(TYPE));
     }
 }

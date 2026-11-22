@@ -23,26 +23,32 @@ pointing at a JDK 25 is needed.
 ./gradlew runClient
 ```
 
-In a creative world with cheats enabled, run the first storage experiment:
+The hidden layer is a real dimension at the same coordinates
+(`phasecraft:hidden_overworld` for the Overworld). In a Creative world with
+cheats enabled:
 
 ```text
 /setblock 10 64 10 minecraft:stone
+/phasecraft set 10 63 10 minecraft:stone
 /phasecraft set 10 64 10 minecraft:redstone_wire
 /phasecraft get 10 64 10
-/phasecraft clear 10 64 10
-/phasecraft get 10 64 10
+/phasecraft layer hidden
+/phasecraft layer visible
 ```
 
-The block argument uses the same syntax as `/setblock`, with tab completion:
-`redstone_wire`, `minecraft:redstone_wire` and
-`minecraft:repeater[facing=east,delay=3]` all work. Block-entity data in
-`{...}` is accepted by the parser but not stored.
+The hidden layer follows vanilla rules, so the hidden wire needs a hidden
+block under it (the second line); without one it breaks, as it would
+anywhere. The block argument uses the same syntax as `/setblock`, with tab
+completion: `redstone_wire`, `minecraft:redstone_wire` and
+`minecraft:repeater[facing=east,delay=3]` all work.
 
-The first `get` should report visible stone and hidden
-`minecraft:redstone_wire[east=none,north=none,power=0,south=none,west=none]`
-(the full block state); the second should report visible stone and hidden
-air. Hidden blocks are **data only**: they do not render, tick, or power
-anything.
+`get` reports visible stone and hidden
+`minecraft:redstone_wire[east=none,north=none,power=0,south=none,west=none]`.
+`/phasecraft layer hidden` takes you to the same spot in the hidden layer
+(Creative or Spectator only: it has no ground), where you can see and build
+hidden circuits with normal blocks and commands; `layer visible` brings you
+back. Hidden redstone runs by vanilla rules but nothing reaches across
+layers yet.
 
 Save and exit your test world, reopen it, and run `/phasecraft get` again to
 manually inspect persistence. The same check runs automatically as
@@ -50,9 +56,11 @@ manually inspect persistence. The same check runs automatically as
 
 ## Current limitations
 
-Only one hidden layer exists; it stores full block states but no block-entity
-data (chest contents, sign text and the like). No overlay, block ticking, cross-layer redstone, or piston movement.
-Commands require operator permission level 2.
+Nothing crosses between layers yet: no cross-layer power, no phase pistons,
+no overlay. Hidden chunks only run while loaded (for example while you are
+in the hidden layer); keeping them loaded with the visible world is not done
+yet. Commands require operator permission level 2. Worlds from earlier builds
+are upgraded automatically at server start.
 
 Use a **new test world**, not your personal saves: the storage format has
 no migration path yet.
