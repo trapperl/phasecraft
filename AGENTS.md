@@ -15,14 +15,15 @@ blocks, with future vanilla-compatible cross-layer redstone and pistons.
 - Never use commands that wipe player saves or unrelated files.
 
 ## Stack
-- Minecraft Java 1.21.1 / Fabric / Java 21.
-- Official Mojang mappings and Gradle Groovy DSL.
+- Minecraft Java **26.3** / Fabric / Java **25** / Gradle **9.8.2**.
+- Mojang-mapped source as provided by Fabric 26.3 (no `mappings` declaration).
+- New unobfuscated Loom plugin ID: `net.fabricmc.fabric-loom`.
 - Tests under src/test/java use JUnit 5.
 - An in-game GameTest harness for cross-layer behavior and save/reload is a
   **next milestone**, not something the current unit tests prove.
 
 ## Next work
-1. Confirm Gradle build succeeds in GitHub Actions and fix failures.
+1. Confirm 26.3 Gradle build succeeds in GitHub Actions and fix failures.
 2. Add repeatable GameTests for hidden/visible coexistence and world reload.
 3. Preserve complete BlockState properties, not just block registry IDs.
 4. Design hidden-layer ticking and cross-layer power transport with explicit
