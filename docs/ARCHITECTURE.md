@@ -21,6 +21,12 @@ Cells are saved as `{pos, state}`, with `state` in Minecraft's own
 that block's default state, and is rewritten in the new format on the next
 save.
 
+The pre-26.3 (Minecraft 1.21.1) prototype used a different file
+(`<world>/data/phasecraft_layer_1.dat`, NBT list `Cells` of `{Pos, Block}`).
+It is **not migrated**: no world in use was created with that build, and a
+1.21.1 world opened in 26.3 would need Minecraft's own world upgrade first.
+Such a file is ignored, not read or deleted.
+
 A hidden piston is still only data: no block entity, no ticking, no redstone.
 This is a storage proof of concept, not a second running Minecraft dimension.
 
