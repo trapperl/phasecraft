@@ -10,7 +10,8 @@ import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.permissions.Permissions;
 
 /**
  * Operator-only developer commands.
@@ -24,7 +25,7 @@ public final class PhaseCraftCommands {
     public static void register() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
                 dispatcher.register(Commands.literal("phasecraft")
-                        .requires(source -> source.hasPermission(2))
+                        .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_MODERATOR))
                         .then(Commands.literal("set")
                                 .then(Commands.argument("pos", BlockPosArgument.blockPos())
                                         .then(Commands.argument("block", StringArgumentType.word())
@@ -41,7 +42,7 @@ public final class PhaseCraftCommands {
         CommandSourceStack source = context.getSource();
         BlockPos position = BlockPosArgument.getBlockPos(context, "pos");
         String input = StringArgumentType.getString(context, "block");
-        ResourceLocation id = ResourceLocation.tryParse(input);
+        Identifier id = Identifier.tryParse(input);
         if (id == null || !BuiltInRegistries.BLOCK.containsKey(id)) {
             source.sendFailure(Component.literal("Unknown block ID: " + input));
             return 0;

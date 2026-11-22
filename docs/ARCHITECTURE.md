@@ -5,8 +5,9 @@
 There is **one real Minecraft level** plus a separate, persisted map of
 hidden-layer cells for each dimension. A cell key is the packed 64-bit position
 from `BlockPos.asLong()`; its value is a Minecraft block registry ID.
-`PhaseLayerData` uses Minecraft's `SavedData`, giving each dimension its own
-`phasecraft_layer_1.dat`. Editing the map does **not** call
+`PhaseLayerData` uses Minecraft 26.3's Codec-backed `SavedDataType`, storing
+one independently scoped collection per dimension. Its identifier is
+`phasecraft:layer_1`. Editing the map does **not** call
 `ServerLevel.setBlock` and therefore does not alter visible terrain.
 
 The map currently stores **block IDs only**. A saved piston is not yet a
@@ -33,6 +34,8 @@ world without immediately creating another player-accessible dimension.
   any transparent overlay is drawn.
 - Add GameTests for coexistence, persistence after server restart, redstone,
   and pushability, including unloaded chunks and multiplayer.
+- The old Minecraft 1.21.1 prototype's NBT storage schema is not compatible
+  with the 26.3 Codec-backed storage; use a fresh test world for now.
 - Plan a data migration format before making the storage schema public.
 
 ## Validation status
