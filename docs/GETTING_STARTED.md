@@ -2,13 +2,13 @@
 
 ## Requirements
 - Java Development Kit 21
-- Git and Gradle 9.8.2
+- Git and Gradle 9.0.0
 - Visual Studio Code with Java and Gradle extensions, or IntelliJ IDEA
 
 The repository's first iteration uses the official Fabric example's pinned
 Minecraft 1.21.1 dependency versions. A Gradle wrapper has **not** been
-committed yet; GitHub Actions installs Gradle 9.8.2 independently. Once Gradle
-is installed locally, run `gradle wrapper --gradle-version 9.8.2` and commit
+committed yet; GitHub Actions installs Gradle 9.0.0 independently. Once Gradle
+is installed locally, run `gradle wrapper --gradle-version 9.0.0` and commit
 the generated `gradlew`, `gradlew.bat`, and wrapper directory in a subsequent
 change. Do not handwrite or omit the wrapper JAR.
 
