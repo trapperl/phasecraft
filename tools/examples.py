@@ -94,6 +94,19 @@ STATIONS = [
             ("minecraft:overworld", (42, Y, 0), "phasecraft:phase_port", "phasecraft:phase_port[power=0]"),
         ],
     },
+    {
+        "x": 48,
+        "sign": ["9. Phase piston", "Flip the lever:", "a hidden piston", "moves the bricks"],
+        "visible": [
+            ((48, Y, 0), "minecraft:lever[face=floor,facing=north,powered=false]"),
+            ((49, Y, 1), "minecraft:stone_bricks"),
+        ],
+        "hidden": [
+            ("minecraft:overworld", (48, Y, 0), "phasecraft:phase_port", "phasecraft:phase_port[power=0]"),
+            ("minecraft:overworld", (49, Y, 0), "phasecraft:sticky_phase_piston[facing=south]",
+             "phasecraft:sticky_phase_piston[extended=false,facing=south]"),
+        ],
+    },
 ]
 
 HIDDEN_OVERWORLD = "phasecraft:hidden_overworld"
@@ -120,15 +133,15 @@ def build_commands():
         "gamerule advance_time false",
         "time set noon",
         "weather clear 1000000",
-        "forceload add -8 -8 51 8",
-        in_dimension(HIDDEN_OVERWORLD, "forceload add -8 -8 51 8"),
+        "forceload add -8 -8 57 8",
+        in_dimension(HIDDEN_OVERWORLD, "forceload add -8 -8 57 8"),
         # Clear the area (visible) and lay a path of andesite under the stations.
-        "fill -4 -60 -8 48 -55 4 minecraft:air",
-        "fill -4 -61 -8 48 -61 4 minecraft:grass_block",
-        "fill -2 -61 -1 44 -61 1 minecraft:polished_andesite",
+        "fill -4 -60 -8 54 -55 4 minecraft:air",
+        "fill -4 -61 -8 54 -61 4 minecraft:grass_block",
+        "fill -2 -61 -1 50 -61 1 minecraft:polished_andesite",
         # The hidden layer: clear it, then hidden ground under the stations.
-        in_dimension(HIDDEN_OVERWORLD, "fill -4 -60 -8 48 -40 4 minecraft:air"),
-        in_dimension(HIDDEN_OVERWORLD, "fill -4 -61 -8 48 -61 4 minecraft:smooth_stone"),
+        in_dimension(HIDDEN_OVERWORLD, "fill -4 -60 -8 54 -40 4 minecraft:air"),
+        in_dimension(HIDDEN_OVERWORLD, "fill -4 -61 -8 54 -61 4 minecraft:smooth_stone"),
         sign((0, Y, -6), WELCOME),
     ]
     for station in STATIONS:

@@ -67,10 +67,10 @@ manually inspect persistence. The same check runs automatically as
 
 ## Current limitations
 
-Power crosses only through **phase ports** (Redstone tab, or
-`/give @s phasecraft:phase_port`); see docs/ARCHITECTURE.md. Moving visible
-blocks from the hidden layer (phase pistons) and the overlay are not done
-yet. Hidden machinery runs wherever the visible world around it runs. Commands require operator permission level 2. Worlds from earlier builds
+Power crosses only through **phase ports**, and visible blocks are moved
+only by **phase pistons** placed in the hidden layer (all in the Redstone
+tab, or `/give @s phasecraft:phase_port`, `phasecraft:sticky_phase_piston`);
+see docs/ARCHITECTURE.md. The overlay is not done yet. Hidden machinery runs wherever the visible world around it runs. Commands require operator permission level 2. Worlds from earlier builds
 are upgraded automatically at server start.
 
 Use a **new test world**, not your personal saves: the storage format has

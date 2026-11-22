@@ -38,9 +38,9 @@ docs/ARCHITECTURE.md); vanilla runs it. Acceptance target for 1: the
 hidden piston door.
 Power crosses only through phase ports (done). The person wants every
 crossing explicit: a dedicated block, never every position.
-1. Phase pistons: a special piston in the hidden layer moves visible blocks
-   by vanilla push rules; ordinary pistons stay in their layer. Finish the
-   hidden piston door (2x2, visible lever) as a GameTest and example station.
+1. The hidden 2x2 flush door as one machine (GameTest + example station):
+   visible lever, hidden port, two-stage sticky phase pistons (back behind
+   the wall face, then sideways). Phase ports and phase pistons are done.
 2. Keep players out of the hidden layer by accident (portals, death, logout).
 3. Overlay rendering, only after server behaviour is sound.
 

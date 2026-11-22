@@ -1,1 +1,5 @@
-{"block.phasecraft.phase_port": "Phase Port"}
+{
+  "block.phasecraft.phase_port": "Phase Port",
+  "block.phasecraft.phase_piston": "Phase Piston",
+  "block.phasecraft.sticky_phase_piston": "Sticky Phase Piston"
+}

@@ -1,0 +1,56 @@
+{
+  "variants": {
+    "extended=false,facing=up": {
+      "model": "phasecraft:block/phase_piston"
+    },
+    "extended=true,facing=up": {
+      "model": "phasecraft:block/phase_piston_extended"
+    },
+    "extended=false,facing=down": {
+      "model": "phasecraft:block/phase_piston",
+      "x": 180
+    },
+    "extended=true,facing=down": {
+      "model": "phasecraft:block/phase_piston_extended",
+      "x": 180
+    },
+    "extended=false,facing=north": {
+      "model": "phasecraft:block/phase_piston",
+      "x": 90
+    },
+    "extended=true,facing=north": {
+      "model": "phasecraft:block/phase_piston_extended",
+      "x": 90
+    },
+    "extended=false,facing=south": {
+      "model": "phasecraft:block/phase_piston",
+      "x": 90,
+      "y": 180
+    },
+    "extended=true,facing=south": {
+      "model": "phasecraft:block/phase_piston_extended",
+      "x": 90,
+      "y": 180
+    },
+    "extended=false,facing=west": {
+      "model": "phasecraft:block/phase_piston",
+      "x": 90,
+      "y": 270
+    },
+    "extended=true,facing=west": {
+      "model": "phasecraft:block/phase_piston_extended",
+      "x": 90,
+      "y": 270
+    },
+    "extended=false,facing=east": {
+      "model": "phasecraft:block/phase_piston",
+      "x": 90,
+      "y": 90
+    },
+    "extended=true,facing=east": {
+      "model": "phasecraft:block/phase_piston_extended",
+      "x": 90,
+      "y": 90
+    }
+  }
+}

@@ -1,0 +1,1 @@
+{"parent": "minecraft:block/cube_bottom_top", "textures": {"top": "phasecraft:block/phase_piston_top", "bottom": "phasecraft:block/phase_piston_bottom", "side": "phasecraft:block/phase_piston_side"}}

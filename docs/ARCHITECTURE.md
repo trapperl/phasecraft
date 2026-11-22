@@ -23,8 +23,9 @@ Writing through it never touches the visible world.
 
 ## Crossing between layers: only where you put a crossing block
 
-The layers are independent except at blocks made for crossing. So far there
-is one; phase pistons (movement) are next.
+The layers are independent except at blocks made for crossing: phase ports
+(power) and phase pistons (movement). Ordinary blocks, including ordinary
+pistons, stay in their own layer.
 
 **Phase port** (`phasecraft:phase_port`, Redstone tab). A port gives out, in
 its own layer and to every side like a redstone block, the power that reaches
@@ -46,6 +47,18 @@ under the visible lever; to send it up, put it in the visible layer.
 in the hidden layer follows each visible chunk's ticking status, so hidden
 machinery runs wherever the world around it runs, and nowhere else. The
 hidden layer's own chunks around a player standing in it also tick, as usual.
+
+**Phase piston / sticky phase piston** (Redstone tab). Placed in the hidden
+layer, powered by hidden redstone exactly like a vanilla piston (including
+quasi-connectivity), it moves the **visible** blocks in front of its
+position. Which blocks move comes from vanilla's own `PistonStructureResolver`
+run on the visible level: push limit 12, obsidian and other immovable blocks
+stop it, slime and honey drag neighbours, fragile blocks break. The moved
+blocks animate as in vanilla. It has **no arm in either layer**: where a
+vanilla piston's head would be, the visible space is left empty. A sticky
+phase piston pulls the visible block back by one on retracting, with
+vanilla's sticky rules. Placed in the visible layer it does nothing.
+`PhasePistonMover` is vanilla's `moveBlocks` minus the arm.
 
 ### Decision: explicit crossing points (decided 2026-11-22)
 
@@ -93,10 +106,11 @@ handling of missing blocks applies, as for any world.
 
 ## Open work and decisions
 
-- **Phase pistons** (next): a special piston in the hidden layer that moves
-  visible blocks by vanilla push rules (push limit 12, obsidian immovable).
-  Ordinary pistons stay in their own layer. Decide what counts as an
-  obstruction across layers.
+- **The hidden 2x2 door** (next): see below.
+- **Phase-piston arm:** a phase piston leaves the visible space in front of
+  it empty when extended, where vanilla would show the head. Sliding doors
+  therefore need somewhere hidden to slide into (see the door below). An
+  alternative would be a visible "arm" block; not decided.
 - **Keeping players out:** portals built in the hidden layer, and deaths or
   logouts while in it.
 - **Overlay:** hidden blocks drawn over the visible world; server state must
@@ -104,9 +118,13 @@ handling of missing blocks applies, as for any world.
 
 ### Acceptance targets
 
-1. **Hidden piston door:** a visible lever opens a 2x2 door whose pistons and
-   wiring are all in the hidden layer. Power half done (lever, hidden port,
-   hidden piston moves); needs phase pistons to move the visible door blocks.
+1. **Hidden piston door:** a visible lever opens a 2x2 flush door whose
+   pistons and wiring are all in the hidden layer. All parts work (lever,
+   hidden port, hidden sticky phase pistons moving visible blocks). A flush
+   door needs two stages, as in vanilla: push the door blocks back behind the
+   wall face, then sideways out of the passage; the phase pistons can stand
+   in the corridor and doorway because they are hidden. Still to build and
+   test as one machine.
 2. **Flying machine (stretch):** a hidden slime/observer engine carrying
    visible blocks. Needs phase pistons to move mixed-layer structures.
 3. **Mob farm:** not a target; the hidden layer does not interact with mobs.
@@ -136,6 +154,11 @@ All of these run on every `./gradlew build`, locally and in CI:
     lever through a visible port lights a visible lamp; ports next to or at
     the same spot as other ports stay off; hidden chunks tick exactly where
     the visible world does.
+  - phase pistons push visible blocks (12 yes, 13 no, obsidian never), a
+    sticky one pulls back, none leaves an arm, an ordinary hidden piston
+    moves only hidden blocks, a phase piston in the visible layer does
+    nothing, and a visible lever, through a hidden port and a hidden sticky
+    phase piston, moves a visible block out of a doorway and back.
 - **JUnit** also checks the update queue: work added while a batch runs waits
   for the next tick.
 - **Restart test** (`./gradlew restartTest`): two separate server processes
