@@ -27,7 +27,15 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.network.protocol.game.ClientboundSetHeldSlotPacket;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.tags.FluidTags;
+import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemUtils;
+import net.minecraft.world.item.MobBucketItem;
+import net.minecraft.world.level.block.BucketPickup;
+import net.minecraft.world.level.block.LiquidBlockContainer;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -182,6 +190,9 @@ public final class HiddenEditing {
         if (stack.isEmpty() || player.getCooldowns().isOnCooldown(stack)) {
             return InteractionResult.PASS;
         }
+        if (stack.getItem() instanceof BucketItem bucket) {
+            return useBucket(player, hand, hidden, bucket, stack, pos, hit);
+        }
         int count = stack.getCount();
         InteractionResult result = stack.useOn(new UseOnContext(hidden, player, hand, stack, hit));
         if (player.hasInfiniteMaterials()) {
@@ -193,6 +204,45 @@ public final class HiddenEditing {
             playPlaceSound(player, hidden.getBlockState(placed), placed);
         }
         return result;
+    }
+
+    /**
+     * A bucket in editing mode, as vanilla's BucketItem.use but at the editing target
+     * instead of along the player's view in their own level. Empty: scoops up hidden
+     * fluid (or a waterlogged hidden block's water). Full: pours into the clicked spot
+     * when nothing is hidden there (as blocks are placed), into a waterloggable hidden
+     * block, or next to the hidden block clicked. Survival swaps buckets as vanilla
+     * does; Creative keeps the bucket. Fish buckets are refused: the fish would be
+     * let out in the hidden layer.
+     */
+    private static InteractionResult useBucket(ServerPlayer player, InteractionHand hand, ServerLevel hidden, BucketItem bucket,
+            ItemStack stack, BlockPos pos, BlockHitResult hit) {
+        if (bucket instanceof MobBucketItem) {
+            return InteractionResult.PASS;
+        }
+        BlockState state = hidden.getBlockState(pos);
+        if (bucket.getContent() == Fluids.EMPTY) {
+            if (state.getBlock() instanceof BucketPickup pickup) {
+                ItemStack filled = pickup.pickupBlock(player, hidden, pos, state);
+                if (!filled.isEmpty()) {
+                    player.awardStat(Stats.ITEM_USED.get(bucket));
+                    pickup.getPickupSound().ifPresent(sound -> player.level().playSound(null, pos, sound, SoundSource.BLOCKS, 1.0F, 1.0F));
+                    player.setItemInHand(hand, ItemUtils.createFilledResult(stack, player, filled));
+                    return InteractionResult.SUCCESS;
+                }
+            }
+            return InteractionResult.FAIL;
+        }
+        boolean intoBlock = state.getBlock() instanceof LiquidBlockContainer && bucket.getContent() == Fluids.WATER;
+        BlockPos target = state.isAir() || intoBlock ? pos : pos.relative(hit.getDirection());
+        if (!bucket.emptyContents(player, hidden, target, hit)) {
+            return InteractionResult.FAIL;
+        }
+        player.awardStat(Stats.ITEM_USED.get(bucket));
+        player.level().playSound(null, target, bucket.getContent().is(FluidTags.LAVA) ? SoundEvents.BUCKET_EMPTY_LAVA : SoundEvents.BUCKET_EMPTY,
+                SoundSource.BLOCKS, 1.0F, 1.0F);
+        player.setItemInHand(hand, BucketItem.getEmptySuccessItem(stack, player));
+        return InteractionResult.SUCCESS;
     }
 
     /** Survival: the player started mining a hidden block; breaking it is allowed once its mining time has passed. */

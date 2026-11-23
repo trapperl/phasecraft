@@ -148,8 +148,12 @@ within reach, hit point on the block), then:
 
 Sounds play in the visible level, where the player is. While editing, every
 right click is taken over, so items that act on air rather than on a
-clicked block (buckets, ender pearls) do nothing; hidden water and lava are
-placed with `/phasecraft set` or from inside the hidden layer.
+clicked block (ender pearls) do nothing. Buckets work at the editing target
+(`useBucket`, vanilla's bucket logic without its own aim): a full bucket
+pours into the clicked spot when nothing is hidden there, into a
+waterloggable hidden block, or next to the hidden block clicked; an empty
+one scoops hidden fluid up. Fish buckets are refused (the fish would be let
+out in the hidden layer).
 
 ### Decision: a click on a visible block places at that same spot (decided by the agent, 2026-11-22; open to change)
 
@@ -232,7 +236,13 @@ changes what is phased.
   between ticks; GameTests run ticks back to back with none, so a phased
   light check could wait indefinitely (light tests failed at random, on CI
   too). After queuing a check PhasedLights asks the light engine to run
-  (`tryScheduleUpdate`). Light tests still allow long tick limits.
+  (`tryScheduleUpdate`), and asks the light engine of every level with a
+  hidden twin again every tick, as vanilla does in spare time: the check
+  reaches the engine's queue through another thread, so the first ask can
+  find it empty, and on a slow, busy machine it can arrive long after
+  (all light tests failed together on one CI run with only the first ask;
+  a lamp's light stayed on with asks for only 40 ticks after the change).
+  Light tests still allow long tick limits.
 
 ### Decision: one phase block, not a phased variant of each block (decided by the person, 2026-11-23)
 
@@ -320,8 +330,8 @@ has such cells.
   slide into (see the door below).
 - **Keeping players out: done** (see above).
 - **Overlay: done** (see above), including chests, signs and fluids.
-- **Editing mode: done** (see above), including middle-click pick. Buckets
-  do not work in editing mode.
+- **Editing mode: done** (see above), including middle-click pick and
+  buckets (not fish buckets).
 
 ### Acceptance targets
 
@@ -442,6 +452,11 @@ All of these run on every `./gradlew build`, locally and in CI:
     directly draws, vertex for vertex (tints, random offsets, model-less
     blocks, fluids), after a change and after a change across a chunk
     border (each shown to fail when its invalidation is removed);
+  - Ctrl + middle click in Creative copies a hidden chest's contents into
+    the picked chest; a plain pick does not (fails with the copy removed);
+  - buckets in editing mode: a water bucket pours hidden water at the
+    clicked spot (Creative keeps the bucket, Survival empties it); an empty
+    bucket scoops hidden water up (each shown to fail with its code removed);
   - slime across layers: a phase piston drags a visible slime structure;
     hidden blocks at those spots do not move; a phase piston moved by a
     hidden vanilla piston works where it lands (all fail when phase pistons
