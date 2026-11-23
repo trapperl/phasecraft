@@ -16,7 +16,10 @@ reports every place a part or piston receives a signal other than its own:
   repeater pointing into it, or a torch under it;
 - a piston is powered from any side but its front, and also (quasi-
   connectivity) by anything powering the cell above it, from any side but
-  below.
+  below;
+- a button is a source like a lever, and strongly powers the block it hangs
+  on; a copper bulb is powered from any side; a comparator is a diode like a
+  repeater, and one reading a copper bulb carries the bulb's signal.
 
 It is a model, not Minecraft: GameTests decide. It exists to catch signals
 leaking into the wrong part before a test run, which in tight 3D layouts is
@@ -78,8 +81,8 @@ class Layout:
 
     def is_conductor(self, p):
         k = self.kind(p)
-        return k not in ("air", "redstone_wire", "repeater", "redstone_torch", "redstone_wall_torch", "phase_port",
-                         "lever", "glass") and "piston" not in k
+        return k not in ("air", "redstone_wire", "repeater", "comparator", "redstone_torch", "redstone_wall_torch",
+                         "phase_port", "lever", "glass") and "piston" not in k and "button" not in k and "bulb" not in k
 
     def wire_connects(self, p, d):
         """Whether the wire at p connects towards horizontal direction d (same level, up or down a step)."""
@@ -90,7 +93,7 @@ class Layout:
         if k == "repeater":
             facing = self.parts[q][1].get("facing")
             return facing in (d, OPPOSITE[d])
-        if k in ("redstone_torch", "redstone_wall_torch", "phase_port", "lever"):
+        if k in ("redstone_torch", "redstone_wall_torch", "phase_port", "lever", "comparator") or "button" in k:
             return True
         if self.kind(add(q, "up")) == "redstone_wire" and not self.is_conductor(add(p, "up")):
             return True
@@ -99,10 +102,12 @@ class Layout:
         return False
 
     def wire_points(self, p):
-        """Horizontal directions a wire powers: its connections; one connection points both ways; none, all."""
+        """Horizontal directions a wire powers: its connections; one connection points both ways; none: all
+        for a cross (sides set, as a player places one), nothing for a dot (no sides set, as /setblock places one)."""
         conn = [d for d in HORIZONTAL if self.wire_connects(p, d)]
         if not conn:
-            return set(HORIZONTAL)
+            props = self.parts[p][1]
+            return set(HORIZONTAL) if any(props.get(d, "none") != "none" for d in HORIZONTAL) else set()
         if len(conn) == 1:
             return {conn[0], OPPOSITE[conn[0]]}
         return set(conn)
@@ -120,13 +125,13 @@ class Layout:
             if d == "up" or OPPOSITE[d] in self.wire_points(src):
                 return {signal}
             return set()
-        if k == "repeater":
+        if k in ("repeater", "comparator"):
             return {signal} if props.get("facing") == d else set()
         if k == "redstone_torch":
             return set() if d == "up" else {signal}
         if k == "redstone_wall_torch":
             return set() if props.get("facing") == d else {signal}
-        if k in ("phase_port", "lever"):
+        if k in ("phase_port", "lever") or "button" in k:
             return {signal}
         if self.is_conductor(src):
             return self.strong(src)
@@ -144,7 +149,11 @@ class Layout:
             toward = OPPOSITE[d]  # direction from src to block
             if k == "redstone_wire" and (toward == "down" or toward in self.wire_points(src)):
                 out.add(signal)
-            elif k == "repeater" and props.get("facing") == d:
+            elif k in ("repeater", "comparator") and props.get("facing") == d:
+                out.add(signal)
+            elif "button" in k and props.get("face") == "wall" and toward == OPPOSITE[props.get("facing")]:
+                out.add(signal)
+            elif "button" in k and props.get("face") in ("floor", "ceiling") and toward == {"floor": "down", "ceiling": "up"}[props["face"]]:
                 out.add(signal)
             elif k in ("redstone_torch", "redstone_wall_torch") and toward == "up":
                 out.add(signal)
@@ -185,7 +194,7 @@ def check(path):
     layout = Layout(parts)
     problems = 0
     for p, (k, props, signal) in sorted(parts.items()):
-        if signal is None and (k == "redstone_wire" or k == "repeater" or "piston" in k):
+        if signal is None and (k in ("redstone_wire", "repeater", "comparator") or "piston" in k or "bulb" in k):
             print(f"no @signal: {k} at {p}")
             problems += 1
             continue
@@ -206,12 +215,31 @@ def check(path):
             if bad:
                 print(f"LEAK       wire at {p} (@{signal}): picks up {sorted(bad)}")
                 problems += 1
-        elif k == "repeater":
+        elif "bulb" in k:
+            got = layout.into(p)
+            bad = got - ok
+            if signal not in got:
+                print(f"UNPOWERED  {k} at {p}: expects @{signal}, gets nothing of it")
+                problems += 1
+            if bad:
+                print(f"LEAK       {k} at {p} (@{signal}): also powered by {sorted(bad)}")
+                problems += 1
+        elif k in ("repeater", "comparator"):
             facing = props["facing"]
             src = add(p, facing)
             got = layout.emits(src, facing) if not layout.is_conductor(src) else layout.strong(src)
-            if layout.kind(src) == "redstone_wire":
+            if layout.kind(src) == "redstone_wire" or (k == "comparator" and "bulb" in layout.kind(src)):
                 got = {parts[src][2]}
+            if k == "comparator":
+                for side in HORIZONTAL:
+                    if side not in (facing, OPPOSITE[facing]):
+                        q = add(p, side)
+                        side_in = layout.emits(q, side) if not layout.is_conductor(q) else layout.strong(q)
+                        if layout.kind(q) == "redstone_wire":
+                            side_in = {parts[q][2]}
+                        if side_in - {None}:
+                            print(f"LEAK       comparator at {p} (@{signal}): side input {q} carries {sorted(side_in - {None})}")
+                            problems += 1
             want = inputs.get(p, signal)
             bad = got - {want, None} - allow.get(want, set())
             if bad:

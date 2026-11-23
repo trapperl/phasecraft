@@ -410,7 +410,27 @@ has such cells.
    structure across both layers (for example a phased slime block that also
    moves what is stuck to it in the other layer), would need new rules and
    was not chosen.
-5. **Mob farm:** not a target; the hidden layer does not interact with mobs.
+5. **Secret room behind a bookshelf wall: done.** A wall of bookshelves with
+   a room behind it; two of the bookshelves are the door, and one bookshelf
+   on each side of the wall is the switch (`SecretRoomGameTests`, examples
+   station 16; layout in `src/gametest/resources/contraptions/secret_room.txt`).
+   Nothing redstone is visible, which vanilla cannot do: its switch is always
+   a visible button, lever or plate (or a trapped chest, a lectern...).
+   - The switch: a hidden phase block inside the wall with a phased button
+     hanging on each side, so a click on either bookshelf presses it. A
+     hidden waxed copper bulb toggles on each press (vanilla's one-block
+     T flip-flop) and a comparator reads it: the door's state.
+   - The door: the 2x2 hidden door's mechanism, one block wide. Stage 1
+     (sticky phase pistons in the corridor) pushes the two door bookshelves
+     back into the wall; stage 2 (sticky phase pistons inside the wall)
+     slides them sideways into a pocket. The same repeater timing holds
+     stage 1 on until stage 2 has pulled back.
+   - Lessons: a lone `redstone_wire` placed by `/setblock` (or a layout) is a
+     dot, which powers only the block under it; give it sides
+     (`[north=side,...]`) for the cross a player places. And `/setblock` of a
+     button does not update what is next to the block the button hangs on,
+     as a real press does (tools/examples.py re-places the wire there).
+6. **Mob farm:** not a target; the hidden layer does not interact with mobs.
 
 ## Validation status
 

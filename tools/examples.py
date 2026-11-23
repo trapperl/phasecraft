@@ -371,7 +371,7 @@ DOOR3_ORIGIN = (92, -63, -12)   # layout (0, 0, 0); the tunnel floor (layout y =
 
 
 def read_layout(path):
-    """(placements, info): placements are (layer, from, to, block) in file order; info has lever, door."""
+    """(placements, info): placements are (layer, from, to, block) in file order; info has lever, door, clicks."""
     placements, info = [], {}
     for raw in open(path):
         words = raw.split("#", 1)[0].split()
@@ -384,6 +384,8 @@ def read_layout(path):
             placements.append((words[1], tuple(int(v) for v in words[2:5]), tuple(int(v) for v in words[5:8]), words[8]))
         elif words[0] == "lever":
             info["lever"] = tuple(int(v) for v in words[1:4])
+        elif words[0] == "click":
+            info.setdefault("clicks", []).append((tuple(int(v) for v in words[1:4]), words[4]))
         elif words[0] == "door":
             info["door"] = words[1]
     return placements, info
@@ -465,6 +467,71 @@ def flying_commands():
     return out
 
 
+# Station 16: the secret room behind a bookshelf wall, built from its layout file (shared with
+# SecretRoomGameTests). One bookshelf on each side of the wall hides a phased button; a hidden copper
+# bulb remembers the door's state. Here the room also gets walls, a roof and a lantern.
+ROOM_LAYOUT = pathlib.Path(__file__).resolve().parent.parent / "src/gametest/resources/contraptions/secret_room.txt"
+ROOM_ORIGIN = (146, -61, -12)   # layout (0, 0, 0); the layout's floor (y = 0) replaces the grass
+
+
+def room_pos(x, y, z):
+    ox, oy, oz = ROOM_ORIGIN
+    return (ox + x, oy + y, oz + z)
+
+
+def room_commands():
+    a, b = room_pos(-2, 1, -2), room_pos(10, 5, 10)
+    out = [
+        f"fill {coords(a)} {coords(b)} minecraft:air",
+        in_dimension(HIDDEN_OVERWORLD, f"fill {coords(room_pos(-2, 0, -2))} {coords(b)} minecraft:air"),
+    ]
+    placements, _ = read_layout(ROOM_LAYOUT)
+    for layer, a, b, block in placements:
+        command = (f"fill {coords(room_pos(*a))} {coords(room_pos(*b))} {block}" if a != b
+                   else f"setblock {coords(room_pos(*a))} {block}")
+        out.append(in_dimension(HIDDEN_OVERWORLD, command) if layer == "hidden" else command)
+    # The room behind the wall (layout z 0..2): walls, a roof over room and wall, a lantern, a chest.
+    out += [
+        f"fill {coords(room_pos(-1, 0, -1))} {coords(room_pos(9, 0, 2))} minecraft:spruce_planks",
+        f"fill {coords(room_pos(-1, 1, -1))} {coords(room_pos(9, 3, -1))} minecraft:bookshelf",
+        f"fill {coords(room_pos(-1, 1, 0))} {coords(room_pos(-1, 3, 5))} minecraft:bookshelf",
+        f"fill {coords(room_pos(9, 1, 0))} {coords(room_pos(9, 3, 5))} minecraft:bookshelf",
+        f"fill {coords(room_pos(-1, 4, -1))} {coords(room_pos(9, 4, 5))} minecraft:spruce_planks",
+        f"setblock {coords(room_pos(1, 1, 0))} minecraft:chest[facing=south]",
+        f"setblock {coords(room_pos(6, 1, 0))} minecraft:lantern",
+        f"setblock {coords(room_pos(2, 1, 0))} minecraft:lectern[facing=south]",
+    ]
+    out.append(sign(room_pos(1, 1, 8), ["16. Secret room", "One of these", "bookshelves is", "a switch"]))
+    return out
+
+
+def room_state():
+    """'closed', 'open' or a picture (D = bookshelf) of the doorway and pocket cells."""
+    cells = [(4, y, z) for y in (1, 2) for z in (5, 4)] + [(5, y, 4) for y in (1, 2)]
+    replies = rcon.send_commands([f"phasecraft get {coords(room_pos(*c))}" for c in cells])
+    at = {c for c, r in zip(cells, replies) if "minecraft:bookshelf" in r.split("visible: ", 1)[1].split(" |")[0]}
+    if at == {(4, 1, 5), (4, 2, 5)}:
+        return "closed"
+    if at == {(5, 1, 4), (5, 2, 4)}:
+        return "open"
+    return "".join("D" if c in at else "." for c in cells)
+
+
+def room_press(click):
+    """Presses and releases the phased button behind a secret bookshelf. RCON cannot click, so this sets
+    the button; a real press also updates what is next to the block the button hangs on, which /setblock
+    does not, so the wire on the phase block is placed again to pick up the change."""
+    (x, y, z), face = click
+    pos = coords(room_pos(x, y, z))
+    wire = coords(room_pos(8, 3, 4))
+    for powered in ("true", "false"):
+        rcon.send_commands([in_dimension(HIDDEN_OVERWORLD, command) for command in (
+            f"setblock {pos} minecraft:stone_button[face=wall,facing={face},powered={powered}]",
+            f"setblock {wire} minecraft:air",
+            f"setblock {wire} minecraft:redstone_wire[north=side,south=side,east=side,west=side]")])
+        time.sleep(1)
+
+
 def flying_observer_commands():
     """The engine's two observers, sent a second after flying_commands(): placed in the same
     batch, the engine starts on its own. They are placed "strict" because a plain setblock
@@ -489,8 +556,8 @@ def build_commands():
         "gamerule advance_time false",
         "time set noon",
         "weather clear 1000000",
-        "forceload add -8 -16 144 8",
-        in_dimension(HIDDEN_OVERWORLD, "forceload add -8 -16 144 8"),
+        "forceload add -8 -16 160 8",
+        in_dimension(HIDDEN_OVERWORLD, "forceload add -8 -16 160 8"),
         # Clear the area (visible) and lay a path of andesite under the stations.
         "fill -4 -60 -8 54 -55 4 minecraft:air",
         "fill -4 -61 -8 54 -61 4 minecraft:grass_block",
@@ -513,6 +580,7 @@ def build_commands():
     commands += staircase_commands()
     commands += door3_commands()
     commands += flying_commands()
+    commands += room_commands()
     for station in STATIONS:
         for dimension, pos, *_ in station["hidden"]:
             commands.append(in_dimension(dimension, f"phasecraft clear {coords(pos)}"))
@@ -615,6 +683,18 @@ def main():
     fly_ok = before == FLY_CARGO[0] and after is not None and after >= FLY_CARGO[0] + 5 and reset == FLY_CARGO[0]
     ok &= fly_ok
     print(f"{'ok ' if fly_ok else 'BAD'} flying cargo: at x={before}, after the switch x={after}, reset to x={reset}")
+    try:
+        _, room_info = read_layout(ROOM_LAYOUT)
+        outside, inside = room_info["clicks"]
+        room_steps = [("before", room_state())]
+        room_press(outside); time.sleep(3); room_steps.append(("outside shelf", room_state()))
+        room_press(inside); time.sleep(3); room_steps.append(("inside shelf", room_state()))
+    except rcon.RconError as error:
+        print(error, file=sys.stderr)
+        return 1
+    room_ok = [s for _, s in room_steps] == ["closed", "open", "closed"]
+    ok &= room_ok
+    print(f"{'ok ' if room_ok else 'BAD'} secret room: " + ", ".join(f"{name}: {state}" for name, state in room_steps))
     print("Examples built and verified." if ok else "Some examples did not build as expected.")
     return 0 if ok else 1
 

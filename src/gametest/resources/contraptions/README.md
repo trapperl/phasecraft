@@ -11,6 +11,8 @@ order (later lines overwrite earlier ones), `#` starts a comment.
 ```
 size X Y Z                                   the test area (needs a matching empty_XxYxZ structure)
 lever x y z                                  the visible lever that operates it
+click x y z <face>                           a visible block a player clicks to operate it (a phased
+                                             button or lever hidden there), and the face clicked
 door <block>                                 the block the door is made of (for the checks)
 fill visible|hidden x1 y1 z1 x2 y2 z2 <block>
 visible x y z <block>
@@ -19,7 +21,9 @@ hidden x y z <block> @out<in                 a repeater or torch that turns sign
 allow <signal> <other>...                    a part of <signal> may also receive <other> (nested signals)
 ```
 
-Blocks use `/setblock` syntax. Place hidden parts in signal order and in
+Blocks use `/setblock` syntax. A wire with nothing to connect to is a dot (it powers only the
+block under it) unless its sides are set: `redstone_wire[north=side,south=side,east=side,west=side]`
+is the cross a player places. Place hidden parts in signal order and in
 their settled state (repeaters `powered=true` where powered, pistons
 `extended=true` where they should be), pistons last: the examples tour
 builds everything in one tick, with no time to settle.
