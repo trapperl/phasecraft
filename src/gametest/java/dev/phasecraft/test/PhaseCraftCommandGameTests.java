@@ -122,6 +122,16 @@ public class PhaseCraftCommandGameTests {
         helper.succeed();
     }
 
+    /** /phasecraft link reports the cross-layer update counters. */
+    @GameTest
+    public void linkCommandReportsCounters(GameTestHelper helper) {
+        CommandProbe.Result link = CommandProbe.asOperator(helper.getLevel(), "/phasecraft link");
+        helper.assertTrue(link.succeeded(), "link command failed: " + link.lastMessage());
+        helper.assertTrue(link.lastMessage().matches("Phase link: pending=\\d+ queued=\\d+ delivered=\\d+ portsRefreshed=\\d+ skippedUnloaded=\\d+"),
+                "unexpected output: " + link.lastMessage());
+        helper.succeed();
+    }
+
     /** Only operators (level 2, like /setblock) may use /phasecraft. */
     @GameTest
     public void requiresOperatorLevelTwo(GameTestHelper helper) {

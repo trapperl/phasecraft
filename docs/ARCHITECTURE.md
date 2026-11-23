@@ -106,7 +106,6 @@ handling of missing blocks applies, as for any world.
 
 ## Open work and decisions
 
-- **The hidden 2x2 door** (next): see below.
 - **Phase-piston arm:** a phase piston leaves the visible space in front of
   it empty when extended, where vanilla would show the head. Sliding doors
   therefore need somewhere hidden to slide into (see the door below). An
@@ -118,13 +117,15 @@ handling of missing blocks applies, as for any world.
 
 ### Acceptance targets
 
-1. **Hidden piston door:** a visible lever opens a 2x2 flush door whose
-   pistons and wiring are all in the hidden layer. All parts work (lever,
-   hidden port, hidden sticky phase pistons moving visible blocks). A flush
-   door needs two stages, as in vanilla: push the door blocks back behind the
-   wall face, then sideways out of the passage; the phase pistons can stand
-   in the corridor and doorway because they are hidden. Still to build and
-   test as one machine.
+1. **Hidden piston door: done.** A visible lever opens and closes a 2x2 flush
+   door in a visible wall; every piston and wire is in the hidden layer
+   (`HiddenDoorGameTests`, examples station 10). Two stages, as in a vanilla
+   flush door: sticky phase pistons hidden in the corridor push the door
+   blocks back behind the wall face, then sticky phase pistons hidden inside
+   the wall slide them sideways into pockets. Timing is two vanilla
+   repeaters: stage 2 follows the lever after a delay; stage 1 follows the
+   lever and is held on by stage 2's signal through a second delay, so on
+   closing stage 2 pulls back first.
 2. **Flying machine (stretch):** a hidden slime/observer engine carrying
    visible blocks. Needs phase pistons to move mixed-layer structures.
 3. **Mob farm:** not a target; the hidden layer does not interact with mobs.
@@ -154,6 +155,8 @@ All of these run on every `./gradlew build`, locally and in CI:
     lever through a visible port lights a visible lamp; ports next to or at
     the same spot as other ports stay off; hidden chunks tick exactly where
     the visible world does.
+  - the hidden 2x2 door opens and closes from one visible lever (and jams
+    half-closed if the hold repeater is removed);
   - phase pistons push visible blocks (12 yes, 13 no, obsidian never), a
     sticky one pulls back, none leaves an arm, an ordinary hidden piston
     moves only hidden blocks, a phase piston in the visible layer does

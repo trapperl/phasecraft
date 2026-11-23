@@ -45,7 +45,18 @@ public final class PhaseLink {
     private static final PhaseUpdateQueue<Refresh> QUEUE = new PhaseUpdateQueue<>();
     private static final Direction[] DIRECTIONS = Direction.values();
 
+    private static long queued;
+    private static long delivered;
+    private static long portsRefreshed;
+    private static long skippedUnloaded;
+
     private PhaseLink() {}
+
+    /** Counters since server start, for /phasecraft link. */
+    public static String stats() {
+        return "pending=" + QUEUE.size() + " queued=" + queued + " delivered=" + delivered
+                + " portsRefreshed=" + portsRefreshed + " skippedUnloaded=" + skippedUnloaded;
+    }
 
     public static void register() {
         ServerTickEvents.END_SERVER_TICK.register(PhaseLink::deliver);
@@ -111,6 +122,7 @@ public final class PhaseLink {
                 for (int dz = -2; dz <= 2; dz++) {
                     if (Math.abs(dx) + Math.abs(dy) + Math.abs(dz) <= 2) {
                         QUEUE.add(new Refresh(other, pos.offset(dx, dy, dz)));
+                        queued++;
                     }
                 }
             }
@@ -122,13 +134,16 @@ public final class PhaseLink {
     }
 
     private static void deliver(MinecraftServer server) {
-        QUEUE.drain(refresh -> {
+        delivered += QUEUE.drain(refresh -> {
             ServerLevel target = server.getLevel(refresh.dimension());
             if (target != null && target.isLoaded(refresh.pos())) {
                 BlockState state = target.getBlockState(refresh.pos());
                 if (isPort(state)) {
+                    portsRefreshed++;
                     PhasePortBlock.refresh(target, refresh.pos(), state);
                 }
+            } else {
+                skippedUnloaded++;
             }
         });
     }

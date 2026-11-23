@@ -127,14 +127,84 @@ def in_dimension(dimension, command):
     return f"execute in {dimension} run {command}"
 
 
+# Station 10: the hidden 2x2 flush door (same layout as HiddenDoorGameTests).
+DOOR_ORIGIN = (58, -61, -4)   # test-relative (0, 0, 0); relative y = 1 is the station level
+DOOR_BLOCK = "minecraft:smooth_stone"
+
+
+def door_pos(x, y, z):
+    ox, oy, oz = DOOR_ORIGIN
+    return (ox + x, oy + y, oz + z)
+
+
+def door_commands():
+    hidden = lambda pos, block: in_dimension(HIDDEN_OVERWORLD, f"setblock {coords(door_pos(*pos))} {block}")
+    visible = lambda pos, block: f"setblock {coords(door_pos(*pos))} {block}"
+    out = []
+    ox, oy, oz = DOOR_ORIGIN
+    out.append(f"fill {ox - 2} {oy + 1} {oz - 2} {ox + 9} {oy + 6} {oz + 9} minecraft:air")
+    out.append(in_dimension(HIDDEN_OVERWORLD, f"fill {ox - 2} {oy} {oz - 2} {ox + 9} {oy + 6} {oz + 9} minecraft:air"))
+    out.append(f"fill {ox} {oy} {oz} {ox + 7} {oy} {oz + 7} minecraft:stone")
+    for x in range(8):
+        for y in range(1, 4):
+            for z in range(2, 5):
+                passage = x in (3, 4) and y <= 2
+                pocket = z == 3 and y <= 2 and x in (2, 5)
+                if not (passage or pocket):
+                    out.append(visible((x, y, z), "minecraft:stone_bricks"))
+    for x in (3, 4):
+        for y in (1, 2):
+            out.append(visible((x, y, 4), DOOR_BLOCK))
+    out.append(visible((7, 2, 6), "minecraft:stone"))
+    out.append(visible((7, 3, 6), "minecraft:lever[face=floor,facing=north,powered=false]"))
+    out.append(sign(door_pos(2, 1, 7), ["10. Hidden door", "Flip the lever", "on the pillar.", "No visible parts"]))
+    # Hidden machinery.
+    out.append(hidden((7, 3, 6), "phasecraft:phase_port"))
+    for z in range(3, 6):
+        out.append(hidden((7, 2, z), "minecraft:stone"))
+        out.append(hidden((7, 3, z), "minecraft:redstone_wire"))
+    for x in (3, 4):
+        for y in (1, 2):
+            out.append(hidden((x, y, 5), "phasecraft:sticky_phase_piston[facing=north]"))
+        out.append(hidden((x, 3, 5), "minecraft:redstone_wire"))
+    for y in (1, 2):
+        out.append(hidden((3, y, 3), "phasecraft:sticky_phase_piston[facing=east]"))
+        out.append(hidden((4, y, 3), "phasecraft:sticky_phase_piston[facing=west]"))
+    out.append(hidden((3, 3, 3), "minecraft:redstone_wire"))
+    out.append(hidden((4, 3, 3), "minecraft:redstone_wire"))
+    for pos in [(5, 3, 5), (5, 3, 3), (6, 2, 5), (6, 2, 3), (5, 2, 4)]:
+        out.append(hidden(pos, "minecraft:stone"))
+    out.append(hidden((6, 3, 5), "minecraft:repeater[facing=east,delay=1]"))
+    out.append(hidden((6, 3, 3), "minecraft:repeater[facing=east,delay=4]"))
+    out.append(hidden((5, 3, 4), "minecraft:repeater[facing=north,delay=4]"))
+    return out
+
+
+def door_state():
+    """'open', 'closed' or a picture of the door blocks (D = door, . = air)."""
+    cells = [(x, y, z) for z in (3, 4) for y in (1, 2) for x in (2, 3, 4, 5)]
+    replies = rcon.send_commands([f"phasecraft get {coords(door_pos(*c))}" for c in cells])
+    seen = {c: (DOOR_BLOCK in r.split("visible: ", 1)[1].split(" |")[0]) for c, r in zip(cells, replies)}
+    door_at = {c for c, is_door in seen.items() if is_door}
+    if door_at == {(x, y, 4) for x in (3, 4) for y in (1, 2)}:
+        return "closed"
+    if door_at == {(x, y, 3) for x in (2, 5) for y in (1, 2)}:
+        return "open"
+    return "".join("D" if seen[c] else "." for c in cells)
+
+
+def lever(on):
+    rcon.send_commands([f"setblock {coords(door_pos(7, 3, 6))} minecraft:lever[face=floor,facing=north,powered={str(on).lower()}]"])
+
+
 def build_commands():
     commands = [
         "setworldspawn 0 -60 -6",
         "gamerule advance_time false",
         "time set noon",
         "weather clear 1000000",
-        "forceload add -8 -8 57 8",
-        in_dimension(HIDDEN_OVERWORLD, "forceload add -8 -8 57 8"),
+        "forceload add -8 -8 72 8",
+        in_dimension(HIDDEN_OVERWORLD, "forceload add -8 -8 72 8"),
         # Clear the area (visible) and lay a path of andesite under the stations.
         "fill -4 -60 -8 54 -55 4 minecraft:air",
         "fill -4 -61 -8 54 -61 4 minecraft:grass_block",
@@ -144,6 +214,7 @@ def build_commands():
         in_dimension(HIDDEN_OVERWORLD, "fill -4 -61 -8 54 -61 4 minecraft:smooth_stone"),
         sign((0, Y, -6), WELCOME),
     ]
+    commands += door_commands()
     for station in STATIONS:
         for dimension, pos, *_ in station["hidden"]:
             commands.append(in_dimension(dimension, f"phasecraft clear {coords(pos)}"))
@@ -162,6 +233,10 @@ def expected_hidden(block):
 
 
 def main():
+    props = rcon.read_properties(rcon.PROPERTIES)
+    if props.get("pause-when-empty-seconds", "60") not in ("0", ""):
+        print("Warning: pause-when-empty-seconds is not 0 in run/server.properties. With nobody online the server"
+              " stops ticking, cross-layer updates (one tick) never arrive, and the door check will fail.", file=sys.stderr)
     try:
         replies = rcon.send_commands(build_commands())
         failures = [(c, r) for c, r in zip(build_commands(), replies)
@@ -184,6 +259,16 @@ def main():
         good = hidden_name == name and all(p in hidden for p in props)
         ok &= good
         print(f"{'ok ' if good else 'BAD'} {dimension:<20} {coords(pos):<12} {hidden}")
+    try:
+        steps = [("before", door_state())]
+        lever(True); time.sleep(3); steps.append(("lever on", door_state()))
+        lever(False); time.sleep(3); steps.append(("lever off", door_state()))
+    except rcon.RconError as error:
+        print(error, file=sys.stderr)
+        return 1
+    door_ok = [s for _, s in steps] == ["closed", "open", "closed"]
+    ok &= door_ok
+    print(f"{'ok ' if door_ok else 'BAD'} hidden door: " + ", ".join(f"{name}: {state}" for name, state in steps))
     print("Examples built and verified." if ok else "Some examples did not build as expected.")
     return 0 if ok else 1
 

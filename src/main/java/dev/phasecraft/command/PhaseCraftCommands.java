@@ -4,6 +4,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import dev.phasecraft.layer.HiddenDimensions;
 import dev.phasecraft.layer.HiddenLayer;
+import dev.phasecraft.link.PhaseLink;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -50,6 +51,10 @@ public final class PhaseCraftCommands {
                         .then(Commands.literal("clear")
                                 .then(Commands.argument("pos", BlockPosArgument.blockPos())
                                         .executes(PhaseCraftCommands::clear)))
+                        .then(Commands.literal("link").executes(context -> {
+                            context.getSource().sendSuccess(() -> Component.literal("Phase link: " + PhaseLink.stats()), false);
+                            return 1;
+                        }))
                         .then(Commands.literal("layer")
                                 .then(Commands.literal("hidden").executes(context -> switchLayer(context, true)))
                                 .then(Commands.literal("visible").executes(context -> switchLayer(context, false))))));

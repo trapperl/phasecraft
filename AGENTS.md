@@ -38,11 +38,10 @@ docs/ARCHITECTURE.md); vanilla runs it. Acceptance target for 1: the
 hidden piston door.
 Power crosses only through phase ports (done). The person wants every
 crossing explicit: a dedicated block, never every position.
-1. The hidden 2x2 flush door as one machine (GameTest + example station):
-   visible lever, hidden port, two-stage sticky phase pistons (back behind
-   the wall face, then sideways). Phase ports and phase pistons are done.
-2. Keep players out of the hidden layer by accident (portals, death, logout).
-3. Overlay rendering, only after server behaviour is sound.
+Phase ports, phase pistons and the hidden 2x2 door are done.
+1. Keep players out of the hidden layer by accident (portals, death, logout).
+2. Overlay rendering, only after server behaviour is sound.
+3. Stretch: a flying machine with a hidden engine carrying visible blocks.
 
 Open questions for the person (do not decide alone): what to do with old
 list cells whose block no longer exists.
@@ -50,6 +49,9 @@ list cells whose block no longer exists.
 ## Local dev server (RCON)
 - `./gradlew runServer` runs a local server in run/ (git-ignored) with RCON
   bound to 127.0.0.1; `python3 tools/rcon.py "<command>"` sends commands.
+- Keep `pause-when-empty-seconds=0` in run/server.properties: a paused server
+  does not tick, so cross-layer updates never arrive (`/phasecraft link`
+  shows `pending` stuck above 0).
 - Use it for real-world checks (restart, joining with a client). It does not
   replace GameTests: anything worth checking twice belongs in a test.
 - `python3 tools/examples.py` rebuilds and verifies the examples area. When a

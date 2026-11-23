@@ -12,6 +12,7 @@
       "dev.phasecraft.test.PhaseCraftLayerSwitchGameTests",
       "dev.phasecraft.test.PhaseCraftCrossLayerGameTests",
       "dev.phasecraft.test.PhasePistonGameTests",
+      "dev.phasecraft.test.HiddenDoorGameTests",
       "dev.phasecraft.test.PhaseLayerRestartPhases"
     ]
   },
