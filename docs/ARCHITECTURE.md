@@ -142,8 +142,9 @@ within reach, hit point on the block), then:
   (`playerWillDestroy`, remove, `destroy`); never the visible block.
 
 - *pick* (middle click): a hidden block's item goes to your hand, as vanilla's
-  pick does (without block entity data: a hidden chest is picked empty);
-  aimed at a visible block, vanilla's own pick.
+  pick does; with Ctrl held, in Creative, with its block entity data too (a
+  hidden chest's contents), as vanilla's pick copies it; aimed at a visible
+  block, vanilla's own pick.
 
 Sounds play in the visible level, where the player is. While editing, every
 right click is taken over, so items that act on air rather than on a
@@ -451,6 +452,8 @@ All of these run on every `./gradlew build`, locally and in CI:
     directly draws, vertex for vertex (tints, random offsets, model-less
     blocks, fluids), after a change and after a change across a chunk
     border (each shown to fail when its invalidation is removed);
+  - Ctrl + middle click in Creative copies a hidden chest's contents into
+    the picked chest; a plain pick does not (fails with the copy removed);
   - buckets in editing mode: a water bucket pours hidden water at the
     clicked spot (Creative keeps the bucket, Survival empties it); an empty
     bucket scoops hidden water up (each shown to fail with its code removed);

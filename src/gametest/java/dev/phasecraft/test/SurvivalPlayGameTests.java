@@ -159,10 +159,10 @@ public class SurvivalPlayGameTests {
         ServerPlayer player = survivalPlayer(helper);
         BlockPos pos = helper.absolutePos(SPOT);
         HiddenLayer.of(helper.getLevel()).setBlock(pos, Blocks.GOLD_BLOCK.defaultBlockState());
-        HiddenEditing.pick(player, pos);
+        HiddenEditing.pick(player, pos, true);
         helper.assertFalse(player.getInventory().contains(new ItemStack(Items.GOLD_BLOCK)), "Survival pick created a gold block");
         player.getInventory().setItem(5, new ItemStack(Items.GOLD_BLOCK));
-        HiddenEditing.pick(player, pos);
+        HiddenEditing.pick(player, pos, true);
         helper.assertValueEqual(player.getInventory().getSelectedSlot(), 5, "selected hotbar slot after picking");
         TestPlayers.leave(helper, player);
         helper.succeed();

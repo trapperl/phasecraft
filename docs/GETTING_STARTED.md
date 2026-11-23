@@ -88,7 +88,8 @@ What a click acts on is outlined in purple:
 - **Aiming at a hidden block** (even one inside a wall, as the overlay shows
   it): right click uses it (flip a hidden lever, set a hidden repeater's
   delay) or places your block next to it; left click breaks it; middle click
-  picks it into your hand.
+  picks it into your hand (Ctrl + middle click in Creative also copies its
+  contents, as vanilla does: a hidden chest with its items).
 - **Aiming at a visible block with nothing hidden there:** right click puts
   your block in the hidden layer *at that same spot*, overlapping the
   visible block. That is how you hide a lamp inside a wall or a port under a
