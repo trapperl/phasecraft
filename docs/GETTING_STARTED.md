@@ -102,6 +102,26 @@ water or lava in with `/phasecraft set` (they show in the overlay).
 
 ![Editing mode: a hidden lamp placed at the spot of a visible stone block, outlined in purple](images/editing.png)
 
+### Secret switches: the phase block
+
+A hidden block standing on a **phase block** (Redstone tab), or hanging on
+its side, is *phased*: it reacts to the visible world at its own spot.
+
+- **Buttons and levers:** right-click the visible block at their spot. A
+  hidden button inside a brick wall, hanging on a hidden phase block behind
+  it, is a secret brick: anyone can press it, in Survival too, and nothing
+  shows where it is. Sneak with something in hand to place against that
+  brick as usual.
+- **Pressure plates:** players, mobs and items standing on their spot in the
+  visible world press them. Put the hidden phase block in the floor (at the
+  same spot as a visible floor block) and the hidden plate on it.
+- Their sounds are heard in the visible world.
+
+Not supported yet (phased, they act as ordinary hidden blocks): other
+blocks, light (next), and arrows on wooden buttons. Pistons cannot move a
+phase block. Examples station 13 has a secret brick and a secret plate,
+each lighting a lamp through a visible phase port.
+
 Save and exit your test world, reopen it, and run `/phasecraft get` again to
 manually inspect persistence. The same check runs automatically as
 `./gradlew restartTest` (see below).

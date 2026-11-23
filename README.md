@@ -7,8 +7,10 @@ redstone and pistons hidden in that layer can act on the blocks of the visible w
 hidden layer (a real dimension, run by vanilla), phase ports that carry power between layers, phase pistons
 that move visible blocks from the hidden layer, a hidden 2x2 piston door, a hidden staircase (flat floor
 that opens into stairs down to a cellar), a hidden 3x3 flush door, the transparent overlay (press **H** in Creative to see hidden blocks drawn as
-see-through ghosts over the world; `[` and `]` change the opacity) and editing mode (press **J**, and your
-clicks place, use and break blocks in the hidden layer instead of the visible world). See [Getting started](docs/GETTING_STARTED.md) and [Architecture](docs/ARCHITECTURE.md).
+see-through ghosts over the world; `[` and `]` change the opacity), editing mode (press **J**, and your
+clicks place, use and break blocks in the hidden layer instead of the visible world) and the phase block
+(a hidden button, lever or pressure plate standing on it reacts to the visible world: secret bricks and
+secret floor tiles). See [Getting started](docs/GETTING_STARTED.md) and [Architecture](docs/ARCHITECTURE.md).
 
 | Overlay off | Overlay on (H) |
 | --- | --- |

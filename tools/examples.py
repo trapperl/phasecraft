@@ -119,6 +119,28 @@ STATIONS = [
 
 HIDDEN_OVERWORLD = "phasecraft:hidden_overworld"
 
+# Station 13: the phase block. A secret button (the top-middle brick of a low
+# wall) and a secret pressure plate (in front of a lamp post), each standing
+# on or hanging from a hidden phase block. Their power comes back to the
+# visible world through visible phase ports, which light the lamps.
+STATIONS.append({
+    "x": 105,
+    "sign": ["13. Phase block", "Click the top", "middle brick or", "stand at post"],
+    "visible": [((x, y, 0), "minecraft:stone_bricks") for x in (107, 108, 109) for y in (Y, Y + 1)] + [
+        ((108, Y + 1, 1), "phasecraft:phase_port"),
+        ((108, Y + 2, 1), "minecraft:redstone_lamp"),
+        ((111, Y, 0), "phasecraft:phase_port"),
+        ((111, Y + 1, 0), "minecraft:redstone_lamp"),
+    ],
+    "hidden": [
+        ("minecraft:overworld", (108, Y + 1, 1), "phasecraft:phase_block"),
+        ("minecraft:overworld", (108, Y + 1, 0), "minecraft:stone_button[face=wall,facing=north]",
+         "minecraft:stone_button[face=wall,facing=north,powered=false]"),
+        ("minecraft:overworld", (111, Y - 1, -1), "phasecraft:phase_block"),
+        ("minecraft:overworld", (111, Y, -1), "minecraft:stone_pressure_plate", "minecraft:stone_pressure_plate[powered=false]"),
+    ],
+})
+
 WELCOME = ["PhaseCraft", "H: see hidden", "J: edit hidden", "[ ] = opacity"]
 
 # Hidden blocks that need something under them (vanilla rules: wire, repeaters
@@ -359,7 +381,7 @@ def door3_pos(x, y, z):
 def door3_commands():
     ox, oy, oz = DOOR3_ORIGIN
     out = [
-        f"fill {ox - 1} {oy + 3} {oz - 1} {ox + 11} {oy + 12} {oz + 14} minecraft:air",
+        f"fill {ox - 2} {oy + 3} {oz - 1} {ox + 11} {oy + 12} {oz + 14} minecraft:air",   # x - 2: the sign
         in_dimension(HIDDEN_OVERWORLD, f"fill {ox - 1} {oy} {oz - 1} {ox + 11} {oy + 12} {oz + 14} minecraft:air"),
     ]
     placements, _ = read_layout(DOOR3_LAYOUT)
@@ -396,8 +418,8 @@ def build_commands():
         "gamerule advance_time false",
         "time set noon",
         "weather clear 1000000",
-        "forceload add -8 -16 104 8",
-        in_dimension(HIDDEN_OVERWORLD, "forceload add -8 -16 104 8"),
+        "forceload add -8 -16 112 8",
+        in_dimension(HIDDEN_OVERWORLD, "forceload add -8 -16 112 8"),
         # Clear the area (visible) and lay a path of andesite under the stations.
         "fill -4 -60 -8 54 -55 4 minecraft:air",
         "fill -4 -61 -8 54 -61 4 minecraft:grass_block",
@@ -405,6 +427,8 @@ def build_commands():
         # The hidden layer: clear it (older builds laid hidden ground everywhere),
         # then hidden ground only under the hidden blocks that need it.
         in_dimension(HIDDEN_OVERWORLD, "fill -4 -61 -8 54 -40 4 minecraft:air"),
+        "fill 104 -60 -4 112 -55 3 minecraft:air",
+        in_dimension(HIDDEN_OVERWORLD, "fill 104 -61 -4 112 -55 3 minecraft:air"),
         sign((0, Y, -6), WELCOME),
     ]
     commands += [in_dimension(HIDDEN_OVERWORLD, f"setblock {coords(pos)} minecraft:smooth_stone") for pos in HIDDEN_SUPPORTS]

@@ -1,20 +1,14 @@
 package dev.phasecraft.test;
 
-import com.mojang.authlib.GameProfile;
 import dev.phasecraft.layer.HiddenDimensions;
 import dev.phasecraft.layer.HiddenLayer;
-import io.netty.channel.embedded.EmbeddedChannel;
-import java.util.UUID;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.network.Connection;
-import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.animal.pig.Pig;
@@ -28,22 +22,12 @@ import net.minecraft.world.phys.Vec3;
 
 /** Nobody ends up in the hidden layer by accident (HiddenLayerGuard and its mixins). */
 public class KeepOutGameTests {
-    /**
-     * A connected test player whose game mode can really change.
-     * (GameTestHelper's makeMockServerPlayerInLevel always reports Creative.)
-     */
     private static ServerPlayer join(GameTestHelper helper, GameType mode) {
-        CommonListenerCookie cookie = CommonListenerCookie.createInitial(new GameProfile(UUID.randomUUID(), "keep-out-test"), false);
-        ServerPlayer player = new ServerPlayer(helper.getLevel().getServer(), helper.getLevel(), cookie.gameProfile(), cookie.clientInformation());
-        Connection connection = new Connection(PacketFlow.SERVERBOUND);
-        new EmbeddedChannel(connection);
-        helper.getLevel().getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
-        player.setGameMode(mode);
-        return player;
+        return TestPlayers.join(helper, mode);
     }
 
     private static void leave(GameTestHelper helper, ServerPlayer player) {
-        helper.getLevel().getServer().getPlayerList().remove(player);
+        TestPlayers.leave(helper, player);
     }
 
     private static void moveTo(ServerPlayer player, ServerLevel level, Vec3 spot) {

@@ -14,5 +14,6 @@
   "phasecraft.edit.creative_only": "Editing the hidden layer needs Creative mode",
   "phasecraft.edit.hud": "Editing: hidden layer",
   "phasecraft.guard.moved_out": "Moved back to the visible layer: only Creative and Spectator players can be in the hidden layer (it has no ground)",
-  "phasecraft.guard.no_respawn": "You cannot set your respawn point in the hidden layer"
+  "phasecraft.guard.no_respawn": "You cannot set your respawn point in the hidden layer",
+  "block.phasecraft.phase_block": "Phase Block"
 }
