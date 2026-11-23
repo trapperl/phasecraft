@@ -15,6 +15,7 @@
       "dev.phasecraft.test.HiddenDoorGameTests",
       "dev.phasecraft.test.HiddenEditingGameTests",
       "dev.phasecraft.test.KeepOutGameTests",
+      "dev.phasecraft.test.NoMojangTrafficGameTests",
       "dev.phasecraft.test.PhaseLayerRestartPhases"
     ],
     "fabric-client-gametest": [

@@ -26,6 +26,8 @@ public class OverlayDedicatedServerClientGameTest implements FabricClientGameTes
     public void runTest(ClientGameTestContext context) {
         Properties properties = new Properties();
         properties.setProperty("server-port", Integer.toString(freePort()));
+        // No Mojang login check: test games never talk to Mojang (see NoMojangTrafficGameTests).
+        properties.setProperty("online-mode", "false");
         try (TestDedicatedServerContext server = context.worldBuilder().createServer(properties);
                 TestDedicatedServerConnection connection = server.connect()) {
             connection.waitForChunksRender();
