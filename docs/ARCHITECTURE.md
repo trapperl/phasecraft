@@ -27,12 +27,28 @@ The layers are independent except at blocks made for crossing: phase ports
 (power) and phase pistons (movement). Ordinary blocks, including ordinary
 pistons, stay in their own layer.
 
-**Phase port** (`phasecraft:phase_port`, Redstone tab). A port gives out, in
-its own layer and to every side like a redstone block, the power that reaches
-its position in the *other* layer: from a signal source standing there (a
-lever, torch, wire, repeater...), or from that position's neighbours there.
-To send power down into the hidden layer, put the port in the hidden layer
-under the visible lever; to send it up, put it in the visible layer.
+**Phase port** (`phasecraft:phase_port`, Redstone tab). It belongs in the
+hidden layer, where it carries power both ways at its spot and nothing shows
+in the visible world (the person, 2026-11-23: "IF we have a block to move
+power between visible and hidden worlds it should not be visible in the main
+world").
+
+- **Down:** the power reaching its spot in the visible world (a signal source
+  standing there, such as a lever, or that spot's neighbours there) comes out
+  of the port in the hidden layer, to every side like a redstone block.
+- **Up:** the hidden power reaching the port is given out in the visible world
+  at its spot, like an invisible redstone block standing there: a visible
+  lamp, door or piston next to that spot is powered.
+  `ServerLevelPhaseBridgeMixin` adds it to every signal read in the visible
+  level.
+- **No loops:** reading the visible world for down ignores what ports put up,
+  and a port ignores other ports, so a port cannot hold itself or another
+  port on (`HiddenPortGameTests`).
+
+The phase block carries no power: it only makes a hidden block on it react to
+the visible world (below). A port placed in the visible layer still works as
+it did before 2026-11-23 (it gives out hidden power there), but it shows, so
+the examples no longer use one.
 
 - **Ports ignore other ports**, at the same spot or next to it, so two ports
   cannot pass power back and forth or hold each other on.
@@ -470,7 +486,8 @@ All of these run on every `./gradlew build`, locally and in CI:
     position, and refuses Survival players;
   - without a port nothing crosses; a visible lever through a hidden port
     lights a hidden lamp and drives a hidden piston out and back; a hidden
-    lever through a visible port lights a visible lamp; ports next to or at
+    lever through a visible port lights a visible lamp, and hidden power
+    through a hidden port too (`HiddenPortGameTests`); ports next to or at
     the same spot as other ports stay off; hidden chunks tick exactly where
     the visible world does.
   - editing mode on the server: placing at a visible block's spot, next to a

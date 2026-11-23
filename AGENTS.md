@@ -55,7 +55,14 @@ The hidden layer is a real dimension per visible dimension (see
 docs/ARCHITECTURE.md); vanilla runs it. Acceptance target for 1: the
 hidden piston door.
 Power crosses only through phase ports (done). The person wants every
-crossing explicit: a dedicated block, never every position.
+crossing explicit: a dedicated block, never every position. And nothing of
+the hidden layer may show in the visible world (the person, 2026-11-23:
+"The whole point of this is to have NO BLOCKS showing from the subworld";
+"IF we have a block to move power between visible and hidden worlds it
+should not be visible in the main world"). So the port sits in the hidden
+layer and carries power both ways at its spot (up: like an invisible
+redstone block there); the phase block only phases and carries no power
+(the person chose this split, 2026-11-23: "Do that").
 Phase ports, phase pistons, the hidden 2x2 door, the hidden staircase, the 3x3 flush door, the overlay (including
 chests, signs and fluids), editing mode (including pick) and keeping players
 out of the hidden layer are done. The person expects the hidden layer to look like a
