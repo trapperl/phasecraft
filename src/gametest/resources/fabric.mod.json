@@ -20,6 +20,7 @@
       "dev.phasecraft.test.SurvivalPlayGameTests",
       "dev.phasecraft.test.RecipeGameTests",
       "dev.phasecraft.test.SlimeAcrossLayersGameTests",
+      "dev.phasecraft.test.FlyingMachineGameTests",
       "dev.phasecraft.test.HiddenEditingGameTests",
       "dev.phasecraft.test.KeepOutGameTests",
       "dev.phasecraft.test.NoMojangTrafficGameTests",

@@ -158,6 +158,12 @@ Examples station 13 has a secret brick and a secret plate, each lighting a
 lamp through a visible phase port; station 14 is a dark hut with a secret
 brick that switches on a lamp hidden in its wall.
 
+Station 15 is a flying machine with a hidden engine: click the top of the
+post and a gold block slides east by itself, pushed each cycle by a phase
+piston riding on a vanilla flying-machine engine in the hidden layer
+(overlay on, H, to watch the engine). Hidden obsidian stops it after eight
+blocks; `python3 tools/examples.py` puts it back.
+
 ![A dark stone room lit by a glowstone hidden in its far wall](images/phased-light-room.png)
 
 Save and exit your test world, reopen it, and run `/phasecraft get` again to

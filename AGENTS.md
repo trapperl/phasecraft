@@ -94,19 +94,18 @@ transparent layer, not a separate world.
       can build inside other people's walls, past claim mods).
    d. Overlay performance for large hidden builds (done: per-chunk geometry
       cache, about 10x less CPU per frame).
-   e. Flying-machine groundwork (done; see the flying machine in
-      docs/ARCHITECTURE.md): phase pistons drag visible slime structures,
-      hidden blocks do not move with them, a phase piston carried by a
-      hidden piston still works. Open, the person's choice: A (a hidden
-      vanilla engine carrying phase pistons that push the visible cargo
-      each cycle; nothing new) or B (a new rule so one structure spans both
-      layers).
+   e. Flying machine (done, the person's option A; see the flying machine
+      in docs/ARCHITECTURE.md): a vanilla engine (the wiki's "engine A") in
+      the hidden layer carries a phase piston that pushes the visible cargo
+      each cycle (station 15). Option B (one structure spanning both layers,
+      new rules) was not chosen.
    Stacking phase pistons? Read the quasi-connectivity lesson under the
    staircase in docs/ARCHITECTURE.md first. New contraptions: write a
    layout file (src/gametest/resources/contraptions/README.md), run
    tools/redstone_check.py on it until it is clean, then build it from the
    GameTest and examples.py with the shared loaders.
-2. Stretch: a flying machine with a hidden engine carrying visible blocks.
+2. Stretch (done as 1e): a flying machine with a hidden engine moving
+   visible blocks.
 3. Known gaps: fish buckets are refused in editing mode. (Buckets work,
    and Ctrl + middle click copies a hidden chest's contents, 2026-11-23.)
 

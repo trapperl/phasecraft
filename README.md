@@ -11,7 +11,7 @@ see-through ghosts over the world; `[` and `]` change the opacity), editing mode
 clicks place, use and break blocks in the hidden layer instead of the visible world) and the phase block
 (a hidden button, lever, pressure plate or light standing on it reacts to the visible world: secret bricks,
 secret floor tiles, and lamps hidden in walls that light the room). It all works in Survival too, with
-recipes and Survival rules (a game rule turns that off for public servers). See [Getting started](docs/GETTING_STARTED.md) and [Architecture](docs/ARCHITECTURE.md).
+recipes and Survival rules, and a hidden flying-machine engine can push visible blocks along (a game rule turns that off for public servers). See [Getting started](docs/GETTING_STARTED.md) and [Architecture](docs/ARCHITECTURE.md).
 
 | Overlay off | Overlay on (H) |
 | --- | --- |
@@ -28,6 +28,8 @@ The 3x3 flush door (examples station 12), the famously hard one in vanilla: the 
 | Closed | Closed, overlay on (H) | Open |
 | --- | --- | --- |
 | ![A tunnel ending in a flush 3x3 wall](docs/images/door3-closed.png) | ![The same view with the hidden pistons and wiring around the door showing through](docs/images/door3-closed-overlay.png) | ![The door has vanished and the tunnel opens to daylight](docs/images/door3-open.png) |
+
+A flying machine with a hidden engine (examples station 15): a vanilla engine in the hidden layer carries a phase piston that pushes a visible gold block one block ahead each cycle, so the gold block flies by itself.
 
 ## Approach
 
