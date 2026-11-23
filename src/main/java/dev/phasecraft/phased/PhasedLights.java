@@ -24,6 +24,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ThreadedLevelLightEngine;
 import net.minecraft.world.level.lighting.LevelLightEngine;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -181,6 +182,12 @@ public final class PhasedLights {
             engine.updateSectionStatus(SectionPos.of(pos), false);
         }
         engine.checkBlock(pos);
+        if (engine instanceof ThreadedLevelLightEngine server) {
+            // Vanilla only starts queued light work when the server has spare time
+            // between ticks; a server with none (a busy one, or GameTests, which run
+            // ticks back to back) could leave this check waiting indefinitely.
+            server.tryScheduleUpdate();
+        }
     }
 
     private static void tick(MinecraftServer server) {

@@ -221,9 +221,11 @@ changes what is phased.
   lights of their dimension, and changes; the client's light engine uses
   them through the same mixin. Players without PhaseCraft see what the
   server sends, which can go stale.
-  GameTests run ticks far faster than 20 a second, while light is computed
-  on its own thread at its own pace: light tests wait in real time (long
-  tick limits), or they fail at random.
+  Vanilla starts queued light work only when the server has spare time
+  between ticks; GameTests run ticks back to back with none, so a phased
+  light check could wait indefinitely (light tests failed at random, on CI
+  too). After queuing a check PhasedLights asks the light engine to run
+  (`tryScheduleUpdate`). Light tests still allow long tick limits.
 
 ### Decision: one phase block, not a phased variant of each block (decided by the person, 2026-11-23)
 
