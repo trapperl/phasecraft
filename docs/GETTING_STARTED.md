@@ -97,6 +97,8 @@ floor with stone first (it goes into the floor), then place on top of that.
 Press J again to go back to normal building. The overlay is shown while you
 edit, even if H turned it off.
 
+![Editing mode: a hidden lamp placed at the spot of a visible stone block, outlined in purple](images/editing.png)
+
 Save and exit your test world, reopen it, and run `/phasecraft get` again to
 manually inspect persistence. The same check runs automatically as
 `./gradlew restartTest` (see below).
