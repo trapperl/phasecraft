@@ -67,9 +67,9 @@ transparent layer, not a separate world.
    span both layers?). Later ideas: secret room behind a wall, trapdoor floor;
    the person's idea (2026-11-23, no rush, not yet scheduled): hidden
    pressure plates and buttons actuated from the visible world (walk over /
-   right-click the spot). Open question for the person: dedicated phase
-   plate/button blocks (agent's recommendation, like phase pistons) or all
-   hidden plates and buttons.
+   right-click the spot). Decided by the person (2026-11-23): dedicated
+   blocks (phase pressure plate, phase button, maybe phase lever), like
+   phase pistons; ordinary hidden plates and buttons stay hidden-only.
    Stacking phase pistons? Read the quasi-connectivity lesson under the
    staircase in docs/ARCHITECTURE.md first.
 2. Stretch: a flying machine with a hidden engine carrying visible blocks.
