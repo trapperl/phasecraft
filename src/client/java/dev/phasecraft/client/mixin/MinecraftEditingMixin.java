@@ -25,7 +25,7 @@ abstract class MinecraftEditingMixin {
 
     @Inject(method = "startAttack", at = @At("HEAD"), cancellable = true)
     private void phasecraft$breakHidden(CallbackInfoReturnable<Boolean> cir) {
-        if (ClientEditing.editing() && ((Minecraft) (Object) this).player.isCreative()) {
+        if (ClientEditing.active((Minecraft) (Object) this)) {
             ClientEditing.attack((Minecraft) (Object) this);
             cir.setReturnValue(false);
         }
@@ -33,14 +33,15 @@ abstract class MinecraftEditingMixin {
 
     @Inject(method = "continueAttack", at = @At("HEAD"), cancellable = true)
     private void phasecraft$noVisibleBreaking(boolean down, CallbackInfo ci) {
-        if (ClientEditing.editing() && ((Minecraft) (Object) this).player.isCreative()) {
+        if (ClientEditing.active((Minecraft) (Object) this)) {
+            ClientEditing.continueAttack((Minecraft) (Object) this, down);
             ci.cancel();
         }
     }
 
     @Inject(method = "startUseItem", at = @At("HEAD"), cancellable = true)
     private void phasecraft$useHidden(CallbackInfo ci) {
-        if (ClientEditing.editing() && ((Minecraft) (Object) this).player.isCreative()) {
+        if (ClientEditing.active((Minecraft) (Object) this)) {
             rightClickDelay = 4; // vanilla's repeat rate while the button is held
             ClientEditing.use((Minecraft) (Object) this);
             ci.cancel();
@@ -50,7 +51,7 @@ abstract class MinecraftEditingMixin {
     @Inject(method = "pickBlockOrEntity", at = @At("HEAD"), cancellable = true)
     private void phasecraft$pickHidden(CallbackInfo ci) {
         Minecraft minecraft = (Minecraft) (Object) this;
-        if (ClientEditing.editing() && minecraft.player.isCreative()) {
+        if (ClientEditing.active(minecraft)) {
             ClientEditing.pick(minecraft, minecraft.hasControlDown());
             ci.cancel();
         }

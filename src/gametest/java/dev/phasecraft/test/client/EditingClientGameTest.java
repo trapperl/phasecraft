@@ -97,12 +97,19 @@ public class EditingClientGameTest implements FabricClientGameTest {
             assertVisible(server, STONE.relative(visibleFace), Blocks.REDSTONE_LAMP);
             assertHidden(server, STONE.relative(visibleFace), Blocks.AIR);
 
-            // Survival players cannot turn editing on.
+            // Survival players can turn editing on while the rule is on, not with it off.
             server.runCommand("gamemode survival @a");
             context.waitTicks(5);
             context.getInput().pressKey(PhaseCraftClient.TOGGLE_EDITING);
             context.waitTicks(5);
-            assertTrue(!context.computeOnClient(minecraft -> ClientEditing.editing()), "survival player turned editing on");
+            assertTrue(context.computeOnClient(minecraft -> ClientEditing.editing()), "survival player (rule on) could not turn editing on");
+            context.getInput().pressKey(PhaseCraftClient.TOGGLE_EDITING);
+            server.runCommand("gamerule phasecraft:survival_access false");
+            context.waitTicks(5);
+            context.getInput().pressKey(PhaseCraftClient.TOGGLE_EDITING);
+            context.waitTicks(5);
+            assertTrue(!context.computeOnClient(minecraft -> ClientEditing.editing()), "survival player (rule off) turned editing on");
+            server.runCommand("gamerule phasecraft:survival_access true");
         }
     }
 

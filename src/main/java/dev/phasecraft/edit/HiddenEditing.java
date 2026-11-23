@@ -1,9 +1,14 @@
 package dev.phasecraft.edit;
 
 import dev.phasecraft.PhaseCraft;
+import dev.phasecraft.layer.Access;
 import dev.phasecraft.layer.HiddenDimensions;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -16,6 +21,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.stats.Stats;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.network.protocol.game.ClientboundSetHeldSlotPacket;
@@ -23,15 +29,21 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Editing mode, server side: a Creative player in the visible world places,
- * uses and breaks blocks in the hidden layer at the same coordinates.
+ * Editing mode, server side: a player in the visible world places, uses and
+ * breaks blocks in the hidden layer at the same coordinates. Who may: see
+ * {@link Access} (Creative; Survival while the game rule is on). Survival
+ * plays by Survival rules: placing uses up the item, breaking takes the
+ * block's mining time ({@link StartBreak}, then {@link Break}) and drops it in
+ * the visible world, middle click only selects what is already carried.
  *
  * <p>The client (key J) sends what it aims at:</p>
  * <ul>
@@ -45,7 +57,7 @@ import org.jspecify.annotations.Nullable;
  *   <li>{@link Pick}: middle click on a hidden block puts that block in your
  *       hand, as vanilla's pick does for visible blocks.</li>
  * </ul>
- * <p>Requests are checked as vanilla checks clicks: Creative, within reach,
+ * <p>Requests are checked as vanilla checks clicks: allowed to edit, within reach,
  * hit point on the block, in a visible dimension with a hidden twin.</p>
  */
 public final class HiddenEditing {
@@ -87,6 +99,23 @@ public final class HiddenEditing {
         }
     }
 
+    /** Survival: the player started mining a hidden block (left button down on it). */
+    public record StartBreak(BlockPos pos) implements CustomPacketPayload {
+        public static final Type<StartBreak> TYPE = new Type<>(id("edit_start_break"));
+        public static final StreamCodec<FriendlyByteBuf, StartBreak> STREAM_CODEC =
+                BlockPos.STREAM_CODEC.<FriendlyByteBuf>cast().map(StartBreak::new, StartBreak::pos);
+
+        @Override
+        public Type<StartBreak> type() {
+            return TYPE;
+        }
+    }
+
+    /** Where and when each Survival player started mining a hidden block. */
+    private record Mining(BlockPos pos, int startTick) {}
+
+    private static final Map<UUID, Mining> MINING = new HashMap<>();
+
     private static Identifier id(String path) {
         return Identifier.fromNamespaceAndPath(PhaseCraft.MOD_ID, path);
     }
@@ -95,6 +124,9 @@ public final class HiddenEditing {
         PayloadTypeRegistry.serverboundPlay().register(Use.TYPE, Use.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(Break.TYPE, Break.STREAM_CODEC.cast());
         PayloadTypeRegistry.serverboundPlay().register(Pick.TYPE, Pick.STREAM_CODEC.cast());
+        PayloadTypeRegistry.serverboundPlay().register(StartBreak.TYPE, StartBreak.STREAM_CODEC.cast());
+        ServerPlayNetworking.registerGlobalReceiver(StartBreak.TYPE, (payload, context) -> startBreaking(context.player(), payload.pos()));
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> MINING.remove(handler.player.getUUID()));
         ServerPlayNetworking.registerGlobalReceiver(Use.TYPE, (payload, context) -> use(context.player(), payload.hand(), payload.hit()));
         ServerPlayNetworking.registerGlobalReceiver(Break.TYPE, (payload, context) -> breakBlock(context.player(), payload.pos()));
         ServerPlayNetworking.registerGlobalReceiver(Pick.TYPE, (payload, context) -> pick(context.player(), payload.pos()));
@@ -102,7 +134,7 @@ public final class HiddenEditing {
 
     /** The hidden level a player may edit from where they are, or null. */
     private static @Nullable ServerLevel editableHiddenLevel(ServerPlayer player) {
-        if (!player.isCreative()) {
+        if (!Access.mayEdit(player)) {
             return null;
         }
         Optional<ResourceKey<Level>> hidden = HiddenDimensions.hiddenOf(player.level().dimension());
@@ -144,7 +176,9 @@ public final class HiddenEditing {
         }
         int count = stack.getCount();
         InteractionResult result = stack.useOn(new UseOnContext(hidden, player, hand, stack, hit));
-        stack.setCount(count); // Creative: infinite materials
+        if (player.hasInfiniteMaterials()) {
+            stack.setCount(count); // Creative: infinite materials; Survival uses the item up
+        }
         if (result.consumesAction()) {
             // Placed at the clicked spot if that changed (it was hidden air), else next to it.
             BlockPos placed = hidden.getBlockState(pos) != state ? pos : pos.relative(hit.getDirection());
@@ -153,7 +187,36 @@ public final class HiddenEditing {
         return result;
     }
 
-    /** Left click on a hidden block in editing mode. Returns whether a hidden block was removed. */
+    /** Survival: the player started mining a hidden block; breaking it is allowed once its mining time has passed. */
+    public static void startBreaking(ServerPlayer player, BlockPos pos) {
+        ServerLevel hidden = editableHiddenLevel(player);
+        if (hidden != null && player.isWithinBlockInteractionRange(pos, 1.0)) {
+            MINING.put(player.getUUID(), new Mining(pos.immutable(), player.level().getServer().getTickCount()));
+        }
+    }
+
+    /**
+     * Whether a Survival player has mined long enough: vanilla's own measure
+     * (the block's destroy progress per tick for this player and tool), with
+     * vanilla's server-side allowance of 70% for lag.
+     */
+    private static boolean minedLongEnough(ServerPlayer player, ServerLevel hidden, BlockPos pos, BlockState state) {
+        Mining mining = MINING.get(player.getUUID());
+        if (mining == null || !mining.pos().equals(pos)) {
+            return false;
+        }
+        float perTick = state.getDestroyProgress(player, hidden, pos);
+        int ticks = player.level().getServer().getTickCount() - mining.startTick() + 1;
+        return perTick > 0 && perTick * ticks >= 0.7F;
+    }
+
+    /**
+     * Left click on a hidden block in editing mode. Creative: removed at once.
+     * Survival: only after the block's mining time ({@link #startBreaking}); it
+     * drops (in the visible world, where the player can pick it up) if the tool
+     * is right for it, and the tool wears, as in vanilla. Returns whether a
+     * hidden block was removed.
+     */
     public static boolean breakBlock(ServerPlayer player, BlockPos pos) {
         ServerLevel hidden = editableHiddenLevel(player);
         if (hidden == null || !player.isWithinBlockInteractionRange(pos, 1.0)) {
@@ -163,11 +226,30 @@ public final class HiddenEditing {
         if (state.isAir()) {
             return false;
         }
+        boolean survival = !player.hasInfiniteMaterials();
+        if (survival && !minedLongEnough(player, hidden, pos, state)) {
+            return false;
+        }
+        MINING.remove(player.getUUID());
         player.resetLastActionTime();
+        BlockEntity blockEntity = hidden.getBlockEntity(pos);
+        ItemStack tool = player.getMainHandItem();
+        ItemStack toolBefore = tool.copy();
+        boolean harvest = survival && player.hasCorrectToolForDrops(state);
         state.getBlock().playerWillDestroy(hidden, pos, state, player);
         boolean removed = hidden.removeBlock(pos, false);
         if (removed) {
             state.getBlock().destroy(hidden, pos, state);
+            if (survival) {
+                tool.mineBlock(hidden, state, pos, player);
+                player.awardStat(Stats.BLOCK_MINED.get(state.getBlock()));
+                player.causeFoodExhaustion(0.005F);
+                if (harvest) {
+                    for (ItemStack drop : Block.getDrops(state, hidden, pos, blockEntity, player, toolBefore)) {
+                        Block.popResource(player.level(), pos, drop);
+                    }
+                }
+            }
             SoundType sound = state.getSoundType();
             // The hidden level has no listeners; play it where the player is.
             player.level().playSound(null, pos, sound.getBreakSound(), SoundSource.BLOCKS,
@@ -198,8 +280,10 @@ public final class HiddenEditing {
             } else {
                 inventory.pickSlot(existing);
             }
-        } else {
+        } else if (player.hasInfiniteMaterials()) {
             inventory.addAndPickItem(stack);
+        } else {
+            return false; // Survival: only what is already carried
         }
         player.connection.send(new ClientboundSetHeldSlotPacket(inventory.getSelectedSlot()));
         player.inventoryMenu.broadcastChanges();

@@ -17,6 +17,8 @@
       "dev.phasecraft.test.ThreeByThreeDoorGameTests",
       "dev.phasecraft.test.PhaseBlockGameTests",
       "dev.phasecraft.test.PhasedLightGameTests",
+      "dev.phasecraft.test.SurvivalPlayGameTests",
+      "dev.phasecraft.test.RecipeGameTests",
       "dev.phasecraft.test.HiddenEditingGameTests",
       "dev.phasecraft.test.KeepOutGameTests",
       "dev.phasecraft.test.NoMojangTrafficGameTests",

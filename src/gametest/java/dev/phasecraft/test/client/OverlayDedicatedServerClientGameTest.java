@@ -19,7 +19,8 @@ import net.minecraft.world.level.block.Blocks;
 /**
  * The overlay over a real network connection to a dedicated server, as when
  * playing on the dev server: a Survival player (the server default) is sent
- * nothing; in Creative, the hidden block in front of them arrives.
+ * nothing while the game rule phasecraft:survival_access is off; in Creative,
+ * or in Survival with the rule on, the hidden block in front of them arrives.
  */
 public class OverlayDedicatedServerClientGameTest implements FabricClientGameTest {
     @Override
@@ -30,6 +31,7 @@ public class OverlayDedicatedServerClientGameTest implements FabricClientGameTes
         properties.setProperty("online-mode", "false");
         try (TestDedicatedServerContext server = context.worldBuilder().createServer(properties);
                 TestDedicatedServerConnection connection = server.connect()) {
+            server.runCommand("gamerule phasecraft:survival_access false");
             connection.waitForChunksRender();
             BlockPos ahead = server.computeOnServer(minecraft ->
                     minecraft.getPlayerList().getPlayers().getFirst().blockPosition().above().south(3));
@@ -42,8 +44,12 @@ public class OverlayDedicatedServerClientGameTest implements FabricClientGameTes
                 return out.toString();
             });
             String mode = server.computeOnServer(minecraft -> minecraft.getPlayerList().getPlayers().getFirst().gameMode().toString());
-            assertTrue(held.isEmpty(), "survival player on a dedicated server was sent hidden blocks (mode " + mode + "): " + held);
+            assertTrue(held.isEmpty(), "survival player (rule off) on a dedicated server was sent hidden blocks (mode " + mode + "): " + held);
             server.runCommand("gamemode creative @a");
+            waitForGhost(context, ahead, Blocks.DIAMOND_BLOCK);
+            server.runCommand("gamemode survival @a");
+            server.runCommand("gamerule phasecraft:survival_access true");
+            context.waitTicks(20);
             waitForGhost(context, ahead, Blocks.DIAMOND_BLOCK);
         }
     }

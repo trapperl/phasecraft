@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "redstone",
+  "ingredients": [
+    "phasecraft:phase_block",
+    "minecraft:redstone_torch"
+  ],
+  "result": {
+    "id": "phasecraft:phase_port"
+  }
+}

@@ -1,5 +1,6 @@
 package dev.phasecraft.overlay;
 
+import dev.phasecraft.layer.Access;
 import dev.phasecraft.layer.HiddenDimensions;
 import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
@@ -32,9 +33,9 @@ import org.jspecify.annotations.Nullable;
  * Keeps each eligible client's copy of the hidden layer near it up to date,
  * so the client can draw hidden blocks as an overlay on the visible world.
  *
- * <p>Eligible: the client has PhaseCraft, the player is in Creative or
- * Spectator (the same rule as entering the hidden layer, so Survival players
- * cannot see hidden doors through walls), and the player is in a visible
+ * <p>Eligible: the client has PhaseCraft, the player may see the hidden
+ * layer ({@link Access}: Creative, Spectator, or Survival while the game rule
+ * phasecraft:survival_access is on), and the player is in a visible
  * dimension that has a hidden twin. Every tick the server sends the hidden
  * blocks of chunks that came within {@link #RADIUS_CHUNKS} of the player,
  * tells the client to forget chunks that left that range, and passes on hidden
@@ -163,8 +164,7 @@ public final class OverlaySync {
 
     /** The hidden level to mirror for this player, or null if the player should not see the overlay. */
     private static @Nullable ServerLevel eligibleHiddenLevel(MinecraftServer server, ServerPlayer player) {
-        if (!(player.isCreative() || player.isSpectator())
-                || !ServerPlayNetworking.canSend(player, OverlayPayloads.Chunk.TYPE)) {
+        if (!Access.maySeeOverlay(player) || !ServerPlayNetworking.canSend(player, OverlayPayloads.Chunk.TYPE)) {
             return null;
         }
         Optional<ResourceKey<Level>> hiddenKey = HiddenDimensions.hiddenOf(player.level().dimension());

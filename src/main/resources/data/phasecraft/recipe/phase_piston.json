@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "redstone",
+  "ingredients": [
+    "minecraft:piston",
+    "phasecraft:phase_block"
+  ],
+  "result": {
+    "id": "phasecraft:phase_piston"
+  }
+}
