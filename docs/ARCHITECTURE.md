@@ -142,8 +142,9 @@ within reach, hit point on the block), then:
   (`playerWillDestroy`, remove, `destroy`); never the visible block.
 
 - *pick* (middle click): a hidden block's item goes to your hand, as vanilla's
-  pick does (without block entity data: a hidden chest is picked empty);
-  aimed at a visible block, vanilla's own pick.
+  pick does; with Ctrl held, in Creative, with its block entity data too (a
+  hidden chest's contents), as vanilla's pick copies it; aimed at a visible
+  block, vanilla's own pick.
 
 Sounds play in the visible level, where the player is. While editing, every
 right click is taken over, so items that act on air rather than on a

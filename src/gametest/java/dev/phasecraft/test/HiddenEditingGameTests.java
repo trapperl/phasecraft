@@ -189,17 +189,44 @@ public class HiddenEditingGameTests {
         layer.setBlock(at.east(20), Blocks.REDSTONE_LAMP.defaultBlockState());
         withPlayer(helper, GameType.CREATIVE, player -> {
             hold(player, Items.OAK_PLANKS);
-            helper.assertFalse(HiddenEditing.pick(player, at.east(20)), "picked out of reach");
-            helper.assertTrue(HiddenEditing.pick(player, at), "pick reported nothing picked");
+            helper.assertFalse(HiddenEditing.pick(player, at.east(20), false), "picked out of reach");
+            helper.assertTrue(HiddenEditing.pick(player, at, false), "pick reported nothing picked");
             helper.assertTrue(player.getMainHandItem().is(Items.REDSTONE_LAMP),
                     "hand holds " + player.getMainHandItem() + ", not the hidden lamp (the visible block is stone)");
         });
         withPlayer(helper, GameType.ADVENTURE, player -> {
             hold(player, Items.OAK_PLANKS);
-            helper.assertFalse(HiddenEditing.pick(player, at), "adventure player picked a hidden block");
+            helper.assertFalse(HiddenEditing.pick(player, at, false), "adventure player picked a hidden block");
         });
         layer.removeBlock(at);
         layer.removeBlock(at.east(20));
+        helper.succeed();
+    }
+
+    /** Ctrl + middle click in Creative copies a hidden chest's contents into the picked chest, as vanilla's pick does. */
+    @GameTest
+    public void creativePickWithDataCopiesChestContents(GameTestHelper helper) {
+        BlockPos at = helper.absolutePos(TARGET);
+        HiddenLayer layer = HiddenLayer.of(helper.getLevel());
+        layer.setBlock(at, Blocks.CHEST.defaultBlockState());
+        if (layer.level().getBlockEntity(at) instanceof net.minecraft.world.level.block.entity.ChestBlockEntity chest) {
+            chest.setItem(0, new ItemStack(Items.DIAMOND, 3));
+        } else {
+            helper.fail("no hidden chest block entity");
+        }
+        withPlayer(helper, GameType.CREATIVE, player -> {
+            hold(player, Items.AIR);
+            helper.assertTrue(HiddenEditing.pick(player, at, false), "plain pick");
+            var plain = player.getMainHandItem().get(net.minecraft.core.component.DataComponents.CONTAINER);
+            helper.assertTrue(plain == null || plain.nonEmptyItemCopyStream().findAny().isEmpty(), "plain pick copied contents: " + plain);
+            hold(player, Items.AIR);
+            player.getInventory().clearContent();
+            helper.assertTrue(HiddenEditing.pick(player, at, true), "pick with data");
+            var contents = player.getMainHandItem().get(net.minecraft.core.component.DataComponents.CONTAINER);
+            helper.assertTrue(contents != null && contents.nonEmptyItemCopyStream().anyMatch(stack -> stack.is(Items.DIAMOND) && stack.getCount() == 3),
+                    "picked chest without the diamonds: " + player.getMainHandItem() + " " + contents);
+        });
+        layer.removeBlock(at);
         helper.succeed();
     }
 }

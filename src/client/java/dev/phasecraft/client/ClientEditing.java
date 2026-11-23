@@ -207,7 +207,7 @@ public final class ClientEditing {
         }
         BlockPos pos = target.hit().getBlockPos();
         if (target.hidden()) {
-            ClientPlayNetworking.send(new HiddenEditing.Pick(pos));
+            ClientPlayNetworking.send(new HiddenEditing.Pick(pos, includeData));
         } else {
             minecraft.gameMode.handlePickItemFromBlock(pos, includeData);
         }

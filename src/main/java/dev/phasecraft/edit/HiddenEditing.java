@@ -26,6 +26,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.network.protocol.game.ClientboundSetHeldSlotPacket;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
@@ -35,7 +36,11 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
+import com.mojang.logging.LogUtils;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.level.storage.TagValueOutput;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
 
 /**
  * Editing mode, server side: a player in the visible world places, uses and
@@ -61,6 +66,8 @@ import org.jspecify.annotations.Nullable;
  * hit point on the block, in a visible dimension with a hidden twin.</p>
  */
 public final class HiddenEditing {
+    private static final Logger LOGGER = LogUtils.getLogger();
+
     private HiddenEditing() {}
 
     public record Use(InteractionHand hand, BlockHitResult hit) implements CustomPacketPayload {
@@ -88,10 +95,11 @@ public final class HiddenEditing {
     }
 
     /** Middle click. (Block entity data, vanilla's Ctrl+pick, is not copied: hidden chests are picked empty.) */
-    public record Pick(BlockPos pos) implements CustomPacketPayload {
+    /** Middle click; {@code includeData}: Ctrl held (Creative copies the block's data, as vanilla's pick). */
+    public record Pick(BlockPos pos, boolean includeData) implements CustomPacketPayload {
         public static final Type<Pick> TYPE = new Type<>(id("edit_pick"));
-        public static final StreamCodec<FriendlyByteBuf, Pick> STREAM_CODEC =
-                BlockPos.STREAM_CODEC.<FriendlyByteBuf>cast().map(Pick::new, Pick::pos);
+        public static final StreamCodec<FriendlyByteBuf, Pick> STREAM_CODEC = StreamCodec.composite(
+                BlockPos.STREAM_CODEC, Pick::pos, ByteBufCodecs.BOOL, Pick::includeData, Pick::new);
 
         @Override
         public Type<Pick> type() {
@@ -129,7 +137,7 @@ public final class HiddenEditing {
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> MINING.remove(handler.player.getUUID()));
         ServerPlayNetworking.registerGlobalReceiver(Use.TYPE, (payload, context) -> use(context.player(), payload.hand(), payload.hit()));
         ServerPlayNetworking.registerGlobalReceiver(Break.TYPE, (payload, context) -> breakBlock(context.player(), payload.pos()));
-        ServerPlayNetworking.registerGlobalReceiver(Pick.TYPE, (payload, context) -> pick(context.player(), payload.pos()));
+        ServerPlayNetworking.registerGlobalReceiver(Pick.TYPE, (payload, context) -> pick(context.player(), payload.pos(), payload.includeData()));
     }
 
     /** The hidden level a player may edit from where they are, or null. */
@@ -263,14 +271,18 @@ public final class HiddenEditing {
      * vanilla's pick (ServerGamePacketListenerImpl.tryPickItem). Returns
      * whether something was picked.
      */
-    public static boolean pick(ServerPlayer player, BlockPos pos) {
+    public static boolean pick(ServerPlayer player, BlockPos pos, boolean includeData) {
         ServerLevel hidden = editableHiddenLevel(player);
         if (hidden == null || !player.isWithinBlockInteractionRange(pos, 1.0) || !hidden.isLoaded(pos)) {
             return false;
         }
-        ItemStack stack = hidden.getBlockState(pos).getCloneItemStack(hidden, pos, false);
+        BlockState state = hidden.getBlockState(pos);
+        ItemStack stack = state.getCloneItemStack(hidden, pos, includeData);
         if (stack.isEmpty() || !stack.isItemEnabled(hidden.enabledFeatures())) {
             return false;
+        }
+        if (includeData && player.hasInfiniteMaterials()) {
+            addBlockData(hidden, pos, state, stack);
         }
         Inventory inventory = player.getInventory();
         int existing = inventory.findSlotMatchingItem(stack);
@@ -288,6 +300,21 @@ public final class HiddenEditing {
         player.connection.send(new ClientboundSetHeldSlotPacket(inventory.getSelectedSlot()));
         player.inventoryMenu.broadcastChanges();
         return true;
+    }
+
+    /** Vanilla's ServerGamePacketListenerImpl.addBlockDataToItem: the block entity's data (a chest's contents) onto the item. */
+    private static void addBlockData(ServerLevel level, BlockPos pos, BlockState state, ItemStack stack) {
+        BlockEntity blockEntity = state.hasBlockEntity() ? level.getBlockEntity(pos) : null;
+        if (blockEntity == null) {
+            return;
+        }
+        try (ProblemReporter.ScopedCollector reporter = new ProblemReporter.ScopedCollector(blockEntity.problemPath(), LOGGER)) {
+            TagValueOutput output = TagValueOutput.createWithContext(reporter, level.registryAccess());
+            blockEntity.saveCustomOnly(output);
+            blockEntity.removeComponentsFromTag(output);
+            BlockItem.setBlockEntityData(stack, blockEntity.getType(), output);
+            stack.applyComponents(blockEntity.collectComponents());
+        }
     }
 
     private static void playPlaceSound(ServerPlayer player, BlockState state, BlockPos pos) {
