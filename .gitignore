@@ -15,3 +15,6 @@ Thumbs.db
 
 # Personal machine settings (e.g. minecraftModsDir)
 local.properties
+
+# Python bytecode (tools/)
+__pycache__/
