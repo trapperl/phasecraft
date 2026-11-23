@@ -82,8 +82,14 @@ transparent layer, not a separate world.
       players use the overlay and editing mode (with Survival rules:
       placing uses the item, breaking takes mining time and the right tool
       and drops the block, normal reach), plus crafting recipes for phase
-      pistons, ports and the phase block; the person picks the recipe
-      costs. Entering the hidden layer stays Creative/Spectator only.
+      pistons, ports and the phase block. Recipes, the person's starting
+      point for balancing (2026-11-23; an ender pearl was "pretty
+      expensive"): Phase Block x4 = amethyst shard in the middle, redstone
+      dust on the 4 sides, cobblestone in the corners; Phase Port = Phase
+      Block + redstone torch; Phase Piston = piston + Phase Block; Sticky
+      Phase Piston = Phase Piston + slime ball (or sticky piston + Phase
+      Block). Cheaper fallback if needed: a copper ingot instead of the
+      shard. Entering the hidden layer stays Creative/Spectator only.
       Servers can turn the rule off (on a public server Survival editing
       can build inside other people's walls, past claim mods).
    d. Overlay performance for large hidden builds.
