@@ -3,7 +3,7 @@
 A Minecraft Java Edition mod: a second block layer that shares the exact XYZ coordinates of the overworld, so
 redstone and pistons hidden in that layer can act on the blocks of the visible world, by vanilla rules.
 
-Nothing is built yet. This is the outline the project starts from.
+A first experimental storage prototype and automated JUnit build are now available on the development branch. **Target: Minecraft Java Edition 26.3** with Fabric and Java 25. Hidden blocks are still data only (no redstone simulation or rendering). See [Getting started](docs/GETTING_STARTED.md).
 
 ## Approach
 
