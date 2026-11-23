@@ -362,8 +362,27 @@ has such cells.
    the staircase), returns the rest, and pulls the nine forward. Stage 1's
    hold must outlast every return move: with one 4-tick delay it pulled
    while the last blocks were still sliding, and they stayed in the wall.
-4. **Flying machine (stretch):** a hidden slime/observer engine carrying
-   visible blocks. Needs phase pistons to move mixed-layer structures.
+4. **Flying machine (stretch): groundwork done, design open.** What the
+   pieces do today (`SlimeAcrossLayersGameTests`):
+   - a phase piston pushing a visible slime block drags the visible blocks
+     stuck to it, by vanilla's rules;
+   - hidden blocks at those spots stay put: the layers move independently,
+     so a slime structure cannot span both layers yet;
+   - a phase piston moved by a vanilla piston in the hidden layer keeps
+     working where it lands, so a hidden engine can carry phase pistons.
+
+   Two ways to a flying machine with a hidden engine (the person's choice):
+   A. *Hidden engine pushes its cargo:* a vanilla flying machine built in the
+      hidden layer carries phase pistons that fire each cycle and push the
+      visible cargo one block ahead, keeping pace. Nothing new is needed; the
+      cargo is pushed (vanilla push rules: up to 12 blocks, slime drags more),
+      not carried. Needs a known-good vanilla engine: a quick search of
+      6-block layouts found none that flew, so start from a documented one.
+   B. *One structure across both layers:* a new rule, for example a phased
+      slime block whose movement also moves what is stuck to it in the other
+      layer, so one machine spans both. Closer to "a hidden engine carrying
+      visible blocks", but new mechanics: both layers move in one tick, each
+      by vanilla push limits, with edge cases where only one side can move.
 5. **Mob farm:** not a target; the hidden layer does not interact with mobs.
 
 ## Validation status
@@ -422,6 +441,10 @@ All of these run on every `./gradlew build`, locally and in CI:
     directly draws, vertex for vertex (tints, random offsets, model-less
     blocks, fluids), after a change and after a change across a chunk
     border (each shown to fail when its invalidation is removed);
+  - slime across layers: a phase piston drags a visible slime structure;
+    hidden blocks at those spots do not move; a phase piston moved by a
+    hidden vanilla piston works where it lands (all fail when phase pistons
+    cannot extend);
   - phased light: hidden glowstone on a phase block lights the visible
     world (15, fading by vanilla's rules), also high in empty sky; without
     a phase block it does not; a phased lamp follows hidden redstone;

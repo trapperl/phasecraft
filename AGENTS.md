@@ -94,8 +94,13 @@ transparent layer, not a separate world.
       can build inside other people's walls, past claim mods).
    d. Overlay performance for large hidden builds (done: per-chunk geometry
       cache, about 10x less CPU per frame).
-   e. Flying-machine groundwork: can phase pistons push slime structures
-      that span both layers?
+   e. Flying-machine groundwork (done; see the flying machine in
+      docs/ARCHITECTURE.md): phase pistons drag visible slime structures,
+      hidden blocks do not move with them, a phase piston carried by a
+      hidden piston still works. Open, the person's choice: A (a hidden
+      vanilla engine carrying phase pistons that push the visible cargo
+      each cycle; nothing new) or B (a new rule so one structure spans both
+      layers).
    Stacking phase pistons? Read the quasi-connectivity lesson under the
    staircase in docs/ARCHITECTURE.md first. New contraptions: write a
    layout file (src/gametest/resources/contraptions/README.md), run
