@@ -98,8 +98,10 @@ Placing follows vanilla rules in the hidden layer, so hidden wire, repeaters
 and floor levers need a hidden block under them: right click the visible
 floor with stone first (it goes into the floor), then place on top of that.
 Press J again to go back to normal building. The overlay is shown while you
-edit, even if H turned it off. Buckets do nothing while editing: put hidden
-water or lava in with `/phasecraft set` (they show in the overlay).
+edit, even if H turned it off. Buckets work too: a full bucket pours hidden
+water or lava (at the spot you aim at, or next to the hidden block you
+aim at), an empty one scoops hidden water or lava up. Fish buckets are
+refused.
 
 ![Editing mode: a hidden lamp placed at the spot of a visible stone block, outlined in purple](images/editing.png)
 

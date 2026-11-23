@@ -202,4 +202,71 @@ public class HiddenEditingGameTests {
         layer.removeBlock(at.east(20));
         helper.succeed();
     }
+
+    /** A hidden stone cup around the target spot, so hidden water put there cannot flow away. */
+    private static void hiddenCup(HiddenLayer layer, BlockPos at) {
+        for (Direction side : new Direction[] {Direction.DOWN, Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST}) {
+            layer.setBlock(at.relative(side), Blocks.STONE.defaultBlockState());
+        }
+    }
+
+    private static void clearCup(HiddenLayer layer, BlockPos at) {
+        layer.removeBlock(at);
+        for (Direction side : new Direction[] {Direction.DOWN, Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST}) {
+            layer.removeBlock(at.relative(side));
+        }
+    }
+
+    /** A water bucket aimed at a visible block's spot pours hidden water there; Creative keeps the full bucket. */
+    @GameTest
+    public void waterBucketPoursHiddenWater(GameTestHelper helper) {
+        BlockPos at = helper.absolutePos(TARGET);
+        HiddenLayer layer = HiddenLayer.of(helper.getLevel());
+        helper.setBlock(TARGET, Blocks.STONE);
+        hiddenCup(layer, at);
+        withPlayer(helper, GameType.CREATIVE, player -> {
+            hold(player, Items.WATER_BUCKET);
+            HiddenEditing.use(player, InteractionHand.MAIN_HAND, click(at, Direction.UP));
+            helper.assertTrue(player.getMainHandItem().is(Items.WATER_BUCKET), "Creative bucket changed: " + player.getMainHandItem());
+        });
+        helper.assertTrue(layer.getBlock(at).getFluidState().isSource() && layer.getBlock(at).is(Blocks.WATER),
+                "no hidden water source at the spot: " + layer.getBlock(at));
+        helper.assertBlockPresent(Blocks.STONE, TARGET);
+        clearCup(layer, at);
+        helper.succeed();
+    }
+
+    /** An empty bucket on hidden water scoops it up; in Survival the bucket becomes a water bucket. */
+    @GameTest
+    public void emptyBucketScoopsHiddenWater(GameTestHelper helper) {
+        BlockPos at = helper.absolutePos(TARGET);
+        HiddenLayer layer = HiddenLayer.of(helper.getLevel());
+        hiddenCup(layer, at);
+        layer.setBlock(at, Blocks.WATER.defaultBlockState());
+        withPlayer(helper, GameType.SURVIVAL, player -> {
+            hold(player, Items.BUCKET);
+            HiddenEditing.use(player, InteractionHand.MAIN_HAND, click(at, Direction.UP));
+            helper.assertTrue(player.getMainHandItem().is(Items.WATER_BUCKET), "bucket after scooping: " + player.getMainHandItem());
+        });
+        helper.assertTrue(layer.getBlock(at).isAir(), "hidden water still there: " + layer.getBlock(at));
+        clearCup(layer, at);
+        helper.succeed();
+    }
+
+    /** In Survival, pouring hidden water empties the bucket. */
+    @GameTest
+    public void survivalWaterBucketEmpties(GameTestHelper helper) {
+        BlockPos at = helper.absolutePos(TARGET);
+        HiddenLayer layer = HiddenLayer.of(helper.getLevel());
+        helper.setBlock(TARGET, Blocks.STONE);
+        hiddenCup(layer, at);
+        withPlayer(helper, GameType.SURVIVAL, player -> {
+            hold(player, Items.WATER_BUCKET);
+            HiddenEditing.use(player, InteractionHand.MAIN_HAND, click(at, Direction.UP));
+            helper.assertTrue(player.getMainHandItem().is(Items.BUCKET), "Survival bucket after pouring: " + player.getMainHandItem());
+        });
+        helper.assertTrue(layer.getBlock(at).is(Blocks.WATER), "no hidden water at the spot: " + layer.getBlock(at));
+        clearCup(layer, at);
+        helper.succeed();
+    }
 }
