@@ -2,6 +2,7 @@ package dev.phasecraft.mixin;
 
 import dev.phasecraft.link.PhaseLink;
 import dev.phasecraft.overlay.OverlaySync;
+import dev.phasecraft.phased.PhasedInput;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.state.BlockState;
@@ -24,5 +25,6 @@ abstract class ServerLevelPhaseLinkMixin {
         ServerLevel level = (ServerLevel) (Object) this;
         PhaseLink.onBlockChanged(level, pos, oldState, newState);
         OverlaySync.onBlockChanged(level, pos, newState);
+        PhasedInput.onBlockChanged(level, pos, oldState, newState);
     }
 }

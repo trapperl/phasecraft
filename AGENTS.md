@@ -75,7 +75,7 @@ transparent layer, not a separate world.
       be moved by pistons. Phase pistons and phase ports stay as they are.
       First step: buttons, levers, pressure plates; blocks not supported yet
       just don't react (list the supported ones in the docs). Built so the
-      person can try it and reassess. Second step (the person, 2026-11-23:
+      person can try it and reassess. First step done (station 13). Second step (the person, 2026-11-23:
       "lights would be cool"): phased light sources (glowstone, lamps,
       torches... on a phase block) light the visible world at their spot;
       the server's light engine and every nearby client need the phased

@@ -178,6 +178,40 @@ nothing for the hidden layer.
 same position. Only Creative or Spectator players may enter: the hidden layer
 has no ground of its own.
 
+### Phased blocks: the phase block (`dev.phasecraft.phased`)
+
+A hidden block standing on a phase block, or hanging on its side (the block
+a button or lever is attached to, otherwise the one below), is phased: it
+reacts to the visible world at its own spot. The phase block itself is an
+ordinary block that pistons cannot move, so moving blocks never quietly
+changes what is phased.
+
+- **Buttons and levers** (`PhasedInput`): a right-click on a visible block
+  (Fabric's use-block event, server side) uses the phased button or lever
+  hidden at that spot, through vanilla's own `useWithoutItem` on the hidden
+  level. Sneaking with something in hand passes the click on, as vanilla
+  does for buttons. The server swings the arm and undoes any placement the
+  client predicted.
+- **Pressure plates:** every plate's signal goes through vanilla's
+  `getEntityCount`; for a phased plate `BasePressurePlateMixin` counts the
+  visible level's entities in the same box. No entity ever touches a hidden
+  plate, so `PhasedInput` keeps a list of the plates in loaded hidden chunks
+  (block changes and chunk loads) and checks the released ones every tick;
+  once pressed, the plate's own scheduled ticks keep counting.
+- **Sounds** (`ServerLevelPhasedSoundMixin`): a sound played at a phased
+  block's spot in a hidden level is also played in the visible level, to
+  everyone (the clicking player included).
+
+### Decision: one phase block, not a phased variant of each block (decided by the person, 2026-11-23)
+
+Dedicated blocks (a phase button, a phase plate) were the first plan, like
+the phase piston. The person chose one phase block instead: one item and
+one rule ("what stands on it is phased") for every kind of block, and still
+an explicit crossing. It costs a hidden cell under or behind each phased
+block; phase pistons and ports stay separate blocks for that reason (the
+staircase stacks pistons with no room for one). Next: phased light sources
+light the visible world.
+
 ### Nobody ends up in the hidden layer by accident (`HiddenLayerGuard`)
 
 - **Only Creative and Spectator players may be there.** Any other player
@@ -325,6 +359,12 @@ All of these run on every `./gradlew build`, locally and in CI:
     again from one visible lever (and fails without phase-piston
     quasi-connectivity, without sticky pull-back, or without the hold
     repeater);
+  - phased blocks: a Survival player's right-click on a plain visible brick
+    presses the phased button hidden there (released by vanilla timing) and
+    toggles a phased lever; an unphased hidden button ignores the click;
+    sneaking with a block places it as usual; a visible pig presses and
+    releases a phased plate, but not an unphased one; pistons cannot move a
+    phase block (each check shown to fail when its code is removed);
   - the 3x3 flush door opens and closes twice from one visible lever (and
     fails without phase-piston quasi-connectivity, with a shorter stage-1
     hold, or without the second lift);

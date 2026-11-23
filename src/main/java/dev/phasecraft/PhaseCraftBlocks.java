@@ -1,6 +1,7 @@
 package dev.phasecraft;
 
 import dev.phasecraft.link.PhasePortBlock;
+import dev.phasecraft.phased.PhaseBlock;
 import dev.phasecraft.piston.PhasePistonBlock;
 import java.util.function.Function;
 import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
@@ -16,6 +17,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
+import net.minecraft.world.level.material.PushReaction;
 
 /** PhaseCraft's blocks and their items. */
 public final class PhaseCraftBlocks {
@@ -30,6 +32,11 @@ public final class PhaseCraftBlocks {
     public static final Block STICKY_PHASE_PISTON = block("sticky_phase_piston", properties -> new PhasePistonBlock(true, properties),
             BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_PURPLE).strength(1.5F).isRedstoneConductor((s, l, p) -> false));
     public static final Item STICKY_PHASE_PISTON_ITEM = item("sticky_phase_piston", STICKY_PHASE_PISTON);
+
+    public static final Block PHASE_BLOCK = block("phase_block", PhaseBlock::new,
+            BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_PURPLE).strength(1.5F).sound(SoundType.AMETHYST)
+                    .pushReaction(PushReaction.IMMOVEABLE));
+    public static final Item PHASE_BLOCK_ITEM = item("phase_block", PHASE_BLOCK);
 
     private static Identifier id(String path) {
         return Identifier.fromNamespaceAndPath(PhaseCraft.MOD_ID, path);
@@ -55,6 +62,7 @@ public final class PhaseCraftBlocks {
                     output.accept(PHASE_PORT_ITEM);
                     output.accept(PHASE_PISTON_ITEM);
                     output.accept(STICKY_PHASE_PISTON_ITEM);
+                    output.accept(PHASE_BLOCK_ITEM);
                 });
     }
 }
