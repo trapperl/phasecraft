@@ -106,10 +106,16 @@ their height in their own texture and tint, without faces between hidden
 fluid of the same kind. Air, barriers and light blocks are not shown. Keys: H toggles, `]` and `[` change the opacity
 (15% to 100%); kept in `config/phasecraft-client.properties`.
 
-Cost: every frame the client re-tessellates every hidden block within 96
-blocks of the camera, twice. Fine for machinery (the examples area is a few
-hundred blocks); not yet tuned for very large hidden builds (tens of
-thousands of blocks in view).
+Cost: the geometry of each chunk's ghosts is built once (the same code as
+before, recorded instead of drawn: positions relative to the chunk, colours
+without the pass's alpha) and kept until hidden blocks in that chunk, or on
+the border of a neighbouring one, change (`GhostLayer.takeChangedChunks`),
+or the block models are reloaded. Each frame replays the meshes of chunks
+within about 100 blocks, with the camera transform and each pass's alpha. On
+18,432 hidden blocks around the camera that took the overlay's CPU time per
+frame from 9.4 ms to 0.9 ms (`OverlayCacheClientGameTest` logs it), and the
+cached geometry matches drawing every ghost from its model, vertex for
+vertex, also after changes and across chunk borders.
 
 ## Editing mode: building in the hidden layer from the visible world
 
@@ -412,6 +418,10 @@ All of these run on every `./gradlew build`, locally and in CI:
     wears the tool; with the rule off nothing is placed or broken; middle
     click never makes items; the recipes craft what they should (each
     shown to fail with its code removed);
+  - the overlay's per-chunk geometry cache draws what drawing every ghost
+    directly draws, vertex for vertex (tints, random offsets, model-less
+    blocks, fluids), after a change and after a change across a chunk
+    border (each shown to fail when its invalidation is removed);
   - phased light: hidden glowstone on a phase block lights the visible
     world (15, fading by vanilla's rules), also high in empty sky; without
     a phase block it does not; a phased lamp follows hidden redstone;
