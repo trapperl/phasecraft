@@ -60,6 +60,13 @@ public class EditingClientGameTest implements FabricClientGameTest {
             // Now the ghost is the target; right click places next to it, toward the player.
             waitUntil(context, "the hidden lamp is targeted", minecraft -> isTarget(STONE, true));
             context.takeScreenshot("editing_target_hidden");
+            // Middle click picks the hidden block, not the visible stone at the same spot.
+            server.runOnServer(minecraft -> minecraft.getPlayerList().getPlayers().getFirst()
+                    .setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.OAK_PLANKS)));
+            waitUntil(context, "client holds planks", minecraft -> minecraft.player.getMainHandItem().is(Items.OAK_PLANKS));
+            context.getInput().pressKey(options -> options.keyPickItem);
+            waitUntil(context, "middle click picks the hidden lamp",
+                    minecraft -> minecraft.player.getMainHandItem().is(Items.REDSTONE_LAMP));
             Direction face = context.computeOnClient(minecraft -> ClientEditing.target().hit().getDirection());
             BlockPos next = STONE.relative(face);
             context.getInput().pressKey(options -> options.keyUse);

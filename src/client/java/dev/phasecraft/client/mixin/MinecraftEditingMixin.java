@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
  * Editing mode: while it is on, the crosshair picks in the hidden layer and
- * left/right clicks are sent there instead of to the visible world.
+ * left, right and middle clicks are sent there instead of to the visible world.
  */
 @Mixin(Minecraft.class)
 abstract class MinecraftEditingMixin {
@@ -43,6 +43,15 @@ abstract class MinecraftEditingMixin {
         if (ClientEditing.editing() && ((Minecraft) (Object) this).player.isCreative()) {
             rightClickDelay = 4; // vanilla's repeat rate while the button is held
             ClientEditing.use((Minecraft) (Object) this);
+            ci.cancel();
+        }
+    }
+
+    @Inject(method = "pickBlockOrEntity", at = @At("HEAD"), cancellable = true)
+    private void phasecraft$pickHidden(CallbackInfo ci) {
+        Minecraft minecraft = (Minecraft) (Object) this;
+        if (ClientEditing.editing() && minecraft.player.isCreative()) {
+            ClientEditing.pick(minecraft, minecraft.hasControlDown());
             ci.cancel();
         }
     }

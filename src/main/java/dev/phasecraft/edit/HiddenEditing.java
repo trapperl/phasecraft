@@ -18,6 +18,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.network.protocol.game.ClientboundSetHeldSlotPacket;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
@@ -40,6 +42,8 @@ import org.jspecify.annotations.Nullable;
  *       (hidden air is replaceable), overlapping the visible block.</li>
  *   <li>{@link Break}: left click on a hidden block removes it. Visible blocks
  *       are never touched.</li>
+ *   <li>{@link Pick}: middle click on a hidden block puts that block in your
+ *       hand, as vanilla's pick does for visible blocks.</li>
  * </ul>
  * <p>Requests are checked as vanilla checks clicks: Creative, within reach,
  * hit point on the block, in a visible dimension with a hidden twin.</p>
@@ -71,6 +75,18 @@ public final class HiddenEditing {
         }
     }
 
+    /** Middle click. (Block entity data, vanilla's Ctrl+pick, is not copied: hidden chests are picked empty.) */
+    public record Pick(BlockPos pos) implements CustomPacketPayload {
+        public static final Type<Pick> TYPE = new Type<>(id("edit_pick"));
+        public static final StreamCodec<FriendlyByteBuf, Pick> STREAM_CODEC =
+                BlockPos.STREAM_CODEC.<FriendlyByteBuf>cast().map(Pick::new, Pick::pos);
+
+        @Override
+        public Type<Pick> type() {
+            return TYPE;
+        }
+    }
+
     private static Identifier id(String path) {
         return Identifier.fromNamespaceAndPath(PhaseCraft.MOD_ID, path);
     }
@@ -78,8 +94,10 @@ public final class HiddenEditing {
     public static void register() {
         PayloadTypeRegistry.serverboundPlay().register(Use.TYPE, Use.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(Break.TYPE, Break.STREAM_CODEC.cast());
+        PayloadTypeRegistry.serverboundPlay().register(Pick.TYPE, Pick.STREAM_CODEC.cast());
         ServerPlayNetworking.registerGlobalReceiver(Use.TYPE, (payload, context) -> use(context.player(), payload.hand(), payload.hit()));
         ServerPlayNetworking.registerGlobalReceiver(Break.TYPE, (payload, context) -> breakBlock(context.player(), payload.pos()));
+        ServerPlayNetworking.registerGlobalReceiver(Pick.TYPE, (payload, context) -> pick(context.player(), payload.pos()));
     }
 
     /** The hidden level a player may edit from where they are, or null. */
@@ -156,6 +174,36 @@ public final class HiddenEditing {
                     (sound.getVolume() + 1.0F) / 2.0F, sound.getPitch() * 0.8F);
         }
         return removed;
+    }
+
+    /**
+     * Middle click on a hidden block: that block's item into the hand, as
+     * vanilla's pick (ServerGamePacketListenerImpl.tryPickItem). Returns
+     * whether something was picked.
+     */
+    public static boolean pick(ServerPlayer player, BlockPos pos) {
+        ServerLevel hidden = editableHiddenLevel(player);
+        if (hidden == null || !player.isWithinBlockInteractionRange(pos, 1.0) || !hidden.isLoaded(pos)) {
+            return false;
+        }
+        ItemStack stack = hidden.getBlockState(pos).getCloneItemStack(hidden, pos, false);
+        if (stack.isEmpty() || !stack.isItemEnabled(hidden.enabledFeatures())) {
+            return false;
+        }
+        Inventory inventory = player.getInventory();
+        int existing = inventory.findSlotMatchingItem(stack);
+        if (existing != -1) {
+            if (Inventory.isHotbarSlot(existing)) {
+                inventory.setSelectedSlot(existing);
+            } else {
+                inventory.pickSlot(existing);
+            }
+        } else {
+            inventory.addAndPickItem(stack);
+        }
+        player.connection.send(new ClientboundSetHeldSlotPacket(inventory.getSelectedSlot()));
+        player.inventoryMenu.broadcastChanges();
+        return true;
     }
 
     private static void playPlaceSound(ServerPlayer player, BlockState state, BlockPos pos) {

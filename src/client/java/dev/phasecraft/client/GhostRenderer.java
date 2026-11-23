@@ -21,6 +21,15 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.client.renderer.block.FluidModel;
+import net.minecraft.client.renderer.block.FluidStateModelSet;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import org.joml.Vector3f;
 
 /**
  * Draws the hidden blocks the client holds as translucent ghosts over the
@@ -28,6 +37,10 @@ import net.minecraft.world.phys.Vec3;
  * they read as an overlay. Ghosts behind or inside visible blocks (machinery in
  * a wall, wiring under the floor) still show, fainter: a second pass draws
  * every ghost without depth test at {@link #SEE_THROUGH_SHARE} of the opacity.
+ *
+ * <p>Blocks drawn by special renderers from block entity data (chests, signs,
+ * beds, banners, heads) are shown as their shape in their particle texture;
+ * water and lava as a box of their height in their own texture and tint.</p>
  *
  * <p>Each ghost is drawn very slightly larger than a block, so where a hidden
  * block shares its position with a visible one, the ghost lies on the visible
@@ -71,8 +84,8 @@ public final class GhostRenderer {
         List<Ghost> ghosts = new ArrayList<>();
         double maxSq = MAX_DISTANCE * MAX_DISTANCE;
         layer.forEach((packed, state) -> {
-            if (state.getRenderShape() != RenderShape.MODEL) {
-                return;
+            if (state.getRenderShape() != RenderShape.MODEL && state.getFluidState().isEmpty()) {
+                return; // air, barriers, light blocks: nothing to show (water and lava are shown)
             }
             BlockPos pos = BlockPos.of(packed);
             double dx = pos.getX() + 0.5 - camera.x;
@@ -89,7 +102,9 @@ public final class GhostRenderer {
     private static void draw(PoseStack.Pose cameraPose, VertexConsumer buffer, List<Ghost> ghosts, GhostLayer layer, int alpha) {
         Minecraft minecraft = Minecraft.getInstance();
         BlockStateModelSet models = minecraft.getModelManager().getBlockStateModelSet();
+        FluidStateModelSet fluidModels = minecraft.getModelManager().getFluidStateModelSet();
         BlockColors colors = minecraft.getBlockColors();
+        ClientEditing.GhostGetter getter = new ClientEditing.GhostGetter(layer, minecraft.level);
         RandomSource random = RandomSource.create();
         List<BlockStateModelPart> parts = new ArrayList<>();
         QuadInstance quad = new QuadInstance();
@@ -104,32 +119,98 @@ public final class GhostRenderer {
             stack.translate(ghost.x() + 0.5F, ghost.y() + 0.5F, ghost.z() + 0.5F);
             stack.scale(1 + 2 * INFLATE, 1 + 2 * INFLATE, 1 + 2 * INFLATE);
             stack.translate(-0.5F, -0.5F, -0.5F);
+            stack.pushPose();
             stack.translate(state.getOffset(ghost.pos()));
             PoseStack.Pose pose = stack.last();
 
-            random.setSeed(state.getSeed(ghost.pos()));
-            models.get(state).collectParts(random, parts);
-            List<BlockTintSource> tints = colors.getTintSources(state);
-            for (BlockStateModelPart part : parts) {
-                for (Direction direction : DIRECTIONS) {
-                    List<BakedQuad> quads = part.getQuads(direction);
-                    if (quads.isEmpty()) {
-                        continue;
+            boolean drewModel = false;
+            if (state.getRenderShape() == RenderShape.MODEL) {
+                random.setSeed(state.getSeed(ghost.pos()));
+                models.get(state).collectParts(random, parts);
+                List<BlockTintSource> tints = colors.getTintSources(state);
+                for (BlockStateModelPart part : parts) {
+                    for (Direction direction : DIRECTIONS) {
+                        List<BakedQuad> quads = part.getQuads(direction);
+                        drewModel |= !quads.isEmpty();
+                        if (quads.isEmpty()) {
+                            continue;
+                        }
+                        neighbour.setWithOffset(ghost.pos(), direction);
+                        if (!Block.shouldRenderFace(state, layer.get(neighbour), direction)) {
+                            continue;
+                        }
+                        for (BakedQuad baked : quads) {
+                            put(pose, buffer, quad, baked, state, tints, alpha);
+                        }
                     }
-                    neighbour.setWithOffset(ghost.pos(), direction);
-                    if (!Block.shouldRenderFace(state, layer.get(neighbour), direction)) {
-                        continue;
-                    }
-                    for (BakedQuad baked : quads) {
+                    for (BakedQuad baked : part.getQuads(null)) {
+                        drewModel = true;
                         put(pose, buffer, quad, baked, state, tints, alpha);
                     }
                 }
-                for (BakedQuad baked : part.getQuads(null)) {
-                    put(pose, buffer, quad, baked, state, tints, alpha);
+                parts.clear();
+                if (!drewModel) {
+                    // Chests, signs, beds, banners, heads: drawn by special renderers from
+                    // block entity data the client does not have. Show their shape instead,
+                    // in their own particle texture.
+                    VoxelShape shape = state.getShape(getter, ghost.pos());
+                    TextureAtlasSprite sprite = models.get(state).particleMaterial().sprite();
+                    for (AABB box : (shape.isEmpty() ? Shapes.block() : shape).toAabbs()) {
+                        putBox(pose, buffer, box, sprite, 0xFFFFFF, alpha, ALL_FACES);
+                    }
                 }
             }
-            parts.clear();
             stack.popPose();
+
+            FluidState fluid = state.getFluidState();
+            if (!fluid.isEmpty()) {
+                FluidModel fluidModel = fluidModels.get(fluid);
+                int rgb = fluidModel.tintSource() != null ? fluidModel.tintSource().color(state) : 0xFFFFFF;
+                boolean fullBelowSurface = sameFluid(fluid, layer.get(neighbour.setWithOffset(ghost.pos(), Direction.UP)));
+                float height = fullBelowSurface ? 1.0F : fluid.getOwnHeight();
+                int faces = 0;
+                for (Direction direction : DIRECTIONS) {
+                    if (!sameFluid(fluid, layer.get(neighbour.setWithOffset(ghost.pos(), direction)))) {
+                        faces |= 1 << direction.ordinal();
+                    }
+                }
+                putBox(stack.last(), buffer, new AABB(0, 0, 0, 1, height, 1), fluidModel.stillMaterial().sprite(), rgb, alpha, faces);
+            }
+            stack.popPose();
+        }
+    }
+
+    private static final int ALL_FACES = 0b111111;
+
+    private static boolean sameFluid(FluidState fluid, BlockState neighbour) {
+        return fluid.getType().isSame(neighbour.getFluidState().getType());
+    }
+
+    /** A textured box (block coordinates 0..1), faces chosen by a bit per Direction ordinal. */
+    private static void putBox(PoseStack.Pose pose, VertexConsumer buffer, AABB box, TextureAtlasSprite sprite, int rgb,
+            int alpha, int faces) {
+        float x0 = (float) box.minX, y0 = (float) box.minY, z0 = (float) box.minZ;
+        float x1 = (float) box.maxX, y1 = (float) box.maxY, z1 = (float) box.maxZ;
+        for (Direction direction : DIRECTIONS) {
+            if ((faces & (1 << direction.ordinal())) == 0) {
+                continue;
+            }
+            int color = ARGB.color(alpha, ARGB.scaleRGB(rgb, shade(direction)));
+            // Corners counter-clockwise seen from outside, as (x, y, z, u, v) in block units.
+            float[][] corners = switch (direction) {
+                case DOWN -> new float[][] {{x0, y0, z1, x0, z1}, {x0, y0, z0, x0, z0}, {x1, y0, z0, x1, z0}, {x1, y0, z1, x1, z1}};
+                case UP -> new float[][] {{x0, y1, z0, x0, z0}, {x0, y1, z1, x0, z1}, {x1, y1, z1, x1, z1}, {x1, y1, z0, x1, z0}};
+                case NORTH -> new float[][] {{x1, y1, z0, 1 - x1, 1 - y1}, {x1, y0, z0, 1 - x1, 1 - y0}, {x0, y0, z0, 1 - x0, 1 - y0}, {x0, y1, z0, 1 - x0, 1 - y1}};
+                case SOUTH -> new float[][] {{x0, y1, z1, x0, 1 - y1}, {x0, y0, z1, x0, 1 - y0}, {x1, y0, z1, x1, 1 - y0}, {x1, y1, z1, x1, 1 - y1}};
+                case WEST -> new float[][] {{x0, y1, z0, z0, 1 - y1}, {x0, y0, z0, z0, 1 - y0}, {x0, y0, z1, z1, 1 - y0}, {x0, y1, z1, z1, 1 - y1}};
+                case EAST -> new float[][] {{x1, y1, z1, 1 - z1, 1 - y1}, {x1, y0, z1, 1 - z1, 1 - y0}, {x1, y0, z0, 1 - z0, 1 - y0}, {x1, y1, z0, 1 - z0, 1 - y1}};
+            };
+            Vector3f normal = pose.transformNormal(direction.getUnitVec3f(), new Vector3f());
+            for (float[] c : corners) {
+                Vector3f position = pose.pose().transformPosition(c[0], c[1], c[2], new Vector3f());
+                buffer.addVertex(position.x(), position.y(), position.z(), color, sprite.getU(c[3]), sprite.getV(c[4]),
+                        OverlayTexture.NO_OVERLAY, LightCoordsUtil.FULL_BRIGHT, normal.x(), normal.y(), normal.z());
+            }
         }
     }
 
