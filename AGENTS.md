@@ -107,8 +107,8 @@ transparent layer, not a separate world.
    tools/redstone_check.py on it until it is clean, then build it from the
    GameTest and examples.py with the shared loaders.
 2. Stretch: a flying machine with a hidden engine carrying visible blocks.
-3. Known gaps: buckets do nothing in editing mode; picking a hidden chest
-   does not copy its contents.
+3. Known gaps: picking a hidden chest does not copy its contents; fish
+   buckets are refused in editing mode. (Buckets work, 2026-11-23.)
 
 Decided by the person: phase pistons show no visible arm; missing blocks
 are handled as vanilla does; Survival players may see and edit while the
