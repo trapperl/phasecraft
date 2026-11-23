@@ -53,16 +53,40 @@ docs/ARCHITECTURE.md); vanilla runs it. Acceptance target for 1: the
 hidden piston door.
 Power crosses only through phase ports (done). The person wants every
 crossing explicit: a dedicated block, never every position.
-Phase ports, phase pistons, the hidden 2x2 door, the overlay (including
+Phase ports, phase pistons, the hidden 2x2 door, the hidden staircase, the overlay (including
 chests, signs and fluids), editing mode (including pick) and keeping players
 out of the hidden layer are done. The person expects the hidden layer to look like a
 transparent layer, not a separate world.
 1. Famous redstone contraptions, PhaseCraft style (the person's idea; a
    Mumbo Jumbo video inspired the mod). Build them as examples stations with
-   GameTests, machinery all hidden, showing what vanilla cannot do. Let the
-   person pick the order; suggested: hidden staircase, 3x3 flush piston door,
-   secret room behind a wall, trapdoor floor. Not block-for-block copies of
-   anyone's builds.
+   GameTests, machinery all hidden, showing what vanilla cannot do. Not
+   block-for-block copies of anyone's builds. Order chosen by the person
+   (2026-11-23), top to bottom: hidden staircase (done, station 11),
+   3x3 flush piston door, overlay performance for large hidden builds,
+   flying-machine groundwork (can phase pistons push slime structures that
+   span both layers?). Later ideas: secret room behind a wall, trapdoor floor;
+   the person's idea (2026-11-23, no rush, not yet scheduled): hidden
+   pressure plates and buttons actuated from the visible world (walk over /
+   right-click the spot). Decided by the person (2026-11-23, replacing
+   dedicated plate/button blocks): one phase block. A hidden block standing
+   on a phase block, or hanging on its side, is phased: it reacts to the
+   visible world at its own spot (clicks for buttons/levers, visible
+   entities for plates; later maybe observers, comparators, tripwire). The
+   phase block cannot be moved by pistons. Phase pistons and phase ports
+   stay as they are. First step: buttons, levers, pressure plates; blocks
+   not supported yet just don't react (list the supported ones in the
+   docs). Suggested slot: after the 3x3 flush door.
+   Then Survival play (decided by the person, 2026-11-23): one game rule,
+   on by default, that lets Survival players use the overlay and editing
+   mode (with Survival rules: placing uses the item, breaking takes mining
+   time and the right tool and drops the block, normal reach), plus
+   crafting recipes for phase pistons, ports and the phase block. The
+   person picks the recipe costs. Entering the hidden layer stays
+   Creative/Spectator only. Servers can turn the rule off (on a public
+   server Survival editing can build inside other people's walls, past
+   claim mods).
+   Stacking phase pistons? Read the quasi-connectivity lesson under the
+   staircase in docs/ARCHITECTURE.md first.
 2. Stretch: a flying machine with a hidden engine carrying visible blocks.
 3. Known gaps: buckets do nothing in editing mode; picking a hidden chest
    does not copy its contents.

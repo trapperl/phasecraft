@@ -252,9 +252,23 @@ has such cells.
    repeaters: stage 2 follows the lever after a delay; stage 1 follows the
    lever and is held on by stage 2's signal through a second delay, so on
    closing stage 2 pulls back first.
-2. **Flying machine (stretch):** a hidden slime/observer engine carrying
+2. **Hidden staircase: done.** A visible lever turns a 2x3 piece of flat floor
+   into stairs down to a cellar, and back (`HiddenStaircaseGameTests`,
+   examples station 11). Two stages: up-facing sticky phase pistons in the
+   ground hold the six floor blocks up and let them drop one block (the front
+   pair becomes the first step); then sideways sticky phase pistons push the
+   back four into pockets inside the side walls, under the floor, uncovering
+   two fixed steps built lower in the pit. The timing is the door's, with a
+   torch, since stage A is powered while the stairs are closed.
+   Lesson for stacked phase pistons: like vanilla pistons they have
+   quasi-connectivity (power reaching the block above a piston powers it).
+   Stage A pistons sit right under stage B pistons, so anything pointing into
+   a stage B piston would fire stage A too; stage B is powered only through
+   its own quasi-connectivity, by repeaters pointing into the empty hidden
+   cell above each B piston.
+3. **Flying machine (stretch):** a hidden slime/observer engine carrying
    visible blocks. Needs phase pistons to move mixed-layer structures.
-3. **Mob farm:** not a target; the hidden layer does not interact with mobs.
+4. **Mob farm:** not a target; the hidden layer does not interact with mobs.
 
 ## Validation status
 
@@ -292,6 +306,10 @@ All of these run on every `./gradlew build`, locally and in CI:
     where visible ones do (hidden sand falls and lands);
   - the hidden 2x2 door opens and closes from one visible lever (and jams
     half-closed if the hold repeater is removed);
+  - the hidden staircase opens, stays open, closes, stays closed and opens
+    again from one visible lever (and fails without phase-piston
+    quasi-connectivity, without sticky pull-back, or without the hold
+    repeater);
   - phase pistons push visible blocks (12 yes, 13 no, obsidian never), a
     sticky one pulls back, none leaves an arm, an ordinary hidden piston
     moves only hidden blocks, a phase piston in the visible layer does
