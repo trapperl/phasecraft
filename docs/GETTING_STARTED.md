@@ -141,6 +141,11 @@ Minecraft EULA (`eula = true` in build.gradle; the project owner has
 accepted it). A server you run yourself (for example for RCON) needs its own
 `run/eula.txt`.
 
+Test games never contact Mojang or Microsoft: service discovery and Realms
+point at local addresses, test servers run in offline mode, and test clients
+skip Mojang's blocked-servers list. (Dozens of test runs once got this
+network's address blocked by Mojang, which broke real logins too.)
+
 The client tests open a game window. If `Xvfb` is installed
 (`sudo apt install xvfb`) they get a private virtual display, so nothing
 appears on your screen; they render in software (Mesa), which needs

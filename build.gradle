@@ -63,6 +63,16 @@ def gameTestArgs = { String report, String filter ->
 }
 def restartRunDir = 'build/run/restartTest'
 
+// Test games never talk to Mojang or Microsoft. They run offline anyway, but
+// every client and server still contacted Mojang's service discovery (and
+// the client Realms) at start; dozens of test runs in an afternoon got this
+// network's address blocked by Mojang's front door (2026-11-22). Discovery
+// points at a closed local port instead, so the services are never looked
+// up; Realms uses its "local" setting (localhost:8080). Checked by
+// NoMojangTrafficGameTests and the client GameTests.
+def offlineTestArgs = ['-Dminecraft.api.discovery.host=http://127.0.0.1:9/minecraft/client',
+                       '-Drealms.environment=local']
+
 loom {
     runs {
         // Declared before gameTest's own arguments are added, so they inherit
@@ -72,25 +82,30 @@ loom {
             configName = 'GameTest: restart, write phase'
             runDir = restartRunDir
             vmArgs gameTestArgs('restart-write', 'phasecraft-test:phase_layer_restart_phases_write*')
+            vmArgs offlineTestArgs
         }
         restartVerify {
             inherit gameTest
             configName = 'GameTest: restart, verify phase'
             runDir = restartRunDir
             vmArgs gameTestArgs('restart-verify', 'phasecraft-test:phase_layer_restart_phases_verify*')
+            vmArgs offlineTestArgs
         }
         gameTest {
             vmArgs gameTestArgs('gametest', 'phasecraft-test:*_game_tests_*')
+            vmArgs offlineTestArgs
         }
         clientGameTestVulkan {
             inherit clientGameTest
             configName = 'Client GameTest: Vulkan'
             runDir = 'build/run/clientGameTestVulkan'
             vmArg '-Dphasecraft.test.graphicsApi=vulkan'
+            vmArgs offlineTestArgs
         }
         clientGameTest {
             configName = 'Client GameTest: OpenGL'
             vmArg '-Dphasecraft.test.graphicsApi=opengl'
+            vmArgs offlineTestArgs
         }
     }
 }

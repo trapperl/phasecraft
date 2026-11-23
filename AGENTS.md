@@ -35,6 +35,13 @@ blocks, with future vanilla-compatible cross-layer redstone and pistons.
     (build/run/clientGameTest*/screenshots) before calling a visual change done.
 - Client-only code lives in src/client (split source sets); src/main must not
   reference client classes.
+- Test games never talk to Mojang or Microsoft (2026-11-22: dozens of test
+  runs got the person's internet address blocked by Mojang's front door,
+  which also broke their own logins and Realms). build.gradle's
+  `offlineTestArgs` point service discovery and Realms at local addresses,
+  test dedicated servers run with `online-mode=false`, and a test mixin skips
+  the blocked-servers download. NoMojangTrafficGameTests guards the settings;
+  any new test run configuration must add `offlineTestArgs`.
 - New behaviour needs a GameTest, and a new test should be shown to fail when
   the behaviour is broken (break the code on purpose, run, restore).
 - `./gradlew installToMinecraft` installs a passing build into the local

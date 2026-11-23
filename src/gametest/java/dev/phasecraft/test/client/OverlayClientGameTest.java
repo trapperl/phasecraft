@@ -2,6 +2,7 @@ package dev.phasecraft.test.client;
 
 import dev.phasecraft.client.PhaseCraftClient;
 import dev.phasecraft.layer.HiddenLayer;
+import dev.phasecraft.test.NoMojangTrafficGameTests;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -54,6 +55,8 @@ public class OverlayClientGameTest implements FabricClientGameTest {
 
     @Override
     public void runTest(ClientGameTestContext context) {
+        String mojang = NoMojangTrafficGameTests.problem();
+        assertTrue(mojang == null, "test client would contact Mojang: " + mojang);
         try (TestSingleplayerContext world = context.worldBuilder().create()) {
             TestServerContext server = world.getServer();
             server.runCommand("gamemode creative @a");
