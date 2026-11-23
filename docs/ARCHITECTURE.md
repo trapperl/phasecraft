@@ -235,7 +235,13 @@ changes what is phased.
   between ticks; GameTests run ticks back to back with none, so a phased
   light check could wait indefinitely (light tests failed at random, on CI
   too). After queuing a check PhasedLights asks the light engine to run
-  (`tryScheduleUpdate`). Light tests still allow long tick limits.
+  (`tryScheduleUpdate`), and asks the light engine of every level with a
+  hidden twin again every tick, as vanilla does in spare time: the check
+  reaches the engine's queue through another thread, so the first ask can
+  find it empty, and on a slow, busy machine it can arrive long after
+  (all light tests failed together on one CI run with only the first ask;
+  a lamp's light stayed on with asks for only 40 ticks after the change).
+  Light tests still allow long tick limits.
 
 ### Decision: one phase block, not a phased variant of each block (decided by the person, 2026-11-23)
 
