@@ -99,8 +99,11 @@ own model, full-bright, at the chosen opacity, in two passes:
 
 Faces between two hidden full blocks are left out, as in the normal world.
 Redstone wire and other tinted blocks keep their tint (wire shows its power).
-Only blocks with a model are drawn: hidden block entities (chests, signs) and
-fluids are not shown yet. Keys: H toggles, `]` and `[` change the opacity
+Blocks that vanilla draws with special renderers from block entity data the
+client does not have (chests, signs, beds, banners, heads) are shown as
+their shape in their particle texture. Water and lava are shown as a box of
+their height in their own texture and tint, without faces between hidden
+fluid of the same kind. Air, barriers and light blocks are not shown. Keys: H toggles, `]` and `[` change the opacity
 (15% to 100%); kept in `config/phasecraft-client.properties`.
 
 Cost: every frame the client re-tessellates every hidden block within 96
@@ -132,9 +135,14 @@ within reach, hit point on the block), then:
 - *break*: removes the hidden block as Creative breaking does
   (`playerWillDestroy`, remove, `destroy`); never the visible block.
 
-Sounds play in the visible level, where the player is. Items that act on air
-rather than on a clicked block (buckets, throwables) are not redirected:
-editing mode is for blocks.
+- *pick* (middle click): a hidden block's item goes to your hand, as vanilla's
+  pick does (without block entity data: a hidden chest is picked empty);
+  aimed at a visible block, vanilla's own pick.
+
+Sounds play in the visible level, where the player is. While editing, every
+right click is taken over, so items that act on air rather than on a
+clicked block (buckets, ender pearls) do nothing; hidden water and lava are
+placed with `/phasecraft set` or from inside the hidden layer.
 
 ### Decision: a click on a visible block places at that same spot (decided by the agent, 2026-11-22; open to change)
 
@@ -229,10 +237,9 @@ has such cells.
   would show the head. Sliding doors therefore need somewhere hidden to
   slide into (see the door below).
 - **Keeping players out: done** (see above).
-- **Overlay: done** (see above). Not yet shown: hidden block entities and
-  fluids.
-- **Editing mode: done** (see above). Middle-click pick, and items that act
-  on air, still act on the visible world.
+- **Overlay: done** (see above), including chests, signs and fluids.
+- **Editing mode: done** (see above), including middle-click pick. Buckets
+  do not work in editing mode.
 
 ### Acceptance targets
 
@@ -276,7 +283,8 @@ All of these run on every `./gradlew build`, locally and in CI:
     the visible world does.
   - editing mode on the server: placing at a visible block's spot, next to a
     hidden block, facing as in vanilla, using a hidden lever, breaking only
-    the hidden block; Survival players and clicks out of reach refused;
+    the hidden block, picking the hidden block into the hand; Survival players
+    and clicks out of reach refused;
   - keeping out: a player switched to Survival inside the hidden layer is
     moved out at the same spot (lifted out of visible blocks if needed);
     Creative and Spectator players stay; no respawn point can be set there; a
@@ -306,11 +314,13 @@ All of these run on every `./gradlew build`, locally and in CI:
   - over a real network connection to a dedicated server: Survival gets
     nothing, Creative gets the hidden block, and nothing from the previous
     world is left over;
+  - a hidden chest (no ordinary model) and hidden lava are drawn;
   - editing mode by real key presses and mouse clicks: J, right click on a
     visible block puts a hidden block at its spot (the visible one stays),
     right click on that ghost places next to it, left clicks break hidden
     blocks nearest first and nothing visible, J again and the same right click
-    builds in the visible world; Survival cannot turn it on.
+    builds in the visible world; middle click on a ghost picks the hidden
+    block, not the visible one at the same spot; Survival cannot turn it on.
 - **Restart test** (`./gradlew restartTest`): two separate server processes
   on one world folder. The first places hidden blocks in all three hidden
   dimensions (one far away and unloaded) and stores some cells the old way;
