@@ -23,6 +23,7 @@
       "dev.phasecraft.test.FlyingMachineGameTests",
       "dev.phasecraft.test.SecretRoomGameTests",
       "dev.phasecraft.test.TrapdoorFloorGameTests",
+      "dev.phasecraft.test.HiddenPortGameTests",
       "dev.phasecraft.test.HiddenEditingGameTests",
       "dev.phasecraft.test.KeepOutGameTests",
       "dev.phasecraft.test.NoMojangTrafficGameTests",

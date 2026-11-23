@@ -136,24 +136,26 @@ STATIONS.append({
 })
 
 # Station 13: the phase block. A secret button (the top-middle brick of a low
-# wall) and a secret pressure plate (in front of a lamp post), each standing
-# on or hanging from a hidden phase block. Their power comes back to the
-# visible world through visible phase ports, which light the lamps.
+# wall) and a secret pressure plate (in front of a lamp), each hanging from or
+# standing on a hidden phase block. Their power comes up into the visible world
+# through hidden phase ports next to the phase blocks, which light the lamps.
+# Nothing of the hidden layer shows.
 STATIONS.append({
     "x": 105,
-    "sign": ["13. Phase block", "Click the top", "middle brick or", "stand at post"],
+    "sign": ["13. Phase block", "Click the top", "middle brick or", "stand at lamp"],
     "visible": [((x, y, 0), "minecraft:stone_bricks") for x in (107, 108, 109) for y in (Y, Y + 1)] + [
-        ((108, Y + 1, 1), "phasecraft:phase_port"),
-        ((108, Y + 2, 1), "minecraft:redstone_lamp"),
-        ((111, Y, 0), "phasecraft:phase_port"),
-        ((111, Y + 1, 0), "minecraft:redstone_lamp"),
+        ((108, Y + 1, 2), "minecraft:stone_bricks"),
+        ((108, Y + 2, 2), "minecraft:redstone_lamp"),
+        ((111, Y, 0), "minecraft:redstone_lamp"),
     ],
     "hidden": [
         ("minecraft:overworld", (108, Y + 1, 1), "phasecraft:phase_block"),
         ("minecraft:overworld", (108, Y + 1, 0), "minecraft:stone_button[face=wall,facing=north]",
          "minecraft:stone_button[face=wall,facing=north,powered=false]"),
+        ("minecraft:overworld", (108, Y + 1, 2), "phasecraft:phase_port", "phasecraft:phase_port[up=0]"),
         ("minecraft:overworld", (111, Y - 1, -1), "phasecraft:phase_block"),
         ("minecraft:overworld", (111, Y, -1), "minecraft:stone_pressure_plate", "minecraft:stone_pressure_plate[powered=false]"),
+        ("minecraft:overworld", (111, Y - 1, 0), "phasecraft:phase_port", "phasecraft:phase_port[up=0]"),
     ],
 })
 

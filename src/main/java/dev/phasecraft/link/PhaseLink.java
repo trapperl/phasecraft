@@ -43,6 +43,10 @@ public final class PhaseLink {
     private record Refresh(ResourceKey<Level> dimension, BlockPos pos) {}
 
     private static final PhaseUpdateQueue<Refresh> QUEUE = new PhaseUpdateQueue<>();
+    /** Visible positions whose neighbours must hear that a hidden port's UP changed. */
+    private static final PhaseUpdateQueue<Refresh> VISIBLE_UPDATES = new PhaseUpdateQueue<>();
+    /** While above 0, {@link #upAt} reports nothing: reads across the layers ignore what ports put up. */
+    private static int ignoreBridge;
     private static final Direction[] DIRECTIONS = Direction.values();
 
     private static long queued;
@@ -84,6 +88,15 @@ public final class PhaseLink {
         if (other == null || !other.isLoaded(pos)) {
             return 0;
         }
+        ignoreBridge++;
+        try {
+            return otherLayerPower(other, pos);
+        } finally {
+            ignoreBridge--;
+        }
+    }
+
+    private static int otherLayerPower(ServerLevel other, BlockPos pos) {
         int best = 0;
         BlockState there = other.getBlockState(pos);
         if (there.isSignalSource() && !isPort(there)) {
@@ -129,11 +142,39 @@ public final class PhaseLink {
         }
     }
 
+    /**
+     * The power a hidden port at pos puts up into this visible level (its UP), or 0: given out at
+     * pos like an invisible redstone block (ServerLevelPhaseBridgeMixin).
+     */
+    public static int upAt(ServerLevel visible, BlockPos pos) {
+        if (ignoreBridge > 0) {
+            return 0;
+        }
+        ResourceKey<Level> hiddenKey = HiddenDimensions.hiddenOf(visible.dimension()).orElse(null);
+        ServerLevel hidden = hiddenKey == null ? null : visible.getServer().getLevel(hiddenKey);
+        if (hidden == null || !hidden.isLoaded(pos)) {
+            return 0;
+        }
+        BlockState state = hidden.getBlockState(pos);
+        return state.getBlock() instanceof PhasePortBlock ? state.getValue(PhasePortBlock.UP) : 0;
+    }
+
+    /** A hidden port's UP changed: the visible neighbours of its spot hear about it at the end of the tick. */
+    public static void queueVisibleUpdate(ServerLevel hidden, BlockPos pos) {
+        HiddenDimensions.visibleOf(hidden.dimension()).ifPresent(visible -> VISIBLE_UPDATES.add(new Refresh(visible, pos.immutable())));
+    }
+
     private static boolean signalRelevant(ServerLevel level, BlockPos pos, BlockState state) {
         return state.isSignalSource() || state.isRedstoneConductor(level, pos);
     }
 
     private static void deliver(MinecraftServer server) {
+        VISIBLE_UPDATES.drain(update -> {
+            ServerLevel visible = server.getLevel(update.dimension());
+            if (visible != null && visible.isLoaded(update.pos())) {
+                visible.updateNeighborsAt(update.pos(), visible.getBlockState(update.pos()).getBlock());
+            }
+        });
         delivered += QUEUE.drain(refresh -> {
             ServerLevel target = server.getLevel(refresh.dimension());
             if (target != null && target.isLoaded(refresh.pos())) {

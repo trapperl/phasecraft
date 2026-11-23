@@ -50,8 +50,11 @@ you are put back in the visible world), where you can see and build
 hidden circuits with normal blocks and commands; `layer visible` brings you
 back. Hidden redstone runs by vanilla rules.
 
-To connect the layers, use a phase port: it outputs, in its own layer, the
-power reaching its spot in the other layer.
+To connect the layers, put a phase port in the hidden layer. It works both
+ways at its spot, and nothing shows in the visible world: visible power at its
+spot (a lever there or next to it) comes out of it into the hidden layer, and
+hidden power reaching it comes out in the visible world at its spot, as if an
+invisible redstone block stood there.
 
 ```text
 /setblock 12 64 10 minecraft:lever[face=floor,powered=false]
@@ -155,7 +158,7 @@ its side, is *phased*: it reacts to the visible world at its own spot.
 Not supported yet (phased, they act as ordinary hidden blocks): other
 blocks, and arrows on wooden buttons. Pistons cannot move a phase block.
 Examples station 13 has a secret brick and a secret plate, each lighting a
-lamp through a visible phase port; station 14 is a dark hut with a secret
+visible lamp through a hidden phase port next to its phase block; station 14 is a dark hut with a secret
 brick that switches on a lamp hidden in its wall.
 
 Station 15 is a flying machine with a hidden engine: click the top of the
