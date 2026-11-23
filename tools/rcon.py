@@ -48,30 +48,43 @@ def receive(sock):
     return request_id, kind, body
 
 
-def main(commands):
-    if not commands:
-        print(__doc__.strip(), file=sys.stderr)
-        return 2
-    props = read_properties(PROPERTIES)
+class RconError(Exception):
+    pass
+
+
+def send_commands(commands, properties=PROPERTIES):
+    """Send commands in one RCON session; return the reply to each, in order."""
+    props = read_properties(properties)
     if props.get("enable-rcon") != "true":
-        print(f"RCON is not enabled in {PROPERTIES}", file=sys.stderr)
-        return 1
+        raise RconError(f"RCON is not enabled in {properties}")
     host = props.get("server-ip") or "127.0.0.1"
     port = int(props.get("rcon.port", "25575"))
+    replies = []
     try:
         with socket.create_connection((host, port), timeout=10) as sock:
             send(sock, 1, LOGIN, props.get("rcon.password", ""))
             request_id, _, _ = receive(sock)
             if request_id == -1:
-                print("RCON login rejected (check rcon.password)", file=sys.stderr)
-                return 1
+                raise RconError("RCON login rejected (check rcon.password)")
             for number, command in enumerate(commands, start=2):
                 send(sock, number, COMMAND, command.removeprefix("/"))
-                _, _, body = receive(sock)
-                print(f"> {command}\n{body}" if len(commands) > 1 else body)
+                replies.append(receive(sock)[2])
     except (OSError, ConnectionError) as error:
-        print(f"Cannot reach RCON at {host}:{port}: {error} (is ./gradlew runServer running?)", file=sys.stderr)
+        raise RconError(f"Cannot reach RCON at {host}:{port}: {error} (is ./gradlew runServer running?)") from error
+    return replies
+
+
+def main(commands):
+    if not commands:
+        print(__doc__.strip(), file=sys.stderr)
+        return 2
+    try:
+        replies = send_commands(commands)
+    except RconError as error:
+        print(error, file=sys.stderr)
         return 1
+    for command, body in zip(commands, replies):
+        print(f"> {command}\n{body}" if len(commands) > 1 else body)
     return 0
 
 

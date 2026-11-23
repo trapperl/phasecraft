@@ -1,6 +1,10 @@
 package dev.phasecraft;
 
 import dev.phasecraft.command.PhaseCraftCommands;
+import dev.phasecraft.layer.LegacyLayerMigration;
+import dev.phasecraft.link.PhaseLink;
+import dev.phasecraft.overlay.OverlaySync;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.api.ModInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,7 +16,11 @@ public final class PhaseCraft implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        PhaseCraftBlocks.register();
         PhaseCraftCommands.register();
-        LOGGER.info("PhaseCraft prototype initialized: virtual layer storage enabled");
+        ServerLifecycleEvents.SERVER_STARTED.register(LegacyLayerMigration::migrateAll);
+        PhaseLink.register();
+        OverlaySync.register();
+        LOGGER.info("PhaseCraft prototype initialized: hidden layer dimensions enabled");
     }
 }

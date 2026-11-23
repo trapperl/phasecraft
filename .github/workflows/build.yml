@@ -20,7 +20,11 @@ jobs:
           java-version: '25'
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
-      - name: Build and run all tests (JUnit, GameTests, restart test)
+      - name: Install a virtual display and software graphics (client GameTests)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xvfb libegl1 libgl1-mesa-dri mesa-vulkan-drivers libvulkan1
+      - name: Build and run all tests (JUnit, GameTests, restart test, client GameTests)
         run: ./gradlew --no-daemon clean build
       - name: Upload GameTest report
         if: always()
@@ -28,6 +32,15 @@ jobs:
         with:
           name: gametest-report
           path: build/reports/gametest/
+          if-no-files-found: ignore
+      - name: Upload client GameTest screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: client-gametest-screenshots
+          path: |
+            build/run/clientGameTest/screenshots/
+            build/run/clientGameTestVulkan/screenshots/
           if-no-files-found: ignore
       - name: Upload development mod JAR
         if: success()

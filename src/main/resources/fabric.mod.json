@@ -4,15 +4,25 @@
   "version": "${version}",
   "name": "PhaseCraft",
   "description": "Experimental overlapping block layers for redstone machinery.",
-  "authors": ["PhaseCraft contributors"],
+  "authors": [
+    "PhaseCraft contributors"
+  ],
   "environment": "*",
   "entrypoints": {
-    "main": ["dev.phasecraft.PhaseCraft"]
+    "main": [
+      "dev.phasecraft.PhaseCraft"
+    ],
+    "client": [
+      "dev.phasecraft.client.PhaseCraftClient"
+    ]
   },
   "depends": {
     "fabricloader": ">=0.20.1",
     "minecraft": "~26.3",
     "java": ">=25",
     "fabric-api": "*"
-  }
+  },
+  "mixins": [
+    "phasecraft.mixins.json"
+  ]
 }

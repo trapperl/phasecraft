@@ -1,0 +1,11 @@
+{
+  "block.phasecraft.phase_port": "Phase Port",
+  "block.phasecraft.phase_piston": "Phase Piston",
+  "block.phasecraft.sticky_phase_piston": "Sticky Phase Piston",
+  "key.category.phasecraft.overlay": "PhaseCraft",
+  "key.phasecraft.toggle_overlay": "Show/hide hidden layer",
+  "key.phasecraft.overlay_more_opaque": "Hidden layer: more opaque",
+  "key.phasecraft.overlay_less_opaque": "Hidden layer: more see-through",
+  "phasecraft.overlay.on": "Hidden layer overlay: on (%s%% opaque)",
+  "phasecraft.overlay.off": "Hidden layer overlay: off"
+}
