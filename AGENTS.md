@@ -64,7 +64,12 @@ transparent layer, not a separate world.
    (2026-11-23), top to bottom: hidden staircase (done, station 11),
    3x3 flush piston door, overlay performance for large hidden builds,
    flying-machine groundwork (can phase pistons push slime structures that
-   span both layers?). Later ideas: secret room behind a wall, trapdoor floor.
+   span both layers?). Later ideas: secret room behind a wall, trapdoor floor;
+   the person's idea (2026-11-23, no rush, not yet scheduled): hidden
+   pressure plates and buttons actuated from the visible world (walk over /
+   right-click the spot). Open question for the person: dedicated phase
+   plate/button blocks (agent's recommendation, like phase pistons) or all
+   hidden plates and buttons.
    Stacking phase pistons? Read the quasi-connectivity lesson under the
    staircase in docs/ARCHITECTURE.md first.
 2. Stretch: a flying machine with a hidden engine carrying visible blocks.
