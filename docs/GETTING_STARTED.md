@@ -183,7 +183,8 @@ the running server (best on a flat world: `level-type=minecraft\:flat`),
 then reads every hidden cell back and exits 1 if one is wrong. Each station
 has a sign. Press H to see the hidden blocks, or inspect them with
 `/phasecraft get <x> -60 0` (or `execute in minecraft:the_nether run ...`
-for station 5). Rerunning it rebuilds the area from scratch. Station 10 is
+for station 5). Rerunning it rebuilds the area from scratch;
+`python3 tools/examples.py --signs-only` rewrites just the signs. Station 10 is
 the hidden 2x2 door; the script also operates it (lever on, open; lever off,
 closed) and leaves it closed for you.
 
