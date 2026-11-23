@@ -65,8 +65,10 @@ transparent layer, not a separate world.
       Mumbo Jumbo video inspired the mod): examples stations with GameTests,
       machinery all hidden, showing what vanilla cannot do; not
       block-for-block copies of anyone's builds. Hidden staircase (done,
-      station 11), 3x3 flush door (done, station 12). Later ideas: secret
-      room behind a wall, trapdoor floor.
+      station 11), 3x3 flush door (done, station 12), secret room behind a
+      bookshelf wall (done, station 16: the switch is a bookshelf hiding a
+      phased button, a hidden copper bulb keeps the state). Later idea:
+      trapdoor floor.
    b. The phase block (decided by the person, replacing dedicated
       plate/button blocks): a hidden block standing on a phase block, or
       hanging on its side, is phased: it reacts to the visible world at its

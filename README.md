@@ -29,6 +29,12 @@ The 3x3 flush door (examples station 12), the famously hard one in vanilla: the 
 | --- | --- | --- |
 | ![A tunnel ending in a flush 3x3 wall](docs/images/door3-closed.png) | ![The same view with the hidden pistons and wiring around the door showing through](docs/images/door3-closed-overlay.png) | ![The door has vanished and the tunnel opens to daylight](docs/images/door3-open.png) |
 
+A secret room behind a bookshelf wall (examples station 16): click the right bookshelf and two others slide away into the wall. There is no button or lever anywhere, only bookshelves.
+
+| Overlay off | Overlay on (H) |
+| --- | --- |
+| ![A plain wall of bookshelves](docs/images/secret-room-wall.png) | ![The same wall with the hidden pistons, wiring and a copper bulb showing through](docs/images/secret-room-wall-overlay.png) |
+
 A flying machine with a hidden engine (examples station 15): a vanilla engine in the hidden layer carries a phase piston that pushes a visible gold block one block ahead each cycle, so the gold block flies by itself.
 
 ## Approach

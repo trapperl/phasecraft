@@ -164,6 +164,13 @@ piston riding on a vanilla flying-machine engine in the hidden layer
 (overlay on, H, to watch the engine). Hidden obsidian stops it after eight
 blocks; `python3 tools/examples.py` puts it back.
 
+Station 16 is a secret room behind a wall of bookshelves. One of the
+bookshelves facing the path is a switch (a phased button hides behind it), and
+so is the one behind it on the room side: click it and two bookshelves slide
+away into the wall; click either switch again and they close.
+
+![A plain wall of bookshelves](images/secret-room-wall.png)
+
 ![A dark stone room lit by a glowstone hidden in its far wall](images/phased-light-room.png)
 
 Save and exit your test world, reopen it, and run `/phasecraft get` again to

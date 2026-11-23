@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.commands.arguments.blocks.BlockStateParser;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.level.block.Block;
@@ -27,8 +28,12 @@ import net.minecraft.world.level.block.state.BlockState;
 public final class ContraptionLayout {
     private record Placement(boolean hidden, BlockPos from, BlockPos to, BlockState state) {}
 
+    /** A visible block a player clicks to operate the contraption, and the face clicked. */
+    public record Click(BlockPos pos, Direction face) {}
+
     private final List<Placement> placements = new ArrayList<>();
     private BlockPos lever;
+    private final List<Click> clicks = new ArrayList<>();
     private Block door;
 
     private ContraptionLayout() {}
@@ -60,6 +65,7 @@ public final class ContraptionLayout {
         switch (w[0]) {
             case "size", "allow" -> { }
             case "lever" -> lever = pos(w, 1);
+            case "click" -> clicks.add(new Click(pos(w, 1), Direction.byName(w[4])));
             case "door" -> door = state(w[1], where).getBlock();
             case "visible" -> placements.add(new Placement(false, pos(w, 1), pos(w, 1), state(w[4], where)));
             case "hidden" -> placements.add(new Placement(true, pos(w, 1), pos(w, 1), state(w[4], where)));
@@ -96,6 +102,10 @@ public final class ContraptionLayout {
 
     public BlockPos lever() {
         return lever;
+    }
+
+    public List<Click> clicks() {
+        return clicks;
     }
 
     public Block door() {
