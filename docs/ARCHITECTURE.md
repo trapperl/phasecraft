@@ -210,9 +210,9 @@ changes what is phased.
   its phased lights. A change re-checks the spot; a phased light can sit in
   a section vanilla thinks is empty (only air), where it keeps no light, so
   the section is first marked as holding something, as vanilla does when a
-  block is placed there. Every five seconds a phased light whose visible
-  spot is darker than it gives off is checked again (a chunk lit from
-  scratch can lose it). Clients: vanilla's light updates alone never showed
+  block is placed there. (Lighting a chunk from scratch including its
+  phased lights is not covered by a test: GameTest areas are never lit from
+  scratch.) Clients: vanilla's light updates alone never showed
   the light on screen (tested), and clients relight by themselves when
   nearby blocks change, so every player with PhaseCraft is sent the phased
   lights of their dimension, and changes; the client's light engine uses
@@ -388,12 +388,12 @@ All of these run on every `./gradlew build`, locally and in CI:
     world (15, fading by vanilla's rules), also high in empty sky; without
     a phase block it does not; a phased lamp follows hidden redstone;
     removing the phase block takes the light away; a wall torch on a phase
-    block's side lights; light wiped from the section comes back. A client
+    block's side lights. A client
     sees a room lit by glowstone hidden in its wall, still lit after the
     wall block at the light's spot is swapped, and dark once the glowstone
     is removed (each shown to fail with its code removed: the mixin, the
     phase-block check, the neighbour re-check, the wall-torch support, the
-    repair, the section marking, the client sync);
+    section marking, the client sync);
   - the 3x3 flush door opens and closes twice from one visible lever (and
     fails without phase-piston quasi-connectivity, with a shorter stage-1
     hold, or without the second lift);

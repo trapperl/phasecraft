@@ -5,12 +5,10 @@ import dev.phasecraft.layer.HiddenLayer;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.SectionPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.chunk.DataLayer;
 
 /**
  * Phased light: a hidden light source standing on a phase block (or hanging on
@@ -116,27 +114,6 @@ public class PhasedLightGameTests {
 
         helper.startSequence()
                 .thenWaitUntil(() -> assertLight(helper, SPOT, 14, "visible light from a wall torch on a phase block"))
-                .thenSucceed();
-    }
-
-    /**
-     * If the visible light at a phased light's spot is wiped (as a chunk being lit for
-     * the first time can do, racing a re-check), the phased light repairs it.
-     */
-    @GameTest(maxTicks = 600)
-    public void wipedLightIsRepaired(GameTestHelper helper) {
-        floor(helper);
-        HiddenLayer hidden = HiddenLayer.of(helper.getLevel());
-        hidden.setBlock(helper.absolutePos(SPOT.below()), PhaseCraftBlocks.PHASE_BLOCK.defaultBlockState());
-        hidden.setBlock(helper.absolutePos(SPOT), Blocks.GLOWSTONE.defaultBlockState());
-
-        helper.startSequence()
-                .thenWaitUntil(() -> assertLight(helper, SPOT, 15, "visible light from phased glowstone"))
-                .thenIdle(50)
-                .thenExecute(() -> helper.getLevel().getChunkSource().getLightEngine()
-                        .queueSectionData(LightLayer.BLOCK, SectionPos.of(helper.absolutePos(SPOT)), new DataLayer()))
-                .thenWaitUntil(() -> assertLight(helper, SPOT, 0, "visible light after wiping the section"))
-                .thenWaitUntil(() -> assertLight(helper, SPOT, 15, "visible light repaired"))
                 .thenSucceed();
     }
 

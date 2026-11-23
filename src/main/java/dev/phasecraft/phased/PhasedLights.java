@@ -32,7 +32,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
@@ -58,10 +57,6 @@ import net.minecraft.world.level.chunk.LevelChunkSection;
  * they happen; the client keeps them in {@link #CLIENT} and the same mixin
  * uses them there.</p>
  *
- * <p>Self-repair: every five seconds any phased light whose visible spot is
- * darker than it gives off is checked again (a chunk lit from scratch, or
- * light data replaced, can lose it). A check that finds nothing wrong changes
- * nothing.</p>
  */
 public final class PhasedLights {
     private static final Map<ResourceKey<Level>, Map<Long, Integer>> LIGHTS = new ConcurrentHashMap<>();
@@ -70,8 +65,6 @@ public final class PhasedLights {
     /** The dimension each player was last sent the phased lights of. */
     private static final Map<UUID, ResourceKey<Level>> SENT = new HashMap<>();
     private static final Direction[] DIRECTIONS = Direction.values();
-    private static final int VERIFY_EVERY = 100;
-    private static int ticks;
 
     private PhasedLights() {}
 
@@ -179,7 +172,6 @@ public final class PhasedLights {
     }
 
     private static void tick(MinecraftServer server) {
-        ticks++;
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             ResourceKey<Level> dimension = player.level().dimension();
             if (!dimension.equals(SENT.get(player.getUUID())) && ServerPlayNetworking.canSend(player, Sync.TYPE)) {
@@ -188,21 +180,6 @@ public final class PhasedLights {
                 lights.forEach((pos, light) -> all.add(new Light(BlockPos.of(pos), light)));
                 ServerPlayNetworking.send(player, new Sync(true, all));
                 SENT.put(player.getUUID(), dimension);
-            }
-        }
-        if (ticks % VERIFY_EVERY != 0) {
-            return;
-        }
-        for (Map.Entry<ResourceKey<Level>, Map<Long, Integer>> entry : LIGHTS.entrySet()) {
-            ServerLevel visible = server.getLevel(entry.getKey());
-            if (visible == null) {
-                continue;
-            }
-            for (Map.Entry<Long, Integer> light : entry.getValue().entrySet()) {
-                BlockPos pos = BlockPos.of(light.getKey());
-                if (visible.isLoaded(pos) && visible.getBrightness(LightLayer.BLOCK, pos) < light.getValue()) {
-                    recheck(visible.getChunkSource().getLightEngine(), pos, light.getValue());
-                }
             }
         }
     }
