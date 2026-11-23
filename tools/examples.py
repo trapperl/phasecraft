@@ -428,14 +428,69 @@ def door3_lever(on):
                         f"minecraft:lever[face=floor,facing=north,powered={str(on).lower()}]"])
 
 
+# Station 15: a flying machine with a hidden engine carrying visible cargo (as FlyingMachineGameTests).
+# The engine is vanilla's 6-block two-way "engine A" (Minecraft Wiki), built in the hidden layer,
+# flying east; a phase piston stuck to it pushes the visible gold block ahead each cycle. The top
+# brick of the post is a secret switch: a hidden lever on a phase block, right above the engine's
+# first observer, which starts it. Hidden obsidian stops it at the end of the run.
+FLY = (130, -58, 0)   # the engine's north-west slime block
+FLY_CARGO = (131, -58, -1)
+FLY_SWITCH = (130, -56, 0)
+
+
+def flying_commands():
+    x, y, z = FLY
+    hidden = lambda pos, block: in_dimension(HIDDEN_OVERWORLD, f"setblock {coords(pos)} {block}")
+    out = [
+        "fill 126 -60 -4 144 -53 4 minecraft:air",
+        in_dimension(HIDDEN_OVERWORLD, "fill 126 -61 -4 144 -53 4 minecraft:air"),
+        # The post (visible): its top brick is the switch.
+        f"fill {x} -60 {z} {x} {FLY_SWITCH[1] - 1} {z} minecraft:oak_fence",
+        f"setblock {coords(FLY_SWITCH)} minecraft:chiseled_stone_bricks",
+        f"setblock {coords(FLY_CARGO)} minecraft:gold_block",
+        sign((128, Y, -2), ["15. Flying gold", "Click the top", "of the post: a", "hidden engine"]),
+        # The switch (hidden): a lever on a phase block, above the first observer.
+        # Placed before the engine: a change in front of an observer starts it.
+        hidden((x, FLY_SWITCH[1], z - 1), "phasecraft:phase_block"),
+        hidden(FLY_SWITCH, "minecraft:lever[face=wall,facing=south,powered=false]"),
+        # The engine (hidden), flying east. Its observers come from flying_observer_commands().
+        hidden((x, y, z), "minecraft:slime_block"),
+        hidden((x + 1, y, z), "minecraft:sticky_piston[facing=west]"),
+        hidden((x, y, z + 1), "minecraft:sticky_piston[facing=east]"),
+        hidden((x + 1, y, z + 1), "minecraft:slime_block"),
+        hidden((x, y, z - 1), "phasecraft:phase_piston[facing=east]"),
+        # The end of the run (hidden).
+        in_dimension(HIDDEN_OVERWORLD, f"fill {x + 9} {y} {z - 1} {x + 9} {y + 1} {z + 2} minecraft:obsidian"),
+    ]
+    return out
+
+
+def flying_observer_commands():
+    """The engine's two observers, sent a second after flying_commands(): placed in the same
+    batch, the engine starts on its own. They are placed "strict" because a plain setblock
+    updates the new block from its neighbours, which fires an observer."""
+    x, y, z = FLY
+    return [in_dimension(HIDDEN_OVERWORLD, f"setblock {coords(pos)} minecraft:observer[facing=up] strict")
+            for pos in ((x, y + 1, z), (x + 1, y + 1, z + 1))]
+
+
+def flying_cargo_x():
+    """Where the visible gold block is on the cargo's row, or None."""
+    replies = rcon.send_commands([f"phasecraft get {xx} {FLY_CARGO[1]} {FLY_CARGO[2]}" for xx in range(FLY_CARGO[0], FLY[0] + 12)])
+    for xx, reply in zip(range(FLY_CARGO[0], FLY[0] + 12), replies):
+        if "minecraft:gold_block" in reply.split("visible: ", 1)[1].split(" |")[0]:
+            return xx
+    return None
+
+
 def build_commands():
     commands = [
         "setworldspawn 0 -60 -6",
         "gamerule advance_time false",
         "time set noon",
         "weather clear 1000000",
-        "forceload add -8 -16 124 8",
-        in_dimension(HIDDEN_OVERWORLD, "forceload add -8 -16 124 8"),
+        "forceload add -8 -16 144 8",
+        in_dimension(HIDDEN_OVERWORLD, "forceload add -8 -16 144 8"),
         # Clear the area (visible) and lay a path of andesite under the stations.
         "fill -4 -60 -8 54 -55 4 minecraft:air",
         "fill -4 -61 -8 54 -61 4 minecraft:grass_block",
@@ -457,6 +512,7 @@ def build_commands():
     commands += door_commands()
     commands += staircase_commands()
     commands += door3_commands()
+    commands += flying_commands()
     for station in STATIONS:
         for dimension, pos, *_ in station["hidden"]:
             commands.append(in_dimension(dimension, f"phasecraft clear {coords(pos)}"))
@@ -483,7 +539,7 @@ def main():
         return 1 if bad else 0
     if "--print-commands" in sys.argv[1:]:
         # For the screenshot tour (ExamplesTourClientGameTest): the build, without RCON.
-        print("\n".join(build_commands()))
+        print("\n".join(build_commands() + flying_observer_commands()))
         return 0
     props = rcon.read_properties(rcon.PROPERTIES)
     if props.get("pause-when-empty-seconds", "60") not in ("0", ""):
@@ -497,6 +553,7 @@ def main():
             print(f"FAILED: {command}\n  {reply}")
 
         time.sleep(1)  # let cross-layer updates (one tick) settle before checking
+        rcon.send_commands(flying_observer_commands())
         checks = [(cell[0], cell[1], cell[-1]) for s in STATIONS for cell in s["hidden"]]
         answers = rcon.send_commands([in_dimension(d, f"phasecraft get {coords(pos)}") for d, pos, _ in checks])
     except rcon.RconError as error:
@@ -541,6 +598,23 @@ def main():
     door3_ok = [s for _, s in door3_steps] == ["closed", "open", "closed"]
     ok &= door3_ok
     print(f"{'ok ' if door3_ok else 'BAD'} 3x3 door: " + ", ".join(f"{name}: {state}" for name, state in door3_steps))
+    try:
+        before = flying_cargo_x()
+        rcon.send_commands([in_dimension(HIDDEN_OVERWORLD,
+                                         f"setblock {coords(FLY_SWITCH)} minecraft:lever[face=wall,facing=south,powered=true]")])
+        time.sleep(6)
+        after = flying_cargo_x()
+        rcon.send_commands(flying_commands())  # ready for another flight
+        time.sleep(1)
+        rcon.send_commands(flying_observer_commands())
+        time.sleep(1)
+        reset = flying_cargo_x()
+    except rcon.RconError as error:
+        print(error, file=sys.stderr)
+        return 1
+    fly_ok = before == FLY_CARGO[0] and after is not None and after >= FLY_CARGO[0] + 5 and reset == FLY_CARGO[0]
+    ok &= fly_ok
+    print(f"{'ok ' if fly_ok else 'BAD'} flying cargo: at x={before}, after the switch x={after}, reset to x={reset}")
     print("Examples built and verified." if ok else "Some examples did not build as expected.")
     return 0 if ok else 1
 

@@ -373,27 +373,43 @@ has such cells.
    the staircase), returns the rest, and pulls the nine forward. Stage 1's
    hold must outlast every return move: with one 4-tick delay it pulled
    while the last blocks were still sliding, and they stayed in the wall.
-4. **Flying machine (stretch): groundwork done, design open.** What the
-   pieces do today (`SlimeAcrossLayersGameTests`):
-   - a phase piston pushing a visible slime block drags the visible blocks
-     stuck to it, by vanilla's rules;
-   - hidden blocks at those spots stay put: the layers move independently,
-     so a slime structure cannot span both layers yet;
-   - a phase piston moved by a vanilla piston in the hidden layer keeps
-     working where it lands, so a hidden engine can carry phase pistons.
+4. **Flying machine: done (option A, chosen by the person).** A vanilla
+   flying machine built entirely in the hidden layer carries a phase piston
+   that pushes the visible cargo one block ahead each cycle
+   (`FlyingMachineGameTests`, examples station 15). Nothing new was needed.
+   - The engine is the 6-block two-way "engine A" from the Minecraft Wiki
+     (Tutorial:Flying machines/Java Engine Gallery): two slime blocks, two
+     sticky pistons facing each other, two observers facing up whose output
+     goes down into the slime blocks. It moves one block about every 10
+     ticks. Brute-force searches over small layouts found no engine, and
+     observers do not fire just from being moved, so start from a
+     documented engine.
+   - A phase piston facing the direction of flight is stuck to one slime
+     block. The slime block it rides on powers it once per cycle, so each
+     cycle it pushes the visible block in front of it one block on, keeping
+     pace. The cargo is pushed, not carried: vanilla push rules, up to 12
+     blocks, and visible slime drags more.
+   - The engine and the cargo are in different layers, so neither blocks
+     the other; hidden obsidian ahead of the engine stops it, as in vanilla.
+     A visible wall in front of the cargo stops only the cargo.
+   - Starting it: a block changing in front of an observer. Station 15 hangs
+     a phased lever (on a phase block) above the first observer, so a click
+     on the visible post top starts the flight.
+   - Built by commands: a plain `/setblock` of an observer fires it (the
+     command updates the new block from its neighbours), and placing the
+     observers in the same command batch as the rest started the engine
+     early. tools/examples.py places them `strict`, a second later.
+   - Hidden observers ignore visible changes in front of them (checked on
+     the dev server): the layers stay separate.
 
-   Two ways to a flying machine with a hidden engine (the person's choice):
-   A. *Hidden engine pushes its cargo:* a vanilla flying machine built in the
-      hidden layer carries phase pistons that fire each cycle and push the
-      visible cargo one block ahead, keeping pace. Nothing new is needed; the
-      cargo is pushed (vanilla push rules: up to 12 blocks, slime drags more),
-      not carried. Needs a known-good vanilla engine: a quick search of
-      6-block layouts found none that flew, so start from a documented one.
-   B. *One structure across both layers:* a new rule, for example a phased
-      slime block whose movement also moves what is stuck to it in the other
-      layer, so one machine spans both. Closer to "a hidden engine carrying
-      visible blocks", but new mechanics: both layers move in one tick, each
-      by vanilla push limits, with edge cases where only one side can move.
+   What the pieces do (`SlimeAcrossLayersGameTests`): a phase piston pushing
+   a visible slime block drags the visible blocks stuck to it; hidden blocks
+   at those spots stay put (the layers move independently, so one slime
+   structure cannot span both layers); a phase piston moved by a vanilla
+   piston in the hidden layer keeps working where it lands. Option B, one
+   structure across both layers (for example a phased slime block that also
+   moves what is stuck to it in the other layer), would need new rules and
+   was not chosen.
 5. **Mob farm:** not a target; the hidden layer does not interact with mobs.
 
 ## Validation status
