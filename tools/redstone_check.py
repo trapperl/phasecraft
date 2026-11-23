@@ -17,8 +17,8 @@ reports every place a part or piston receives a signal other than its own:
 - a piston is powered from any side but its front, and also (quasi-
   connectivity) by anything powering the cell above it, from any side but
   below;
-- a button is a source like a lever, and strongly powers the block it hangs
-  on; a copper bulb is powered from any side; a comparator is a diode like a
+- a button or pressure plate is a source like a lever, and strongly powers
+  the block it hangs on or stands on; a copper bulb is powered from any side; a comparator is a diode like a
   repeater, and one reading a copper bulb carries the bulb's signal.
 
 It is a model, not Minecraft: GameTests decide. It exists to catch signals
@@ -82,7 +82,8 @@ class Layout:
     def is_conductor(self, p):
         k = self.kind(p)
         return k not in ("air", "redstone_wire", "repeater", "comparator", "redstone_torch", "redstone_wall_torch",
-                         "phase_port", "lever", "glass") and "piston" not in k and "button" not in k and "bulb" not in k
+                         "phase_port", "lever", "glass") and "piston" not in k and "button" not in k and "bulb" not in k \
+            and "pressure_plate" not in k
 
     def wire_connects(self, p, d):
         """Whether the wire at p connects towards horizontal direction d (same level, up or down a step)."""
@@ -93,7 +94,8 @@ class Layout:
         if k == "repeater":
             facing = self.parts[q][1].get("facing")
             return facing in (d, OPPOSITE[d])
-        if k in ("redstone_torch", "redstone_wall_torch", "phase_port", "lever", "comparator") or "button" in k:
+        if k in ("redstone_torch", "redstone_wall_torch", "phase_port", "lever", "comparator") or "button" in k \
+                or "pressure_plate" in k:
             return True
         if self.kind(add(q, "up")) == "redstone_wire" and not self.is_conductor(add(p, "up")):
             return True
@@ -131,7 +133,7 @@ class Layout:
             return set() if d == "up" else {signal}
         if k == "redstone_wall_torch":
             return set() if props.get("facing") == d else {signal}
-        if k in ("phase_port", "lever") or "button" in k:
+        if k in ("phase_port", "lever") or "button" in k or "pressure_plate" in k:
             return {signal}
         if self.is_conductor(src):
             return self.strong(src)
@@ -152,6 +154,8 @@ class Layout:
             elif k in ("repeater", "comparator") and props.get("facing") == d:
                 out.add(signal)
             elif "button" in k and props.get("face") == "wall" and toward == OPPOSITE[props.get("facing")]:
+                out.add(signal)
+            elif "pressure_plate" in k and toward == "down":
                 out.add(signal)
             elif "button" in k and props.get("face") in ("floor", "ceiling") and toward == {"floor": "down", "ceiling": "up"}[props["face"]]:
                 out.add(signal)

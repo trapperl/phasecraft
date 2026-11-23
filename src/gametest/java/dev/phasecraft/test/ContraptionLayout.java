@@ -34,6 +34,7 @@ public final class ContraptionLayout {
     private final List<Placement> placements = new ArrayList<>();
     private BlockPos lever;
     private final List<Click> clicks = new ArrayList<>();
+    private BlockPos step;
     private Block door;
 
     private ContraptionLayout() {}
@@ -66,6 +67,7 @@ public final class ContraptionLayout {
             case "size", "allow" -> { }
             case "lever" -> lever = pos(w, 1);
             case "click" -> clicks.add(new Click(pos(w, 1), Direction.byName(w[4])));
+            case "step" -> step = pos(w, 1);
             case "door" -> door = state(w[1], where).getBlock();
             case "visible" -> placements.add(new Placement(false, pos(w, 1), pos(w, 1), state(w[4], where)));
             case "hidden" -> placements.add(new Placement(true, pos(w, 1), pos(w, 1), state(w[4], where)));
@@ -102,6 +104,11 @@ public final class ContraptionLayout {
 
     public BlockPos lever() {
         return lever;
+    }
+
+    /** Where a visible entity standing operates the contraption (a phased pressure plate hidden there). */
+    public BlockPos step() {
+        return step;
     }
 
     public List<Click> clicks() {

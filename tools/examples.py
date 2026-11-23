@@ -371,7 +371,7 @@ DOOR3_ORIGIN = (92, -63, -12)   # layout (0, 0, 0); the tunnel floor (layout y =
 
 
 def read_layout(path):
-    """(placements, info): placements are (layer, from, to, block) in file order; info has lever, door, clicks."""
+    """(placements, info): placements are (layer, from, to, block) in file order; info has lever, door, clicks, step."""
     placements, info = [], {}
     for raw in open(path):
         words = raw.split("#", 1)[0].split()
@@ -386,6 +386,8 @@ def read_layout(path):
             info["lever"] = tuple(int(v) for v in words[1:4])
         elif words[0] == "click":
             info.setdefault("clicks", []).append((tuple(int(v) for v in words[1:4]), words[4]))
+        elif words[0] == "step":
+            info["step"] = tuple(int(v) for v in words[1:4])
         elif words[0] == "door":
             info["door"] = words[1]
     return placements, info
@@ -532,6 +534,66 @@ def room_press(click):
         time.sleep(1)
 
 
+# Station 17: the trapdoor floor, built from its layout file (shared with TrapdoorFloorGameTests).
+# A raised corridor: step on the fifth tile and the next two drop away into a pit. A tunnel leads
+# out of the pit, and steps lead up to the corridor.
+TRAP_LAYOUT = pathlib.Path(__file__).resolve().parent.parent / "src/gametest/resources/contraptions/trapdoor_floor.txt"
+TRAP_ORIGIN = (158, -64, -4)   # layout (0, 0, 0); the world's bottom, so the corridor floor (y = 5) is at -59
+
+
+def trap_pos(x, y, z):
+    ox, oy, oz = TRAP_ORIGIN
+    return (ox + x, oy + y, oz + z)
+
+
+def trap_commands():
+    out = [
+        f"fill {coords(trap_pos(-1, 4, -4))} {coords(trap_pos(11, 9, 13))} minecraft:air",
+        in_dimension(HIDDEN_OVERWORLD, f"fill {coords(trap_pos(-1, 0, -4))} {coords(trap_pos(11, 9, 13))} minecraft:air"),
+        f"fill {coords(trap_pos(-1, 0, -1))} {coords(trap_pos(9, 3, 12))} minecraft:stone",
+    ]
+    placements, _ = read_layout(TRAP_LAYOUT)
+    for layer, a, b, block in placements:
+        command = (f"fill {coords(trap_pos(*a))} {coords(trap_pos(*b))} {block}" if a != b
+                   else f"setblock {coords(trap_pos(*a))} {block}")
+        out.append(in_dimension(HIDDEN_OVERWORLD, command) if layer == "hidden" else command)
+    out += [
+        # Steps up to the corridor (north end).
+        f"setblock {coords(trap_pos(4, 4, -2))} minecraft:stone_brick_stairs[facing=south]",
+        f"setblock {coords(trap_pos(4, 5, -1))} minecraft:stone_brick_stairs[facing=south]",
+        # The way out of the pit: a tunnel south under the corridor, and steps up to the grass.
+        f"fill {coords(trap_pos(4, 2, 7))} {coords(trap_pos(4, 3, 11))} minecraft:air",
+        f"setblock {coords(trap_pos(4, 2, 10))} minecraft:stone_brick_stairs[facing=south]",
+        f"setblock {coords(trap_pos(4, 3, 11))} minecraft:stone_brick_stairs[facing=south]",
+        f"setblock {coords(trap_pos(4, 4, 7))} minecraft:lantern[hanging=true]",
+    ]
+    out.append(sign(trap_pos(2, 4, -3), ["17. Trapdoor", "Walk down the", "corridor. Mind", "your step!"]))
+    return out
+
+
+def trap_state():
+    """'closed', 'open' or a picture (T = tile) of the trap tiles, the cells under them and the pockets."""
+    _, info = read_layout(TRAP_LAYOUT)
+    cells = [(x, y, z) for z in (5, 6) for y in (5, 4) for x in (4, 5)]
+    replies = rcon.send_commands([f"phasecraft get {coords(trap_pos(*c))}" for c in cells])
+    at = {c for c, r in zip(cells, replies) if info["door"] in r.split("visible: ", 1)[1].split(" |")[0]}
+    if at == {(4, 5, 5), (4, 5, 6)}:
+        return "closed"
+    if at == {(5, 4, 5), (5, 4, 6)}:
+        return "open"
+    return "".join("T" if c in at else "." for c in cells)
+
+
+def trap_walker(present):
+    """A pig with no AI standing on the trigger tile (RCON cannot walk), or none."""
+    _, info = read_layout(TRAP_LAYOUT)
+    x, y, z = trap_pos(*info["step"])
+    commands = ["kill @e[type=minecraft:pig,tag=phasecraft_trap]"]
+    if present:
+        commands.append(f"summon minecraft:pig {x + 0.5} {y} {z + 0.5} {{NoAI:1b,Tags:[\"phasecraft_trap\"]}}")
+    rcon.send_commands(commands)
+
+
 def flying_observer_commands():
     """The engine's two observers, sent a second after flying_commands(): placed in the same
     batch, the engine starts on its own. They are placed "strict" because a plain setblock
@@ -556,8 +618,8 @@ def build_commands():
         "gamerule advance_time false",
         "time set noon",
         "weather clear 1000000",
-        "forceload add -8 -16 160 8",
-        in_dimension(HIDDEN_OVERWORLD, "forceload add -8 -16 160 8"),
+        "forceload add -8 -16 176 8",
+        in_dimension(HIDDEN_OVERWORLD, "forceload add -8 -16 176 8"),
         # Clear the area (visible) and lay a path of andesite under the stations.
         "fill -4 -60 -8 54 -55 4 minecraft:air",
         "fill -4 -61 -8 54 -61 4 minecraft:grass_block",
@@ -581,6 +643,7 @@ def build_commands():
     commands += door3_commands()
     commands += flying_commands()
     commands += room_commands()
+    commands += trap_commands()
     for station in STATIONS:
         for dimension, pos, *_ in station["hidden"]:
             commands.append(in_dimension(dimension, f"phasecraft clear {coords(pos)}"))
@@ -695,6 +758,16 @@ def main():
     room_ok = [s for _, s in room_steps] == ["closed", "open", "closed"]
     ok &= room_ok
     print(f"{'ok ' if room_ok else 'BAD'} secret room: " + ", ".join(f"{name}: {state}" for name, state in room_steps))
+    try:
+        trap_steps = [("before", trap_state())]
+        trap_walker(True); time.sleep(3); trap_steps.append(("pig on the trigger", trap_state()))
+        trap_walker(False); time.sleep(4); trap_steps.append(("pig gone", trap_state()))
+    except rcon.RconError as error:
+        print(error, file=sys.stderr)
+        return 1
+    trap_ok = [s for _, s in trap_steps] == ["closed", "open", "closed"]
+    ok &= trap_ok
+    print(f"{'ok ' if trap_ok else 'BAD'} trapdoor floor: " + ", ".join(f"{name}: {state}" for name, state in trap_steps))
     print("Examples built and verified." if ok else "Some examples did not build as expected.")
     return 0 if ok else 1
 
