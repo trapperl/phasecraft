@@ -14,6 +14,7 @@
       "dev.phasecraft.test.PhasePistonGameTests",
       "dev.phasecraft.test.HiddenDoorGameTests",
       "dev.phasecraft.test.HiddenStaircaseGameTests",
+      "dev.phasecraft.test.ThreeByThreeDoorGameTests",
       "dev.phasecraft.test.HiddenEditingGameTests",
       "dev.phasecraft.test.KeepOutGameTests",
       "dev.phasecraft.test.NoMojangTrafficGameTests",

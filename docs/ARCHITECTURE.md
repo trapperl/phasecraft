@@ -266,9 +266,24 @@ has such cells.
    a stage B piston would fire stage A too; stage B is powered only through
    its own quasi-connectivity, by repeaters pointing into the empty hidden
    cell above each B piston.
-3. **Flying machine (stretch):** a hidden slime/observer engine carrying
+3. **3x3 flush door: done.** The famously hard vanilla door: one lever opens a
+   3x3 door flush with a wall at the end of a tunnel, and closes it flush
+   again (`ThreeByThreeDoorGameTests`, examples station 12; layout in
+   `src/gametest/resources/contraptions/flush_door_3x3.txt`). The hard part
+   is the centre block, surrounded by doorway on every side, so it must move
+   twice. Stage 1 pushes all nine blocks back into the wall. Stage 2, with
+   pistons hidden inside the doorway and the wall: sticky pullers outside
+   the side columns pull them into pockets, a sticky puller under the floor
+   drops the bottom-middle block into the floor, and two pushes from below
+   lift the centre and top-middle blocks, as one line, into a two-high
+   pocket over the doorway. Closing pushes them down from above (two
+   pistons, the top one powered only through its quasi-connectivity, as in
+   the staircase), returns the rest, and pulls the nine forward. Stage 1's
+   hold must outlast every return move: with one 4-tick delay it pulled
+   while the last blocks were still sliding, and they stayed in the wall.
+4. **Flying machine (stretch):** a hidden slime/observer engine carrying
    visible blocks. Needs phase pistons to move mixed-layer structures.
-4. **Mob farm:** not a target; the hidden layer does not interact with mobs.
+5. **Mob farm:** not a target; the hidden layer does not interact with mobs.
 
 ## Validation status
 
@@ -310,6 +325,9 @@ All of these run on every `./gradlew build`, locally and in CI:
     again from one visible lever (and fails without phase-piston
     quasi-connectivity, without sticky pull-back, or without the hold
     repeater);
+  - the 3x3 flush door opens and closes twice from one visible lever (and
+    fails without phase-piston quasi-connectivity, with a shorter stage-1
+    hold, or without the second lift);
   - phase pistons push visible blocks (12 yes, 13 no, obsidian never), a
     sticky one pulls back, none leaves an arm, an ordinary hidden piston
     moves only hidden blocks, a phase piston in the visible layer does
