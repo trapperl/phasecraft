@@ -60,6 +60,65 @@ phase piston pulls the visible block back by one on retracting, with
 vanilla's sticky rules. Placed in the visible layer it does nothing.
 `PhasePistonMover` is vanilla's `moveBlocks` minus the arm.
 
+## The overlay: seeing the hidden layer from the visible world
+
+The hidden layer is a separate dimension, but it is meant to be seen as a
+transparent layer over the visible world. Two halves:
+
+**Server: `OverlaySync`.** Each tick, for each eligible player, the server
+sends the non-air hidden blocks of every hidden chunk within 4 chunks of the
+player (a 9x9 square) that the client does not have yet, tells the client to
+forget chunks that left that square, and passes on hidden block changes in
+chunks the client has (from the same block-change hook as the phase link).
+Large chunks are split into messages of at most 4096 blocks. Only hidden
+chunks that are already loaded are sent; nothing is loaded for the overlay.
+Messages: `phasecraft:hidden_chunk`, `hidden_blocks`, `hidden_forget`,
+`hidden_reset` (`OverlayPayloads`).
+
+Eligible means: the client has PhaseCraft (vanilla clients get nothing), the
+player is in Creative or Spectator, and the player is in a visible dimension
+with a hidden twin. A player who stops being eligible (changes to Survival,
+enters the hidden layer) or changes dimension gets a reset. A client clears
+its copy whenever a new connection starts.
+
+**Client: `GhostLayer`, `GhostRenderer`** (in `src/client`, a client-only
+source set). The client keeps what it was sent and draws each hidden block's
+own model, full-bright, at the chosen opacity, in two passes:
+
+1. like a normal translucent block (vanilla's translucent moving-block render
+   type): hidden by visible blocks in front of it. Ghosts are drawn 0.3%
+   larger than a block, so a hidden block sharing its spot with a visible one
+   lies on the visible block's surface as a tint instead of flickering;
+2. without depth test, at 40% of that opacity (`GhostRenderTypes`, a PhaseCraft
+   render pipeline using vanilla's block shader, with an order-independent
+   transparency variant for "improved transparency"): hidden machinery inside
+   a wall or under the floor shows through, fainter.
+
+Faces between two hidden full blocks are left out, as in the normal world.
+Redstone wire and other tinted blocks keep their tint (wire shows its power).
+Only blocks with a model are drawn: hidden block entities (chests, signs) and
+fluids are not shown yet. Keys: H toggles, `]` and `[` change the opacity
+(15% to 100%); kept in `config/phasecraft-client.properties`.
+
+Cost: every frame the client re-tessellates every hidden block within 96
+blocks of the camera, twice. Fine for machinery (the examples area is a few
+hundred blocks); not yet tuned for very large hidden builds (tens of
+thousands of blocks in view).
+
+### Decision: who sees the overlay (decided by the agent, 2026-11-22; open to change)
+
+The same rule as entering the hidden layer: Creative and Spectator. A
+Survival player sees nothing, and a modded client cannot ask for more, so a
+hidden door in a multiplayer world stays hidden from Survival players. Easy
+to widen if the person prefers (for example to operators, or to everyone).
+
+### Decision: see-through by default (decided by the agent, 2026-11-22)
+
+A first version drew ghosts only where no visible block was in front of
+them; in the examples world that hid exactly the interesting part, the
+door's machinery inside the wall. The person expects a transparent layer, so
+ghosts also show through visible blocks, fainter, to keep a sense of depth.
+
 ### Decision: explicit crossing points (decided 2026-11-22)
 
 A first version let power cross at every position (any block heard a source
@@ -115,11 +174,10 @@ has such cells.
   slide into (see the door below).
 - **Keeping players out:** portals built in the hidden layer, and deaths or
   logouts while in it.
-- **Overlay** (next): hidden blocks drawn as translucent ghosts over the
-  visible world near the player, toggled by a key, adjustable opacity, so
-  nobody needs to visit the hidden dimension. Then an editing mode: a key
-  switches which layer you place and break in, while staying in the visible
-  world. Server state must reach observing clients first.
+- **Overlay: done** (see above). Not yet shown: hidden block entities and
+  fluids.
+- **Editing mode** (next): a key switches which layer you place and break
+  in, while staying in the visible world, using the overlay to see.
 
 ### Acceptance targets
 
@@ -170,6 +228,21 @@ All of these run on every `./gradlew build`, locally and in CI:
     phase piston, moves a visible block out of a doorway and back.
 - **JUnit** also checks the update queue: work added while a batch runs waits
   for the next tick.
+- **Client GameTests** (`./gradlew clientTest`, a real game client, run once
+  with OpenGL and once with Vulkan, software-rendered on a virtual display;
+  a test-only mixin pins the backend so neither silently falls back):
+  - screenshots with the overlay on, off, and at higher opacity, compared
+    pixel by pixel where each test block appears: a ghost floating in the air,
+    a ghost tinting the visible block at its own spot, a ghost inside the
+    ground, and a ghost completely behind a visible wall (must show through,
+    fainter than one in front); also with improved transparency;
+  - H and `]` change the settings;
+  - removing a hidden block removes the ghost; chunks out of range are
+    forgotten and come back; Survival players and players inside the hidden
+    layer are sent nothing;
+  - over a real network connection to a dedicated server: Survival gets
+    nothing, Creative gets the hidden block, and nothing from the previous
+    world is left over.
 - **Restart test** (`./gradlew restartTest`): two separate server processes
   on one world folder. The first places hidden blocks in all three hidden
   dimensions (one far away and unloaded) and stores some cells the old way;
@@ -181,4 +254,5 @@ Checked by hand on the RCON dev server: a world with old-style hidden blocks
 upgraded at startup, and `tools/examples.py` verifies the examples world,
 including a hidden lamp lit by hidden power.
 
-**Not yet automated:** multiplayer, and the client side of layer switching.
+**Not yet automated:** multiplayer with more than one player, and the
+client side of layer switching.

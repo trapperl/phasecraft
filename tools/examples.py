@@ -5,12 +5,18 @@ Usage:
     ./gradlew runServer            # in another terminal, RCON enabled
     python3 tools/examples.py
 
+    python3 tools/examples.py --print-commands > build/examples-commands.txt
+    PHASECRAFT_EXAMPLES_COMMANDS=$PWD/build/examples-commands.txt ./gradlew runClientGameTest
+                                   # screenshots of every station, overlay on
+                                   # and off, in build/run/clientGameTest/screenshots
+
 Builds a row of example stations near spawn on a flat world (ground at
 y=-61, stations at y=-60), each with a sign explaining it. The hidden layer is
 a real dimension at the same coordinates (phasecraft:hidden_overworld); the
-script lays hidden ground under the stations, since hidden redstone follows
-vanilla rules. Inspect hidden blocks with /phasecraft get, or go and look with
-/phasecraft layer hidden (Creative). After building, every hidden cell is read
+script puts a hidden block of ground under hidden blocks that need one, since
+hidden redstone follows vanilla rules. With PhaseCraft on the client, press H
+(Creative or Spectator) to see the hidden layer as an overlay; or inspect it
+with /phasecraft get, or go there with /phasecraft layer hidden. After building, every hidden cell is read
 back over RCON and the script exits 1 if any does not match.
 
 Add a station here whenever a milestone adds something worth seeing.
@@ -66,7 +72,7 @@ STATIONS = [
     },
     {
         "x": 30,
-        "sign": ["6. Hidden lamp", "lit by hidden", "power. See it:", "/phasecraft layer"],
+        "sign": ["6. Hidden lamp", "lit by hidden", "power. Press H", "to see it"],
         "visible": [],
         "hidden": [
             # Placed unlit; the check expects lit=true, so it passes only if vanilla
@@ -86,7 +92,7 @@ STATIONS = [
     },
     {
         "x": 42,
-        "sign": ["8. Hidden piston", "Flip the lever,", "then look with", "/phasecraft layer"],
+        "sign": ["8. Hidden piston", "Flip the lever:", "the hidden", "piston pushes"],
         "visible": [((42, Y, 0), "minecraft:lever[face=floor,facing=north,powered=false]")],
         "hidden": [
             ("minecraft:overworld", (42, Y, 2), "minecraft:oak_planks"),
@@ -111,7 +117,11 @@ STATIONS = [
 
 HIDDEN_OVERWORLD = "phasecraft:hidden_overworld"
 
-WELCOME = ["PhaseCraft examples", "/phasecraft get", "x -60 0, or go:", "/phasecraft layer"]
+WELCOME = ["PhaseCraft examples", "Press H to show", "the hidden layer", "[ ] = opacity"]
+
+# Hidden blocks that need something under them (vanilla rules: wire, repeaters
+# and floor levers break without support) get one hidden block of ground.
+HIDDEN_SUPPORTS = [(0, Y - 1, 0), (6, Y - 1, 0), (24, Y - 1, 0)]
 
 
 def coords(pos):
@@ -209,11 +219,12 @@ def build_commands():
         "fill -4 -60 -8 54 -55 4 minecraft:air",
         "fill -4 -61 -8 54 -61 4 minecraft:grass_block",
         "fill -2 -61 -1 50 -61 1 minecraft:polished_andesite",
-        # The hidden layer: clear it, then hidden ground under the stations.
-        in_dimension(HIDDEN_OVERWORLD, "fill -4 -60 -8 54 -40 4 minecraft:air"),
-        in_dimension(HIDDEN_OVERWORLD, "fill -4 -61 -8 54 -61 4 minecraft:smooth_stone"),
+        # The hidden layer: clear it (older builds laid hidden ground everywhere),
+        # then hidden ground only under the hidden blocks that need it.
+        in_dimension(HIDDEN_OVERWORLD, "fill -4 -61 -8 54 -40 4 minecraft:air"),
         sign((0, Y, -6), WELCOME),
     ]
+    commands += [in_dimension(HIDDEN_OVERWORLD, f"setblock {coords(pos)} minecraft:smooth_stone") for pos in HIDDEN_SUPPORTS]
     commands += door_commands()
     for station in STATIONS:
         for dimension, pos, *_ in station["hidden"]:
@@ -233,6 +244,10 @@ def expected_hidden(block):
 
 
 def main():
+    if "--print-commands" in sys.argv[1:]:
+        # For the screenshot tour (ExamplesTourClientGameTest): the build, without RCON.
+        print("\n".join(build_commands()))
+        return 0
     props = rcon.read_properties(rcon.PROPERTIES)
     if props.get("pause-when-empty-seconds", "60") not in ("0", ""):
         print("Warning: pause-when-empty-seconds is not 0 in run/server.properties. With nobody online the server"

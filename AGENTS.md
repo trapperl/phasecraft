@@ -27,6 +27,14 @@ blocks, with future vanilla-compatible cross-layer redstone and pistons.
     or it is silently not run.
   - Behaviour that must survive a restart goes in `PhaseLayerRestartPhases`
     (write phase, then verify phase in a new server process).
+  - Client behaviour (rendering, keys, syncing) goes in client GameTests
+    (src/gametest/java/dev/phasecraft/test/client, listed under the
+    `fabric-client-gametest` entrypoint). `./gradlew clientTest` runs them
+    with OpenGL and with Vulkan on an Xvfb virtual display. Check what is
+    drawn by comparing screenshot pixels, and look at the screenshots
+    (build/run/clientGameTest*/screenshots) before calling a visual change done.
+- Client-only code lives in src/client (split source sets); src/main must not
+  reference client classes.
 - New behaviour needs a GameTest, and a new test should be shown to fail when
   the behaviour is broken (break the code on purpose, run, restore).
 - `./gradlew installToMinecraft` installs a passing build into the local
@@ -38,18 +46,19 @@ docs/ARCHITECTURE.md); vanilla runs it. Acceptance target for 1: the
 hidden piston door.
 Power crosses only through phase ports (done). The person wants every
 crossing explicit: a dedicated block, never every position.
-Phase ports, phase pistons and the hidden 2x2 door are done.
-1. Overlay: hidden blocks near the player drawn as translucent ghosts over
-   the visible world (key toggle, adjustable opacity). The person expects the
-   hidden layer to look like a transparent layer, not a separate world.
-   Verify with Fabric client GameTests and screenshots before handing over.
-2. Editing mode: a key switches which layer you place/break in, staying in
-   the visible world (roadmap step 3).
-3. Keep players out of the hidden dimension by accident (portals, death, logout).
+Phase ports, phase pistons, the hidden 2x2 door and the overlay are done.
+The person expects the hidden layer to look like a transparent layer, not a
+separate world.
+1. Editing mode: a key switches which layer you place/break in, staying in
+   the visible world (roadmap step 3), using the overlay to see.
+2. Keep players out of the hidden dimension by accident (portals, death, logout).
+3. Overlay leftovers: hidden block entities and fluids are not drawn.
 4. Stretch: a flying machine with a hidden engine carrying visible blocks.
 
 Decided by the person: phase pistons show no visible arm; missing blocks
-are handled as vanilla does.
+are handled as vanilla does. Decided by the agent, open to change: only
+Creative/Spectator players are sent the overlay; ghosts show through
+visible blocks (fainter).
 
 ## Local dev server (RCON)
 - `./gradlew runServer` runs a local server in run/ (git-ignored) with RCON

@@ -61,6 +61,22 @@ power reaching its spot in the other layer.
 
 Flip the (visible) lever and the hidden lamp next to the hidden port lights.
 
+### Seeing the hidden layer: the overlay
+
+In Creative or Spectator, hidden blocks near you (about 70 blocks around)
+are drawn as see-through ghosts over the visible world: clearly where
+nothing visible is in front of them, fainter through visible blocks, so
+machinery inside a wall or under the floor still shows.
+
+| Key (Controls, "PhaseCraft") | Does |
+| --- | --- |
+| **H** | Show or hide the overlay |
+| **]** / **[** | More opaque / more see-through (15% to 100%, in steps of 10) |
+
+The setting is kept in `config/phasecraft-client.properties`. Survival
+players are sent nothing, so hidden doors stay hidden from them. The
+overlay needs PhaseCraft on the client as well as on the server.
+
 Save and exit your test world, reopen it, and run `/phasecraft get` again to
 manually inspect persistence. The same check runs automatically as
 `./gradlew restartTest` (see below).
@@ -70,7 +86,9 @@ manually inspect persistence. The same check runs automatically as
 Power crosses only through **phase ports**, and visible blocks are moved
 only by **phase pistons** placed in the hidden layer (all in the Redstone
 tab, or `/give @s phasecraft:phase_port`, `phasecraft:sticky_phase_piston`);
-see docs/ARCHITECTURE.md. The overlay is not done yet. Hidden machinery runs wherever the visible world around it runs. Commands require operator permission level 2. Worlds from earlier builds
+see docs/ARCHITECTURE.md. The overlay shows hidden blocks but you cannot
+build in it yet: place hidden blocks with `/phasecraft set` or from inside
+the hidden layer. Hidden machinery runs wherever the visible world around it runs. Commands require operator permission level 2. Worlds from earlier builds
 are upgraded automatically at server start.
 
 Use a **new test world**, not your personal saves: the storage format has
@@ -83,6 +101,7 @@ no migration path yet.
 | `./gradlew build` | Compiles, then runs **every** test below (CI runs this). |
 | `./gradlew runGameTest` | In-game tests: every class named `*GameTests` in `src/gametest`. |
 | `./gradlew restartTest` | Full restart: one server writes hidden cells and shuts down, a second server process loads the same world and checks them. |
+| `./gradlew clientTest` | A real game client, once with OpenGL and once with Vulkan: the overlay's pictures (screenshots in `build/run/clientGameTest*/screenshots`), keys and syncing, singleplayer and on a dedicated server. |
 | `./gradlew installToMinecraft` | `build`, then (only if everything passed) replaces PhaseCraft in your Minecraft mods folder. Restart Minecraft afterwards. |
 
 `installToMinecraft` reads your mods folder from `local.properties`
@@ -93,8 +112,17 @@ minecraftModsDir=/mnt/c/Users/<you>/AppData/Roaming/.minecraft/mods
 ```
 
 Reports are written to `build/reports/gametest/TEST-*.xml`. Test servers run
-headless; Fabric API's GameTest mode does not read `eula.txt`, so nothing needs
-accepting. A server you run yourself (for example for RCON) still does.
+headless; Fabric API's GameTest mode does not read `eula.txt`. The client
+tests start a dedicated server too, for which the build accepts the
+Minecraft EULA (`eula = true` in build.gradle; the project owner has
+accepted it). A server you run yourself (for example for RCON) needs its own
+`run/eula.txt`.
+
+The client tests open a game window. If `Xvfb` is installed
+(`sudo apt install xvfb`) they get a private virtual display, so nothing
+appears on your screen; they render in software (Mesa), which needs
+`libgl1-mesa-dri libegl1 mesa-vulkan-drivers`. Without Xvfb they use your
+display.
 
 ## Local dev server with RCON
 
@@ -131,8 +159,16 @@ in game, make yourself an operator with
 `python3 tools/examples.py` builds a row of example stations near spawn on
 the running server (best on a flat world: `level-type=minecraft\:flat`),
 then reads every hidden cell back and exits 1 if one is wrong. Each station
-has a sign; hidden blocks are invisible for now, so inspect them with
+has a sign. Press H to see the hidden blocks, or inspect them with
 `/phasecraft get <x> -60 0` (or `execute in minecraft:the_nether run ...`
 for station 5). Rerunning it rebuilds the area from scratch. Station 10 is
 the hidden 2x2 door; the script also operates it (lever on, open; lever off,
 closed) and leaves it closed for you.
+
+To get screenshots of every station with the overlay on and off, without a
+server:
+
+```sh
+python3 tools/examples.py --print-commands > build/examples-commands.txt
+PHASECRAFT_EXAMPLES_COMMANDS=$PWD/build/examples-commands.txt ./gradlew runClientGameTest
+```

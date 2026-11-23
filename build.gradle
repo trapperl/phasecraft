@@ -22,6 +22,18 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
+// Client-only code (the overlay renderer, key mappings) lives in src/client.
+// Must come before configureTests, which builds on the source sets.
+loom {
+    splitEnvironmentSourceSets()
+    mods {
+        phasecraft {
+            sourceSet sourceSets.main
+            sourceSet sourceSets.client
+        }
+    }
+}
+
 // In-game GameTests live in src/gametest as a separate test mod
 // (phasecraft-test). Each run starts a headless server, runs the selected
 // @GameTests, writes a JUnit-style report and exits non-zero on failure.
@@ -29,14 +41,19 @@ dependencies {
 //   ./gradlew runGameTest   ordinary tests: classes named *GameTests
 //   ./gradlew restartTest   two server processes on one world folder:
 //                           PhaseLayerRestartPhases write, then verify
-//   ./gradlew check         unit tests + both of the above (build runs it)
+//   ./gradlew clientTest    client GameTests (src/gametest/.../client): a real
+//                           client, once with OpenGL and once with Vulkan,
+//                           taking screenshots (build/run/clientGameTest*/screenshots)
+//   ./gradlew check         unit tests + all of the above (build runs it)
 fabricApi {
     configureTests {
         createSourceSet = true
         modId = 'phasecraft-test'
         enableGameTests = true
-        enableClientGameTests = false
-        eula = false
+        enableClientGameTests = true
+        // The dedicated server in the client GameTests needs the Minecraft
+        // EULA accepted (https://aka.ms/MinecraftEULA); the project owner has.
+        eula = true
     }
 }
 
@@ -65,6 +82,16 @@ loom {
         gameTest {
             vmArgs gameTestArgs('gametest', 'phasecraft-test:*_game_tests_*')
         }
+        clientGameTestVulkan {
+            inherit clientGameTest
+            configName = 'Client GameTest: Vulkan'
+            runDir = 'build/run/clientGameTestVulkan'
+            vmArg '-Dphasecraft.test.graphicsApi=vulkan'
+        }
+        clientGameTest {
+            configName = 'Client GameTest: OpenGL'
+            vmArg '-Dphasecraft.test.graphicsApi=opengl'
+        }
     }
 }
 
@@ -82,8 +109,69 @@ tasks.register('restartTest') {
     description = 'Writes hidden cells, stops the server, starts a new one and verifies them.'
     dependsOn 'runRestartVerify'
 }
+
+// Client GameTests open a game window. When Xvfb is installed they get a
+// private virtual display instead, so nothing appears on your screen and they
+// run the same way in CI. Without Xvfb they use your display.
+def xvfb = ['/usr/bin/Xvfb', '/usr/local/bin/Xvfb'].find { new File(it).canExecute() }
+['runClientGameTest', 'runClientGameTestVulkan'].each { name ->
+    tasks.named(name) { task ->
+        def server = null
+        doFirst {
+            if (xvfb == null) {
+                logger.lifecycle("${name}: Xvfb not found, using your display")
+                return
+            }
+            // Try display numbers until one is free; -displayfd prints the number once ready.
+            String number = null
+            for (int candidate in (90..199).findAll { !new File("/tmp/.X${it}-lock").exists() }.take(5)) {
+                server = new ProcessBuilder(xvfb, ":${candidate}", '-displayfd', '1', '-screen', '0', '1280x720x24', '-nolisten', 'tcp')
+                        .redirectError(ProcessBuilder.Redirect.DISCARD).start()
+                number = new BufferedReader(new InputStreamReader(server.inputStream)).readLine()?.trim()
+                if (number == "${candidate}") {
+                    break
+                }
+                server.destroy()
+                server = null
+                number = null
+            }
+            if (number == null) {
+                throw new GradleException('Xvfb did not start (tried 5 display numbers)')
+            }
+            task.environment('DISPLAY', ":${number}")
+            task.environment.remove('WAYLAND_DISPLAY')
+            task.environment('SDL_VIDEODRIVER', 'x11')
+            // Xvfb offers no GLX visual SDL accepts; EGL works (Mesa software rendering).
+            task.environment('SDL_VIDEO_FORCE_EGL', '1')
+            logger.lifecycle("${name}: running on virtual display :${number}")
+        }
+        doLast { server?.destroy() }
+        // A failing run skips doLast; stop the display anyway.
+        task.ext.stopDisplay = { server?.destroy() }
+    }
+}
+gradle.taskGraph.afterTask { task ->
+    if (task.ext.has('stopDisplay')) {
+        task.ext.stopDisplay()
+    }
+}
+tasks.register('clientTest') {
+    group = 'verification'
+    description = 'Runs the client GameTests with OpenGL and with Vulkan.'
+    dependsOn 'runClientGameTest', 'runClientGameTestVulkan'
+}
+tasks.named('runClientGameTestVulkan') {
+    mustRunAfter 'runClientGameTest'
+    dependsOn 'acceptGameTestEula'
+    // Loom accepts the EULA (see configureTests) only in the default run folder.
+    def eulaFile = file('build/run/clientGameTestVulkan/eula.txt')
+    doFirst {
+        eulaFile.parentFile.mkdirs()
+        eulaFile.text = '# Accepted for the test server, as in build/run/clientGameTest.\neula=true\n'
+    }
+}
 tasks.named('check') {
-    dependsOn 'runGameTest', 'restartTest'
+    dependsOn 'runGameTest', 'restartTest', 'clientTest'
 }
 
 processResources {

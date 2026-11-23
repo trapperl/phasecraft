@@ -11,6 +11,9 @@
   "entrypoints": {
     "main": [
       "dev.phasecraft.PhaseCraft"
+    ],
+    "client": [
+      "dev.phasecraft.client.PhaseCraftClient"
     ]
   },
   "depends": {
