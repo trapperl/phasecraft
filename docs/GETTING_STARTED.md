@@ -193,8 +193,10 @@ has a sign. Press H to see the hidden blocks, or inspect them with
 `/phasecraft get <x> -60 0` (or `execute in minecraft:the_nether run ...`
 for station 5). Rerunning it rebuilds the area from scratch;
 `python3 tools/examples.py --signs-only` rewrites just the signs. Station 10 is
-the hidden 2x2 door; the script also operates it (lever on, open; lever off,
-closed) and leaves it closed for you.
+the hidden 2x2 door; station 11 is the hidden staircase, on a raised
+platform at x = 76 (climb the stairs on its north side; the lever is at the
+top). The script operates both (lever on, open; lever off, closed) and leaves
+them closed for you.
 
 To get screenshots of every station with the overlay on and off, without a
 server:

@@ -215,14 +215,126 @@ def lever(on):
     rcon.send_commands([f"setblock {coords(door_pos(7, 3, 6))} minecraft:lever[face=floor,facing=north,powered={str(on).lower()}]"])
 
 
+# Station 11: the hidden staircase (same layout as HiddenStaircaseGameTests).
+STAIR_ORIGIN = (76, -61, -4)   # test-relative (0, 0, 0); the walking surface is relative y = 5
+STAIR_STEP = "minecraft:polished_andesite"
+STAIR_BODY = "minecraft:stone_bricks"
+STAIR_LEVER = (9, 6, 2)
+
+
+def stair_pos(x, y, z):
+    ox, oy, oz = STAIR_ORIGIN
+    return (ox + x, oy + y, oz + z)
+
+
+def stair_air(x, y, z):
+    """Visible air inside the platform: the pit under the hidden floor, the cellar, the wall pockets."""
+    return (x in (3, 4) and ((z == 2 and y == 4) or (z == 3 and y == 4) or (z == 4 and y in (3, 4))
+                             or (5 <= z <= 7 and 2 <= y <= 4))) or (y == 4 and z in (3, 4) and x in (2, 5))
+
+
+def staircase_commands():
+    visible = lambda pos, block: f"setblock {coords(stair_pos(*pos))} {block}"
+    hidden = lambda pos, block: in_dimension(HIDDEN_OVERWORLD, f"setblock {coords(stair_pos(*pos))} {block}")
+
+    def on(pos, block):  # a hidden wire or repeater on a hidden block of stone
+        x, y, z = pos
+        return [hidden((x, y - 1, z), "minecraft:stone"), hidden(pos, block)]
+
+    def repeater(facing, delay, powered):  # facing = the input side
+        return f"minecraft:repeater[facing={facing},delay={delay},powered={str(powered).lower()}]"
+
+    wire = "minecraft:redstone_wire"
+    ox, oy, oz = STAIR_ORIGIN
+    out = [
+        f"fill {ox - 1} {oy + 1} {oz - 8} {ox + 12} {oy + 8} {oz + 10} minecraft:air",
+        in_dimension(HIDDEN_OVERWORLD, f"fill {ox - 1} {oy} {oz - 8} {ox + 12} {oy + 8} {oz + 10} minecraft:air"),
+        f"fill {ox} {oy} {oz} {ox + 10} {oy} {oz + 8} minecraft:stone",
+        f"fill {ox} {oy + 1} {oz} {ox + 10} {oy + 4} {oz + 8} {STAIR_BODY}",
+        f"fill {ox} {oy + 5} {oz} {ox + 10} {oy + 5} {oz + 8} {STAIR_STEP}",
+    ]
+    out += [visible((x, y, z), "minecraft:air")
+            for x in range(11) for y in range(1, 6) for z in range(9) if stair_air(x, y, z)]
+    for x in (3, 4):
+        out.append(visible((x, 3, 3), STAIR_STEP))
+        out.append(visible((x, 2, 4), STAIR_STEP))
+        out.append(f"fill {coords(stair_pos(x, 1, 5))} {coords(stair_pos(x, 1, 7))} {STAIR_STEP}")
+    # Something to find in the cellar, and light to find it by.
+    out.append(visible((3, 2, 7), "minecraft:chest[facing=north]"))
+    out.append(visible((4, 2, 7), "minecraft:lantern"))
+    # Ordinary stairs up to the platform, on the north side by the lever.
+    for i, z in enumerate(range(-5, 0)):
+        for x in (7, 8):
+            if i > 0:
+                out.append(f"fill {coords(stair_pos(x, 1, z))} {coords(stair_pos(x, i, z))} {STAIR_BODY}")
+            out.append(visible((x, i + 1, z), "minecraft:stone_brick_stairs[facing=south]"))
+    out.append(visible(STAIR_LEVER, "minecraft:lever[face=floor,facing=north,powered=false]"))
+    out.append(sign(stair_pos(6, 1, -6), ["11. Stairs", "Go up and flip", "the lever: the", "floor opens"]))
+
+    # Hidden machinery, closed, in signal order so every part is placed already settled.
+    out.append(hidden((9, 5, 2), "phasecraft:phase_port"))         # under the lever
+    out += on((9, 5, 3), repeater("north", 1, False))              # R1: lever -> S1
+    out += on((8, 5, 2), repeater("east", 4, False))               # R2: lever -> stage B bus
+    out += on((8, 5, 4), repeater("west", 4, False))               # R3: stage B bus -> S1 (hold)
+    out.append(hidden((9, 5, 4), "minecraft:stone"))               # S1
+    for z in range(0, 5):
+        out += on((7, 5, z), wire)
+    for x in range(6, -1, -1):
+        out += on((x, 5, 0), wire)
+    for z in range(1, 5):
+        out += on((0, 5, z), wire)
+    for z in (3, 4):
+        out += on((1, 5, z), repeater("west", 1, False))
+        out += on((2, 5, z), repeater("west", 3, False))
+        out += on((6, 5, z), repeater("east", 1, False))
+        out += on((5, 5, z), repeater("east", 3, False))
+    out.append(hidden((9, 5, 5), "minecraft:redstone_wall_torch[facing=south,lit=true]"))
+    out += on((9, 4, 5), wire)
+    out += on((8, 3, 5), wire)
+    out += on((7, 3, 5), repeater("east", 1, True))
+    for z in range(5, 0, -1):
+        out += on((6, 3, z), wire)
+    for x in range(5, 0, -1):
+        out += on((x, 3, 1), wire)
+    for z in range(2, 5):
+        out += on((1, 3, z), wire)
+    for z in range(2, 5):
+        out += on((2, 3, z), repeater("west", 1, True))
+        out += on((5, 3, z), repeater("east", 1, True))
+    for z in range(2, 5):
+        for x in (3, 4):
+            out.append(hidden((x, 3, z), "phasecraft:sticky_phase_piston[facing=up,extended=true]"))
+    for z in (3, 4):
+        out.append(hidden((3, 4, z), "phasecraft:sticky_phase_piston[facing=east,extended=false]"))
+        out.append(hidden((4, 4, z), "phasecraft:sticky_phase_piston[facing=west,extended=false]"))
+    return out
+
+
+def staircase_state():
+    """'closed', 'open' or a picture of the moving blocks (S = step block, . = anything else)."""
+    cells = [(x, y, z) for z in (2, 3, 4) for y in (5, 4) for x in (2, 3, 4, 5) if y == 4 or x in (3, 4)]
+    replies = rcon.send_commands([f"phasecraft get {coords(stair_pos(*c))}" for c in cells])
+    step_at = {c for c, r in zip(cells, replies) if STAIR_STEP in r.split("visible: ", 1)[1].split(" |")[0]}
+    if step_at == {(x, 5, z) for x in (3, 4) for z in (2, 3, 4)}:
+        return "closed"
+    if step_at == {(3, 4, 2), (4, 4, 2), (2, 4, 3), (2, 4, 4), (5, 4, 3), (5, 4, 4)}:
+        return "open"
+    return "".join("S" if c in step_at else "." for c in cells)
+
+
+def stair_lever(on):
+    rcon.send_commands([f"setblock {coords(stair_pos(*STAIR_LEVER))} "
+                        f"minecraft:lever[face=floor,facing=north,powered={str(on).lower()}]"])
+
+
 def build_commands():
     commands = [
         "setworldspawn 0 -60 -6",
         "gamerule advance_time false",
         "time set noon",
         "weather clear 1000000",
-        "forceload add -8 -8 72 8",
-        in_dimension(HIDDEN_OVERWORLD, "forceload add -8 -8 72 8"),
+        "forceload add -8 -16 88 8",
+        in_dimension(HIDDEN_OVERWORLD, "forceload add -8 -16 88 8"),
         # Clear the area (visible) and lay a path of andesite under the stations.
         "fill -4 -60 -8 54 -55 4 minecraft:air",
         "fill -4 -61 -8 54 -61 4 minecraft:grass_block",
@@ -234,6 +346,7 @@ def build_commands():
     ]
     commands += [in_dimension(HIDDEN_OVERWORLD, f"setblock {coords(pos)} minecraft:smooth_stone") for pos in HIDDEN_SUPPORTS]
     commands += door_commands()
+    commands += staircase_commands()
     for station in STATIONS:
         for dimension, pos, *_ in station["hidden"]:
             commands.append(in_dimension(dimension, f"phasecraft clear {coords(pos)}"))
@@ -298,6 +411,16 @@ def main():
     door_ok = [s for _, s in steps] == ["closed", "open", "closed"]
     ok &= door_ok
     print(f"{'ok ' if door_ok else 'BAD'} hidden door: " + ", ".join(f"{name}: {state}" for name, state in steps))
+    try:
+        stair_steps = [("before", staircase_state())]
+        stair_lever(True); time.sleep(3); stair_steps.append(("lever on", staircase_state()))
+        stair_lever(False); time.sleep(3); stair_steps.append(("lever off", staircase_state()))
+    except rcon.RconError as error:
+        print(error, file=sys.stderr)
+        return 1
+    stairs_ok = [s for _, s in stair_steps] == ["closed", "open", "closed"]
+    ok &= stairs_ok
+    print(f"{'ok ' if stairs_ok else 'BAD'} hidden staircase: " + ", ".join(f"{name}: {state}" for name, state in stair_steps))
     print("Examples built and verified." if ok else "Some examples did not build as expected.")
     return 0 if ok else 1
 

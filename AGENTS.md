@@ -53,16 +53,20 @@ docs/ARCHITECTURE.md); vanilla runs it. Acceptance target for 1: the
 hidden piston door.
 Power crosses only through phase ports (done). The person wants every
 crossing explicit: a dedicated block, never every position.
-Phase ports, phase pistons, the hidden 2x2 door, the overlay (including
+Phase ports, phase pistons, the hidden 2x2 door, the hidden staircase, the overlay (including
 chests, signs and fluids), editing mode (including pick) and keeping players
 out of the hidden layer are done. The person expects the hidden layer to look like a
 transparent layer, not a separate world.
 1. Famous redstone contraptions, PhaseCraft style (the person's idea; a
    Mumbo Jumbo video inspired the mod). Build them as examples stations with
-   GameTests, machinery all hidden, showing what vanilla cannot do. Let the
-   person pick the order; suggested: hidden staircase, 3x3 flush piston door,
-   secret room behind a wall, trapdoor floor. Not block-for-block copies of
-   anyone's builds.
+   GameTests, machinery all hidden, showing what vanilla cannot do. Not
+   block-for-block copies of anyone's builds. Order chosen by the person
+   (2026-11-23), top to bottom: hidden staircase (done, station 11),
+   3x3 flush piston door, overlay performance for large hidden builds,
+   flying-machine groundwork (can phase pistons push slime structures that
+   span both layers?). Later ideas: secret room behind a wall, trapdoor floor.
+   Stacking phase pistons? Read the quasi-connectivity lesson under the
+   staircase in docs/ARCHITECTURE.md first.
 2. Stretch: a flying machine with a hidden engine carrying visible blocks.
 3. Known gaps: buckets do nothing in editing mode; picking a hidden chest
    does not copy its contents.
