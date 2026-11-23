@@ -203,7 +203,10 @@ changes what is phased.
   everyone (the clicking player included).
 - **Light** (`PhasedLights`, `BlockLightEnginePhasedMixin`): the server
   keeps the light each phased hidden block gives off, per visible
-  dimension, from hidden block changes and hidden chunk loads. Vanilla's
+  dimension, from hidden block changes and hidden chunk loads (a loaded
+  chunk is scanned on the next tick: reading a block of a chunk while it is
+  still loading waits for that very chunk, which hung the server at startup;
+  the restart test now stores a phased light). Vanilla's
   block light engine asks a position's emission through `getEmission`;
   the mixin returns the brighter of the visible block's own and the phased
   light at that spot, and lighting a chunk from scratch also starts from
@@ -429,7 +432,9 @@ All of these run on every `./gradlew build`, locally and in CI:
 - **Restart test** (`./gradlew restartTest`): two separate server processes
   on one world folder. The first places hidden blocks in all three hidden
   dimensions (one far away and unloaded) and stores some cells the old way;
-  the second checks every hidden block and that the old cells were migrated.
+  the second checks every hidden block and that the old cells were migrated,
+  and that a stored phased glowstone lights the visible world after the
+  restart (it hung the server before the next-tick chunk scan).
 
 Each test was checked by breaking the code on purpose and seeing it fail.
 

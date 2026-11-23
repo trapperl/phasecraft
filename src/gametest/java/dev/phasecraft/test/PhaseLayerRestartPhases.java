@@ -1,5 +1,6 @@
 package dev.phasecraft.test;
 
+import dev.phasecraft.PhaseCraftBlocks;
 import dev.phasecraft.layer.HiddenLayer;
 import dev.phasecraft.layer.PhaseLayerData;
 import java.util.List;
@@ -11,6 +12,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -34,6 +36,9 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 public class PhaseLayerRestartPhases {
     private record Expected(ResourceKey<Level> dimension, BlockPos pos, BlockState block) {}
 
+    /** Where a phased glowstone is stored; after the restart it must light the visible world there. */
+    private static final BlockPos PHASED_LIGHT = new BlockPos(10, 70, 30);
+
     /** Same XYZ in every dimension, plus a cell far outside any loaded chunk. */
     private static final List<Expected> HIDDEN = List.of(
             // Ground first: wire and repeaters need a block under them, by vanilla rules.
@@ -48,7 +53,10 @@ public class PhaseLayerRestartPhases {
                     .setValue(BlockStateProperties.DELAY, 4)),
             new Expected(Level.NETHER, new BlockPos(10, 64, 10), Blocks.STICKY_PISTON.defaultBlockState()
                     .setValue(BlockStateProperties.FACING, Direction.EAST)),
-            new Expected(Level.END, new BlockPos(10, 64, 10), Blocks.OBSIDIAN.defaultBlockState()));
+            new Expected(Level.END, new BlockPos(10, 64, 10), Blocks.OBSIDIAN.defaultBlockState()),
+            // A phased light: loading its hidden chunk once deadlocked the server at startup.
+            new Expected(Level.OVERWORLD, PHASED_LIGHT.below(), PhaseCraftBlocks.PHASE_BLOCK.defaultBlockState()),
+            new Expected(Level.OVERWORLD, PHASED_LIGHT, Blocks.GLOWSTONE.defaultBlockState()));
 
     /** Stored the old way before the restart; must be in the hidden dimension after it. */
     private static final List<Expected> LEGACY = List.of(
@@ -74,7 +82,7 @@ public class PhaseLayerRestartPhases {
         helper.succeed();
     }
 
-    @GameTest
+    @GameTest(maxTicks = 600)
     public void verifyAfterRestart(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
         for (Expected cell : HIDDEN) {
@@ -89,6 +97,11 @@ public class PhaseLayerRestartPhases {
             helper.assertValueEqual(PhaseLayerData.get(level).size(), 0,
                     "old-style cells left in " + cell.dimension().identifier());
         }
-        helper.succeed();
+        // Light is computed on its own thread: wait for it (in real time; see PhasedLightGameTests).
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertValueEqual(
+                        server.overworld().getBrightness(LightLayer.BLOCK, PHASED_LIGHT), 15,
+                        "visible block light at the phased glowstone after restart"))
+                .thenSucceed();
     }
 }

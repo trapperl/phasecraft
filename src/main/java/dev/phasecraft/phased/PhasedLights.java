@@ -4,6 +4,7 @@ import dev.phasecraft.PhaseCraftBlocks;
 import dev.phasecraft.layer.HiddenDimensions;
 import dev.phasecraft.layer.HiddenLayer;
 import dev.phasecraft.PhaseCraft;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -62,6 +63,8 @@ public final class PhasedLights {
     private static final Map<ResourceKey<Level>, Map<Long, Integer>> LIGHTS = new ConcurrentHashMap<>();
     /** On a client: the phased lights of the dimension the player is in, as sent by the server. */
     public static final Map<Long, Integer> CLIENT = new ConcurrentHashMap<>();
+    /** Hidden chunks loaded since the last tick, per hidden dimension (server thread only). */
+    private static final Map<ResourceKey<Level>, LongOpenHashSet> TO_SCAN = new HashMap<>();
     /** The dimension each player was last sent the phased lights of. */
     private static final Map<UUID, ResourceKey<Level>> SENT = new HashMap<>();
     private static final Direction[] DIRECTIONS = Direction.values();
@@ -89,11 +92,18 @@ public final class PhasedLights {
     public static void register() {
         PayloadTypeRegistry.clientboundPlay().register(Sync.TYPE, Sync.STREAM_CODEC);
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> SENT.remove(handler.player.getUUID()));
-        ServerChunkEvents.CHUNK_LOAD.register((level, chunk, generated) -> scan(level, chunk));
+        // Scanned on the next tick, not while the chunk is still loading: reading a block of
+        // a chunk that is loading waits for that very chunk, and the server hangs at startup.
+        ServerChunkEvents.CHUNK_LOAD.register((level, chunk, generated) -> {
+            if (HiddenDimensions.isHidden(level.dimension())) {
+                TO_SCAN.computeIfAbsent(level.dimension(), key -> new LongOpenHashSet()).add(chunk.getPos().pack());
+            }
+        });
         ServerTickEvents.END_SERVER_TICK.register(PhasedLights::tick);
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
             LIGHTS.clear();
             SENT.clear();
+            TO_SCAN.clear();
         });
     }
 
@@ -143,7 +153,9 @@ public final class PhasedLights {
             return;
         }
         BlockState state = hidden.getBlockState(pos);
-        int light = state.getLightEmission() > 0 && Phased.isOnPhaseBlock(hidden, pos, state) ? state.getLightEmission() : 0;
+        // The support may be in a neighbouring chunk; never load one for this.
+        int light = state.getLightEmission() > 0 && hidden.isLoaded(Phased.supportOf(pos, state))
+                && Phased.isOnPhaseBlock(hidden, pos, state) ? state.getLightEmission() : 0;
         ServerLevel visible = HiddenLayer.of(hidden).visibleLevel();
         Map<Long, Integer> lights = LIGHTS.computeIfAbsent(visible.dimension(), key -> new ConcurrentHashMap<>());
         Integer before = light == 0 ? lights.remove(pos.asLong()) : lights.put(pos.asLong(), light);
@@ -172,6 +184,20 @@ public final class PhasedLights {
     }
 
     private static void tick(MinecraftServer server) {
+        if (!TO_SCAN.isEmpty()) {
+            for (Map.Entry<ResourceKey<Level>, LongOpenHashSet> entry : TO_SCAN.entrySet()) {
+                ServerLevel hidden = server.getLevel(entry.getKey());
+                if (hidden != null) {
+                    entry.getValue().forEach(packed -> {
+                        LevelChunk chunk = hidden.getChunkSource().getChunkNow(ChunkPos.getX(packed), ChunkPos.getZ(packed));
+                        if (chunk != null) {
+                            scan(hidden, chunk);
+                        }
+                    });
+                }
+            }
+            TO_SCAN.clear();
+        }
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             ResourceKey<Level> dimension = player.level().dimension();
             if (!dimension.equals(SENT.get(player.getUUID())) && ServerPlayNetworking.canSend(player, Sync.TYPE)) {
@@ -185,9 +211,6 @@ public final class PhasedLights {
     }
 
     private static void scan(ServerLevel level, LevelChunk chunk) {
-        if (!HiddenDimensions.isHidden(level.dimension())) {
-            return;
-        }
         LevelChunkSection[] sections = chunk.getSections();
         for (int index = 0; index < sections.length; index++) {
             LevelChunkSection section = sections[index];
