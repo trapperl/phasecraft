@@ -76,6 +76,15 @@ transparent layer, not a separate world.
    stay as they are. First step: buttons, levers, pressure plates; blocks
    not supported yet just don't react (list the supported ones in the
    docs). Suggested slot: after the 3x3 flush door.
+   Then Survival play (decided by the person, 2026-11-23): one game rule,
+   on by default, that lets Survival players use the overlay and editing
+   mode (with Survival rules: placing uses the item, breaking takes mining
+   time and the right tool and drops the block, normal reach), plus
+   crafting recipes for phase pistons, ports and the phase block. The
+   person picks the recipe costs. Entering the hidden layer stays
+   Creative/Spectator only. Servers can turn the rule off (on a public
+   server Survival editing can build inside other people's walls, past
+   claim mods).
    Stacking phase pistons? Read the quasi-connectivity lesson under the
    staircase in docs/ARCHITECTURE.md first.
 2. Stretch: a flying machine with a hidden engine carrying visible blocks.
