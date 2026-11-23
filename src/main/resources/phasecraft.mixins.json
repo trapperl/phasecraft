@@ -3,7 +3,7 @@
   "package": "dev.phasecraft.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": ["ServerLevelPhaseLinkMixin", "ServerPlayerRespawnMixin", "EntityPortalMixin", "BasePressurePlateAccessor",
-             "BasePressurePlateMixin", "ServerLevelPhasedSoundMixin", "LightEngineAccessor",
+             "BasePressurePlateMixin", "LightEngineAccessor",
              "BlockLightEnginePhasedMixin", "ServerLevelPhaseBridgeMixin"],
   "injectors": {"defaultRequire": 1}
 }

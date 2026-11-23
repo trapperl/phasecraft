@@ -50,8 +50,8 @@ import net.minecraft.world.phys.BlockHitResult;
  *       (and {@code BasePressurePlateMixin} makes them count visible
  *       entities).</li>
  * </ul>
- * Sounds of phased blocks are heard in the visible world
- * ({@code ServerLevelPhasedSoundMixin}).
+ * Phased blocks make no sound in the visible world (the person, 2026-11-23);
+ * their sounds play in the hidden layer only.
  */
 public final class PhasedInput {
     /** Every pressure plate in loaded hidden chunks, per hidden dimension. */

@@ -24,6 +24,7 @@
       "dev.phasecraft.test.SecretRoomGameTests",
       "dev.phasecraft.test.TrapdoorFloorGameTests",
       "dev.phasecraft.test.HiddenPortGameTests",
+      "dev.phasecraft.test.SilentHiddenGameTests",
       "dev.phasecraft.test.HiddenEditingGameTests",
       "dev.phasecraft.test.KeepOutGameTests",
       "dev.phasecraft.test.NoMojangTrafficGameTests",

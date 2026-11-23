@@ -141,8 +141,9 @@ public class PhasePistonBlock extends DirectionalBlock {
                 return false;
             }
             level.setBlock(pos, state.setValue(EXTENDED, true), Block.UPDATE_ALL);
-            visible.playSound(null, pos, SoundEvents.PISTON_EXTEND, SoundSource.BLOCKS, 0.5F,
-                    visible.getRandom().nextFloat() * 0.25F + 0.6F);
+            // Heard in the hidden layer only: hidden blocks make no sound in the visible world.
+            level.playSound(null, pos, SoundEvents.PISTON_EXTEND, SoundSource.BLOCKS, 0.5F,
+                    level.getRandom().nextFloat() * 0.25F + 0.6F);
             return true;
         }
         if (powered) {
@@ -152,8 +153,8 @@ public class PhasePistonBlock extends DirectionalBlock {
             pullBack(visible, pos, direction);
         }
         level.setBlock(pos, state.setValue(EXTENDED, false), Block.UPDATE_ALL);
-        visible.playSound(null, pos, SoundEvents.PISTON_CONTRACT, SoundSource.BLOCKS, 0.5F,
-                visible.getRandom().nextFloat() * 0.15F + 0.6F);
+        level.playSound(null, pos, SoundEvents.PISTON_CONTRACT, SoundSource.BLOCKS, 0.5F,
+                level.getRandom().nextFloat() * 0.15F + 0.6F);
         return true;
     }
 
