@@ -154,13 +154,27 @@ public final class PhaseLink {
         if (hidden == null) {
             return;
         }
-        boolean wasTicking = oldStatus.isOrAfter(FullChunkStatus.BLOCK_TICKING);
-        boolean isTicking = newStatus.isOrAfter(FullChunkStatus.BLOCK_TICKING);
-        // Radius 1 puts the centre chunk at block-ticking level.
-        if (isTicking && !wasTicking) {
-            hidden.getChunkSource().addTicketWithRadius(PHASE_TICKET, chunk.getPos(), 1);
-        } else if (wasTicking && !isTicking) {
-            hidden.getChunkSource().removeTicketWithRadius(PHASE_TICKET, chunk.getPos(), 1);
+        // The hidden chunk ticks exactly as the visible one does: blocks where it
+        // ticks blocks, entities too (falling sand, items, minecarts) where it
+        // ticks entities. A ticket of radius r puts its centre chunk at level
+        // 33 - r: 32 is block ticking, 31 entity ticking.
+        int oldRadius = ticketRadius(oldStatus);
+        int newRadius = ticketRadius(newStatus);
+        if (oldRadius == newRadius) {
+            return;
         }
+        if (newRadius > 0) {
+            hidden.getChunkSource().addTicketWithRadius(PHASE_TICKET, chunk.getPos(), newRadius);
+        }
+        if (oldRadius > 0) {
+            hidden.getChunkSource().removeTicketWithRadius(PHASE_TICKET, chunk.getPos(), oldRadius);
+        }
+    }
+
+    private static int ticketRadius(FullChunkStatus status) {
+        if (status.isOrAfter(FullChunkStatus.ENTITY_TICKING)) {
+            return 2;
+        }
+        return status.isOrAfter(FullChunkStatus.BLOCK_TICKING) ? 1 : 0;
     }
 }

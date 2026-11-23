@@ -45,7 +45,8 @@ completion: `redstone_wire`, `minecraft:redstone_wire` and
 `get` reports visible stone and hidden
 `minecraft:redstone_wire[east=none,north=none,power=0,south=none,west=none]`.
 `/phasecraft layer hidden` takes you to the same spot in the hidden layer
-(Creative or Spectator only: it has no ground), where you can see and build
+(Creative or Spectator only: it has no ground; switch to Survival there and
+you are put back in the visible world), where you can see and build
 hidden circuits with normal blocks and commands; `layer visible` brings you
 back. Hidden redstone runs by vanilla rules.
 

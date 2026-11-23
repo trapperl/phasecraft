@@ -196,7 +196,7 @@ public class PhaseCraftCrossLayerGameTests {
                 .thenSucceed();
     }
 
-    /** Hidden chunks tick where the visible world ticks, and not where it does not. */
+    /** Hidden chunks tick (blocks and entities) where the visible world ticks, and not where it does not. */
     @GameTest(maxTicks = 100)
     public void hiddenChunksTickWithVisibleChunks(GameTestHelper helper) {
         HiddenLayer layer = HiddenLayer.of(helper.getLevel());
@@ -204,7 +204,28 @@ public class PhaseCraftCrossLayerGameTests {
         BlockPos far = here.offset(2_000_000, 0, 2_000_000);
         helper.succeedWhen(() -> {
             helper.assertTrue(layer.level().shouldTickBlocksAt(here), "hidden chunk under the test does not tick");
+            helper.assertTrue(layer.level().isPositionEntityTicking(here), "hidden entities under the test do not tick");
             helper.assertFalse(layer.level().shouldTickBlocksAt(far), "hidden chunk ticks where the visible world is not loaded");
+            helper.assertFalse(layer.level().isPositionEntityTicking(far), "hidden entities tick where the visible world is not loaded");
         });
+    }
+
+    /** Hidden entities run by vanilla rules too: hidden sand with nothing under it falls and lands. */
+    @GameTest(maxTicks = 100)
+    public void hiddenSandFalls(GameTestHelper helper) {
+        HiddenLayer layer = HiddenLayer.of(helper.getLevel());
+        BlockPos floor = helper.absolutePos(new BlockPos(6, 1, 1));
+        BlockPos high = floor.above(4);
+        layer.setBlock(floor, STONE);
+        layer.setBlock(high, Blocks.SAND.defaultBlockState());
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(layer.getBlock(floor.above()).is(Blocks.SAND),
+                        "hidden sand did not land; at the top: " + layer.getBlock(high)))
+                .thenExecute(() -> {
+                    helper.assertTrue(layer.getBlock(high).isAir(), "sand still at the top");
+                    layer.removeBlock(floor.above());
+                    layer.removeBlock(floor);
+                })
+                .thenSucceed();
     }
 }
