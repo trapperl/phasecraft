@@ -1,0 +1,7 @@
+{
+  "required": true,
+  "package": "dev.phasecraft.client.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": ["MinecraftEditingMixin"],
+  "injectors": {"defaultRequire": 1}
+}

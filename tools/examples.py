@@ -5,6 +5,8 @@ Usage:
     ./gradlew runServer            # in another terminal, RCON enabled
     python3 tools/examples.py
 
+    python3 tools/examples.py --signs-only    # rewrite only the signs, keep the rest
+
     python3 tools/examples.py --print-commands > build/examples-commands.txt
     PHASECRAFT_EXAMPLES_COMMANDS=$PWD/build/examples-commands.txt ./gradlew runClientGameTest
                                    # screenshots of every station, overlay on
@@ -39,31 +41,31 @@ SIGN_Z = -2      # signs stand north of each station, readable from the north
 STATIONS = [
     {
         "x": 0,
-        "sign": ["1. Overlap", "Stone you see;", "redstone hidden", "at the same XYZ"],
+        "sign": ["1. Same spot", "You see stone.", "Hidden inside:", "redstone wire"],
         "visible": [((0, Y, 0), "minecraft:stone")],
         "hidden": [("minecraft:overworld", (0, Y, 0), "minecraft:redstone_wire")],
     },
     {
         "x": 6,
-        "sign": ["2. Full state", "Hidden repeater", "east, delay 3;", "visible twin S"],
+        "sign": ["2. Exact copy", "Hidden repeater", "(delay 3) next", "to a real one"],
         "visible": [((6, Y, 1), "minecraft:repeater[facing=east,delay=3]")],
         "hidden": [("minecraft:overworld", (6, Y, 0), "minecraft:repeater[facing=east,delay=3]")],
     },
     {
         "x": 12,
-        "sign": ["3. Hidden piston", "facing up, under", "the sand. Later:", "it will push it"],
+        "sign": ["3. Own layer", "A hidden piston", "can't move real", "blocks (see 9)"],
         "visible": [((12, Y, 0), "minecraft:glass"), ((12, Y + 1, 0), "minecraft:sand")],
         "hidden": [("minecraft:overworld", (12, Y, 0), "minecraft:piston[facing=up]")],
     },
     {
         "x": 18,
-        "sign": ["4. Break me", "Break the planks", "then /phasecraft", "get: still there"],
+        "sign": ["4. Break me", "Break planks:", "hidden block", "stays (press H)"],
         "visible": [((18, Y, 0), "minecraft:oak_planks")],
         "hidden": [("minecraft:overworld", (18, Y, 0), "minecraft:redstone_block")],
     },
     {
         "x": 24,
-        "sign": ["5. Dimensions", "Here: a lever.", "The Nether has", "its own: 24 64 0"],
+        "sign": ["5. Each world", "has its own", "hidden layer.", "Nether: 24 64 0"],
         "visible": [((24, Y, 0), "minecraft:polished_andesite")],
         "hidden": [
             ("minecraft:overworld", (24, Y, 0), "minecraft:lever[face=floor,facing=north]"),
@@ -72,7 +74,7 @@ STATIONS = [
     },
     {
         "x": 30,
-        "sign": ["6. Hidden lamp", "lit by hidden", "power. Press H", "to see it"],
+        "sign": ["6. Hidden power", "Hidden redstone", "block lights a", "hidden lamp"],
         "visible": [],
         "hidden": [
             # Placed unlit; the check expects lit=true, so it passes only if vanilla
@@ -83,7 +85,7 @@ STATIONS = [
     },
     {
         "x": 36,
-        "sign": ["7. Phase port", "Lever (on) here,", "hidden port at", "its spot: lamp on"],
+        "sign": ["7. Phase port", "Lever's power", "goes down to a", "hidden lamp"],
         "visible": [((36, Y, 0), "minecraft:lever[face=floor,facing=north,powered=true]")],
         "hidden": [
             ("minecraft:overworld", (36, Y, 1), "minecraft:redstone_lamp[lit=false]", "minecraft:redstone_lamp[lit=true]"),
@@ -92,7 +94,7 @@ STATIONS = [
     },
     {
         "x": 42,
-        "sign": ["8. Hidden piston", "Flip the lever:", "the hidden", "piston pushes"],
+        "sign": ["8. Power down", "Flip the lever:", "power goes down", "a hidden piston"],
         "visible": [((42, Y, 0), "minecraft:lever[face=floor,facing=north,powered=false]")],
         "hidden": [
             ("minecraft:overworld", (42, Y, 2), "minecraft:oak_planks"),
@@ -102,7 +104,7 @@ STATIONS = [
     },
     {
         "x": 48,
-        "sign": ["9. Phase piston", "Flip the lever:", "a hidden piston", "moves the bricks"],
+        "sign": ["9. Phase piston", "Flip the lever:", "hidden piston", "moves the brick"],
         "visible": [
             ((48, Y, 0), "minecraft:lever[face=floor,facing=north,powered=false]"),
             ((49, Y, 1), "minecraft:stone_bricks"),
@@ -117,7 +119,7 @@ STATIONS = [
 
 HIDDEN_OVERWORLD = "phasecraft:hidden_overworld"
 
-WELCOME = ["PhaseCraft examples", "Press H to show", "the hidden layer", "[ ] = opacity"]
+WELCOME = ["PhaseCraft", "H: see hidden", "J: edit hidden", "[ ] = opacity"]
 
 # Hidden blocks that need something under them (vanilla rules: wire, repeaters
 # and floor levers break without support) get one hidden block of ground.
@@ -128,7 +130,13 @@ def coords(pos):
     return f"{pos[0]} {pos[1]} {pos[2]}"
 
 
+SIGN_LINE_MAX = 15  # characters that fit on a sign line at the default font, roughly
+
+
 def sign(pos, lines):
+    too_long = [line for line in lines if len(line) > SIGN_LINE_MAX]
+    if too_long or len(lines) > 4:
+        raise ValueError(f"sign text does not fit (4 lines of {SIGN_LINE_MAX}): {lines}")
     messages = ",".join('"' + line.replace('"', "'") + '"' for line in (lines + ["", "", "", ""])[:4])
     return f"setblock {coords(pos)} minecraft:oak_sign[rotation=8]{{front_text:{{messages:[{messages}]}}}} replace"
 
@@ -167,7 +175,7 @@ def door_commands():
             out.append(visible((x, y, 4), DOOR_BLOCK))
     out.append(visible((7, 2, 6), "minecraft:stone"))
     out.append(visible((7, 3, 6), "minecraft:lever[face=floor,facing=north,powered=false]"))
-    out.append(sign(door_pos(2, 1, 7), ["10. Hidden door", "Flip the lever", "on the pillar.", "No visible parts"]))
+    out.append(sign(door_pos(2, 1, 7), ["10. Hidden door", "Flip the lever", "on the pillar.", "H shows how"]))
     # Hidden machinery.
     out.append(hidden((7, 3, 6), "phasecraft:phase_port"))
     for z in range(3, 6):
@@ -244,6 +252,12 @@ def expected_hidden(block):
 
 
 def main():
+    if "--signs-only" in sys.argv[1:]:
+        # Rewrite just the signs on the running server, leaving everything else as it is.
+        replies = rcon.send_commands([c for c in build_commands() if "_sign[" in c])
+        bad = [r for r in replies if r and "Changed the block" not in r]
+        print(f"{len(replies)} signs written" + (f"; problems: {bad}" if bad else ""))
+        return 1 if bad else 0
     if "--print-commands" in sys.argv[1:]:
         # For the screenshot tour (ExamplesTourClientGameTest): the build, without RCON.
         print("\n".join(build_commands()))

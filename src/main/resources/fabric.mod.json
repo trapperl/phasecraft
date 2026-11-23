@@ -23,6 +23,10 @@
     "fabric-api": "*"
   },
   "mixins": [
-    "phasecraft.mixins.json"
+    "phasecraft.mixins.json",
+    {
+      "config": "phasecraft.client.mixins.json",
+      "environment": "client"
+    }
   ]
 }

@@ -141,7 +141,13 @@ public class OverlayClientGameTest implements FabricClientGameTest {
             server.runOnServer(minecraft -> HiddenLayer.of(minecraft.overworld()).removeBlock(GOLD));
             waitUntil(context, "client drops the removed hidden block", minecraft -> PhaseCraftClient.layer().get(GOLD).isAir());
             BufferedImage removed = screenshot(context, "gold_removed");
-            double removedTint = gold.mean(removed, Channel.RED_MINUS_BLUE) - gold.mean(off, Channel.RED_MINUS_BLUE);
+            // Compared with the overlay switched off right now, not with the earlier
+            // screenshot: the view can drift a little over a long test.
+            context.runOnClient(minecraft -> PhaseCraftClient.settings().setEnabled(false));
+            context.waitTicks(2);
+            BufferedImage removedOff = screenshot(context, "gold_removed_overlay_off");
+            context.runOnClient(minecraft -> PhaseCraftClient.settings().setEnabled(true));
+            double removedTint = gold.mean(removed, Channel.RED_MINUS_BLUE) - gold.mean(removedOff, Channel.RED_MINUS_BLUE);
             assertTrue(Math.abs(removedTint) < 8, "gold ghost still drawn after removal: " + removedTint);
             server.runOnServer(minecraft -> HiddenLayer.of(minecraft.overworld()).setBlock(GOLD, Blocks.GOLD_BLOCK.defaultBlockState()));
             waitForGhost(context, GOLD, Blocks.GOLD_BLOCK);

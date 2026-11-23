@@ -13,11 +13,13 @@
       "dev.phasecraft.test.PhaseCraftCrossLayerGameTests",
       "dev.phasecraft.test.PhasePistonGameTests",
       "dev.phasecraft.test.HiddenDoorGameTests",
+      "dev.phasecraft.test.HiddenEditingGameTests",
       "dev.phasecraft.test.PhaseLayerRestartPhases"
     ],
     "fabric-client-gametest": [
       "dev.phasecraft.test.client.OverlayClientGameTest",
       "dev.phasecraft.test.client.OverlayDedicatedServerClientGameTest",
+      "dev.phasecraft.test.client.EditingClientGameTest",
       "dev.phasecraft.test.client.ExamplesTourClientGameTest"
     ]
   },

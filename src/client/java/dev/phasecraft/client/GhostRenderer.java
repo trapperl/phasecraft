@@ -46,8 +46,9 @@ public final class GhostRenderer {
 
     private GhostRenderer() {}
 
-    public static void collect(LevelRenderContext context, GhostLayer layer, OverlaySettings settings) {
-        if (!settings.enabled() || layer.isEmpty()) {
+    /** Draws the ghosts if the overlay is on, or always while editing (you need to see what you edit). */
+    public static void collect(LevelRenderContext context, GhostLayer layer, OverlaySettings settings, boolean editing) {
+        if (!(settings.enabled() || editing) || layer.isEmpty()) {
             return;
         }
         Vec3 camera = context.levelState().cameraRenderState.pos;
