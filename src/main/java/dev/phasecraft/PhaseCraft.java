@@ -4,6 +4,7 @@ import dev.phasecraft.command.PhaseCraftCommands;
 import dev.phasecraft.edit.HiddenEditing;
 import dev.phasecraft.layer.HiddenLayerGuard;
 import dev.phasecraft.phased.PhasedInput;
+import dev.phasecraft.phased.PhasedLights;
 import dev.phasecraft.layer.LegacyLayerMigration;
 import dev.phasecraft.link.PhaseLink;
 import dev.phasecraft.overlay.OverlaySync;
@@ -27,6 +28,7 @@ public final class PhaseCraft implements ModInitializer {
         HiddenEditing.register();
         HiddenLayerGuard.register();
         PhasedInput.register();
+        PhasedLights.register();
         LOGGER.info("PhaseCraft prototype initialized: hidden layer dimensions enabled");
     }
 }

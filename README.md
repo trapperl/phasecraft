@@ -9,8 +9,8 @@ that move visible blocks from the hidden layer, a hidden 2x2 piston door, a hidd
 that opens into stairs down to a cellar), a hidden 3x3 flush door, the transparent overlay (press **H** in Creative to see hidden blocks drawn as
 see-through ghosts over the world; `[` and `]` change the opacity), editing mode (press **J**, and your
 clicks place, use and break blocks in the hidden layer instead of the visible world) and the phase block
-(a hidden button, lever or pressure plate standing on it reacts to the visible world: secret bricks and
-secret floor tiles). See [Getting started](docs/GETTING_STARTED.md) and [Architecture](docs/ARCHITECTURE.md).
+(a hidden button, lever, pressure plate or light standing on it reacts to the visible world: secret bricks,
+secret floor tiles, and lamps hidden in walls that light the room). See [Getting started](docs/GETTING_STARTED.md) and [Architecture](docs/ARCHITECTURE.md).
 
 | Overlay off | Overlay on (H) |
 | --- | --- |
