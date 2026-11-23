@@ -201,6 +201,26 @@ changes what is phased.
 - **Sounds** (`ServerLevelPhasedSoundMixin`): a sound played at a phased
   block's spot in a hidden level is also played in the visible level, to
   everyone (the clicking player included).
+- **Light** (`PhasedLights`, `BlockLightEnginePhasedMixin`): the server
+  keeps the light each phased hidden block gives off, per visible
+  dimension, from hidden block changes and hidden chunk loads. Vanilla's
+  block light engine asks a position's emission through `getEmission`;
+  the mixin returns the brighter of the visible block's own and the phased
+  light at that spot, and lighting a chunk from scratch also starts from
+  its phased lights. A change re-checks the spot; a phased light can sit in
+  a section vanilla thinks is empty (only air), where it keeps no light, so
+  the section is first marked as holding something, as vanilla does when a
+  block is placed there. (Lighting a chunk from scratch including its
+  phased lights is not covered by a test: GameTest areas are never lit from
+  scratch.) Clients: vanilla's light updates alone never showed
+  the light on screen (tested), and clients relight by themselves when
+  nearby blocks change, so every player with PhaseCraft is sent the phased
+  lights of their dimension, and changes; the client's light engine uses
+  them through the same mixin. Players without PhaseCraft see what the
+  server sends, which can go stale.
+  GameTests run ticks far faster than 20 a second, while light is computed
+  on its own thread at its own pace: light tests wait in real time (long
+  tick limits), or they fail at random.
 
 ### Decision: one phase block, not a phased variant of each block (decided by the person, 2026-11-23)
 
@@ -209,8 +229,7 @@ the phase piston. The person chose one phase block instead: one item and
 one rule ("what stands on it is phased") for every kind of block, and still
 an explicit crossing. It costs a hidden cell under or behind each phased
 block; phase pistons and ports stay separate blocks for that reason (the
-staircase stacks pistons with no room for one). Next: phased light sources
-light the visible world.
+staircase stacks pistons with no room for one).
 
 ### Nobody ends up in the hidden layer by accident (`HiddenLayerGuard`)
 
@@ -365,6 +384,16 @@ All of these run on every `./gradlew build`, locally and in CI:
     sneaking with a block places it as usual; a visible pig presses and
     releases a phased plate, but not an unphased one; pistons cannot move a
     phase block (each check shown to fail when its code is removed);
+  - phased light: hidden glowstone on a phase block lights the visible
+    world (15, fading by vanilla's rules), also high in empty sky; without
+    a phase block it does not; a phased lamp follows hidden redstone;
+    removing the phase block takes the light away; a wall torch on a phase
+    block's side lights. A client
+    sees a room lit by glowstone hidden in its wall, still lit after the
+    wall block at the light's spot is swapped, and dark once the glowstone
+    is removed (each shown to fail with its code removed: the mixin, the
+    phase-block check, the neighbour re-check, the wall-torch support, the
+    section marking, the client sync);
   - the 3x3 flush door opens and closes twice from one visible lever (and
     fails without phase-piston quasi-connectivity, with a shorter stage-1
     hold, or without the second lift);

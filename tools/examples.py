@@ -119,6 +119,22 @@ STATIONS = [
 
 HIDDEN_OVERWORLD = "phasecraft:hidden_overworld"
 
+# Station 14: phased light. A dark hut; one brick of its back wall is a secret
+# lever, and a redstone lamp hidden in the wall beside it, standing on a hidden
+# phase block, lights the hut when the lever is on.
+STATIONS.append({
+    "x": 115,
+    "sign": ["14. Hidden lamp", "Dark hut: find", "the brick that", "turns it on"],
+    "visible": [],
+    "hidden": [
+        ("minecraft:overworld", (118, Y + 1, 5), "phasecraft:phase_block"),
+        ("minecraft:overworld", (118, Y + 1, 4), "minecraft:lever[face=wall,facing=north]",
+         "minecraft:lever[face=wall,facing=north,powered=false]"),
+        ("minecraft:overworld", (119, Y, 4), "phasecraft:phase_block"),
+        ("minecraft:overworld", (119, Y + 1, 4), "minecraft:redstone_lamp", "minecraft:redstone_lamp[lit=false]"),
+    ],
+})
+
 # Station 13: the phase block. A secret button (the top-middle brick of a low
 # wall) and a secret pressure plate (in front of a lamp post), each standing
 # on or hanging from a hidden phase block. Their power comes back to the
@@ -418,8 +434,8 @@ def build_commands():
         "gamerule advance_time false",
         "time set noon",
         "weather clear 1000000",
-        "forceload add -8 -16 112 8",
-        in_dimension(HIDDEN_OVERWORLD, "forceload add -8 -16 112 8"),
+        "forceload add -8 -16 124 8",
+        in_dimension(HIDDEN_OVERWORLD, "forceload add -8 -16 124 8"),
         # Clear the area (visible) and lay a path of andesite under the stations.
         "fill -4 -60 -8 54 -55 4 minecraft:air",
         "fill -4 -61 -8 54 -61 4 minecraft:grass_block",
@@ -429,6 +445,12 @@ def build_commands():
         in_dimension(HIDDEN_OVERWORLD, "fill -4 -61 -8 54 -40 4 minecraft:air"),
         "fill 104 -60 -4 112 -55 3 minecraft:air",
         in_dimension(HIDDEN_OVERWORLD, "fill 104 -61 -4 112 -55 3 minecraft:air"),
+        # Station 14's hut: solid, hollowed out, a doorway in front; dark inside.
+        "fill 114 -60 -4 124 -54 7 minecraft:air",
+        in_dimension(HIDDEN_OVERWORLD, "fill 114 -61 -4 124 -54 7 minecraft:air"),
+        "fill 116 -60 -1 122 -56 5 minecraft:stone_bricks",
+        "fill 117 -60 0 121 -57 3 minecraft:air",
+        "fill 119 -60 -1 119 -59 -1 minecraft:air",
         sign((0, Y, -6), WELCOME),
     ]
     commands += [in_dimension(HIDDEN_OVERWORLD, f"setblock {coords(pos)} minecraft:smooth_stone") for pos in HIDDEN_SUPPORTS]

@@ -16,6 +16,7 @@
       "dev.phasecraft.test.HiddenStaircaseGameTests",
       "dev.phasecraft.test.ThreeByThreeDoorGameTests",
       "dev.phasecraft.test.PhaseBlockGameTests",
+      "dev.phasecraft.test.PhasedLightGameTests",
       "dev.phasecraft.test.HiddenEditingGameTests",
       "dev.phasecraft.test.KeepOutGameTests",
       "dev.phasecraft.test.NoMojangTrafficGameTests",
@@ -25,6 +26,7 @@
       "dev.phasecraft.test.client.OverlayClientGameTest",
       "dev.phasecraft.test.client.OverlayDedicatedServerClientGameTest",
       "dev.phasecraft.test.client.EditingClientGameTest",
+      "dev.phasecraft.test.client.PhasedLightClientGameTest",
       "dev.phasecraft.test.client.ExamplesTourClientGameTest"
     ]
   },

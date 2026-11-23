@@ -115,12 +115,20 @@ its side, is *phased*: it reacts to the visible world at its own spot.
 - **Pressure plates:** players, mobs and items standing on their spot in the
   visible world press them. Put the hidden phase block in the floor (at the
   same spot as a visible floor block) and the hidden plate on it.
+- **Light sources** (glowstone, lamps, torches, lanterns...): they light the
+  visible world at their spot, by vanilla's light rules, for every player.
+  A hidden lamp inside a wall, on a phase block, lights the room in front of
+  it; hidden redstone switches it. A wall torch counts as hanging on the
+  block behind it, a hanging lantern on the block above.
 - Their sounds are heard in the visible world.
 
 Not supported yet (phased, they act as ordinary hidden blocks): other
-blocks, light (next), and arrows on wooden buttons. Pistons cannot move a
-phase block. Examples station 13 has a secret brick and a secret plate,
-each lighting a lamp through a visible phase port.
+blocks, and arrows on wooden buttons. Pistons cannot move a phase block.
+Examples station 13 has a secret brick and a secret plate, each lighting a
+lamp through a visible phase port; station 14 is a dark hut with a secret
+brick that switches on a lamp hidden in its wall.
+
+![A dark stone room lit by a glowstone hidden in its far wall](images/phased-light-room.png)
 
 Save and exit your test world, reopen it, and run `/phasecraft get` again to
 manually inspect persistence. The same check runs automatically as

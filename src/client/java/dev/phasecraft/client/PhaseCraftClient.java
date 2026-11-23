@@ -3,6 +3,7 @@ package dev.phasecraft.client;
 import com.mojang.blaze3d.platform.InputConstants;
 import dev.phasecraft.PhaseCraft;
 import dev.phasecraft.overlay.OverlayPayloads;
+import dev.phasecraft.phased.PhasedLights;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
@@ -64,15 +65,18 @@ public final class PhaseCraftClient implements ClientModInitializer {
                 (payload, context) -> LAYER.forget(payload.chunk()));
         ClientPlayNetworking.registerGlobalReceiver(OverlayPayloads.Reset.TYPE,
                 (payload, context) -> LAYER.clear());
+        ClientPlayNetworking.registerGlobalReceiver(PhasedLights.Sync.TYPE, (payload, context) -> PhasedLightsClient.apply(payload));
         // A new connection starts empty: nothing from the last world or server
         // may show here. Queued before any of the new connection's payloads.
         ClientPlayConnectionEvents.INIT.register((handler, client) -> client.execute(() -> {
             LAYER.clear();
             ClientEditing.reset();
+            PhasedLights.CLIENT.clear();
         }));
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(() -> {
             LAYER.clear();
             ClientEditing.reset();
+            PhasedLights.CLIENT.clear();
         }));
 
         ClientTickEvents.END_CLIENT_TICK.register(PhaseCraftClient::handleKeys);
