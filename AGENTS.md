@@ -92,7 +92,8 @@ transparent layer, not a separate world.
       shard. Entering the hidden layer stays Creative/Spectator only.
       Servers can turn the rule off (on a public server Survival editing
       can build inside other people's walls, past claim mods).
-   d. Overlay performance for large hidden builds.
+   d. Overlay performance for large hidden builds (done: per-chunk geometry
+      cache, about 10x less CPU per frame).
    e. Flying-machine groundwork: can phase pistons push slime structures
       that span both layers?
    Stacking phase pistons? Read the quasi-connectivity lesson under the
