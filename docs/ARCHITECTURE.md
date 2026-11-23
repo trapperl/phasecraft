@@ -105,6 +105,42 @@ blocks of the camera, twice. Fine for machinery (the examples area is a few
 hundred blocks); not yet tuned for very large hidden builds (tens of
 thousands of blocks in view).
 
+## Editing mode: building in the hidden layer from the visible world
+
+**Client: `ClientEditing`** (key J, Creative only). While on, after vanilla
+picks what the crosshair is on, PhaseCraft picks again: the nearest hidden
+block along the view within reach (a raycast through the client's copy of
+the hidden layer, ignoring visible blocks, so hidden blocks inside walls can
+be reached as the overlay shows them), or else the visible block looked at.
+The target is outlined in purple. Vanilla's own pick is set to "nothing"
+and left/right clicks are taken over (`MinecraftEditingMixin`), so nothing
+visible is broken, placed or used. Clicks are sent to the server as
+`phasecraft:edit_use` (hand + hit) and `phasecraft:edit_break` (position).
+
+**Server: `HiddenEditing`.** Checks as vanilla checks a click (Creative,
+within reach, hit point on the block), then:
+
+- *use*: vanilla's `ServerPlayerGameMode.useItemOn` steps, carried out in the
+  hidden level (vanilla's would take the player's own, visible level): the
+  hidden block's own use first (levers, repeaters), then the held item with a
+  context in the hidden level. Aimed at a visible block with nothing hidden
+  there, the clicked spot is hidden air, which is replaceable, so by vanilla's
+  placement rules the new block goes at that same spot.
+- *break*: removes the hidden block as Creative breaking does
+  (`playerWillDestroy`, remove, `destroy`); never the visible block.
+
+Sounds play in the visible level, where the player is. Items that act on air
+rather than on a clicked block (buckets, throwables) are not redirected:
+editing mode is for blocks.
+
+### Decision: a click on a visible block places at that same spot (decided by the agent, 2026-11-22; open to change)
+
+Overlapping a visible block is the point of PhaseCraft (a port under a
+lever, a lamp inside a wall), and vanilla's own rule gives it for free:
+the hidden spot is air, and air is replaced. Placing *next to* a visible
+block works by clicking a hidden block instead (for example the hidden
+block just placed).
+
 ### Decision: who sees the overlay (decided by the agent, 2026-11-22; open to change)
 
 The same rule as entering the hidden layer: Creative and Spectator. A
@@ -176,8 +212,8 @@ has such cells.
   logouts while in it.
 - **Overlay: done** (see above). Not yet shown: hidden block entities and
   fluids.
-- **Editing mode** (next): a key switches which layer you place and break
-  in, while staying in the visible world, using the overlay to see.
+- **Editing mode: done** (see above). Middle-click pick, and items that act
+  on air, still act on the visible world.
 
 ### Acceptance targets
 
@@ -219,6 +255,9 @@ All of these run on every `./gradlew build`, locally and in CI:
     lever through a visible port lights a visible lamp; ports next to or at
     the same spot as other ports stay off; hidden chunks tick exactly where
     the visible world does.
+  - editing mode on the server: placing at a visible block's spot, next to a
+    hidden block, facing as in vanilla, using a hidden lever, breaking only
+    the hidden block; Survival players and clicks out of reach refused;
   - the hidden 2x2 door opens and closes from one visible lever (and jams
     half-closed if the hold repeater is removed);
   - phase pistons push visible blocks (12 yes, 13 no, obsidian never), a
@@ -242,7 +281,12 @@ All of these run on every `./gradlew build`, locally and in CI:
     layer are sent nothing;
   - over a real network connection to a dedicated server: Survival gets
     nothing, Creative gets the hidden block, and nothing from the previous
-    world is left over.
+    world is left over;
+  - editing mode by real key presses and mouse clicks: J, right click on a
+    visible block puts a hidden block at its spot (the visible one stays),
+    right click on that ghost places next to it, left clicks break hidden
+    blocks nearest first and nothing visible, J again and the same right click
+    builds in the visible world; Survival cannot turn it on.
 - **Restart test** (`./gradlew restartTest`): two separate server processes
   on one world folder. The first places hidden blocks in all three hidden
   dimensions (one far away and unloaded) and stores some cells the old way;

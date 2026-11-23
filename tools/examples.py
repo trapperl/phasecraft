@@ -117,7 +117,7 @@ STATIONS = [
 
 HIDDEN_OVERWORLD = "phasecraft:hidden_overworld"
 
-WELCOME = ["PhaseCraft examples", "Press H to show", "the hidden layer", "[ ] = opacity"]
+WELCOME = ["PhaseCraft examples", "H: show hidden", "J: edit hidden", "[ ] = opacity"]
 
 # Hidden blocks that need something under them (vanilla rules: wire, repeaters
 # and floor levers break without support) get one hidden block of ground.

@@ -77,6 +77,26 @@ The setting is kept in `config/phasecraft-client.properties`. Survival
 players are sent nothing, so hidden doors stay hidden from them. The
 overlay needs PhaseCraft on the client as well as on the server.
 
+### Building in the hidden layer: editing mode
+
+Press **J** (Creative) and "Editing: hidden layer" shows in the top left.
+Your clicks now go to the hidden layer; the visible world is not touched.
+What a click acts on is outlined in purple:
+
+- **Aiming at a hidden block** (even one inside a wall, as the overlay shows
+  it): right click uses it (flip a hidden lever, set a hidden repeater's
+  delay) or places your block next to it; left click breaks it.
+- **Aiming at a visible block with nothing hidden there:** right click puts
+  your block in the hidden layer *at that same spot*, overlapping the
+  visible block. That is how you hide a lamp inside a wall or a port under a
+  lever. Left click does nothing.
+
+Placing follows vanilla rules in the hidden layer, so hidden wire, repeaters
+and floor levers need a hidden block under them: right click the visible
+floor with stone first (it goes into the floor), then place on top of that.
+Press J again to go back to normal building. The overlay is shown while you
+edit, even if H turned it off.
+
 Save and exit your test world, reopen it, and run `/phasecraft get` again to
 manually inspect persistence. The same check runs automatically as
 `./gradlew restartTest` (see below).
@@ -86,9 +106,9 @@ manually inspect persistence. The same check runs automatically as
 Power crosses only through **phase ports**, and visible blocks are moved
 only by **phase pistons** placed in the hidden layer (all in the Redstone
 tab, or `/give @s phasecraft:phase_port`, `phasecraft:sticky_phase_piston`);
-see docs/ARCHITECTURE.md. The overlay shows hidden blocks but you cannot
-build in it yet: place hidden blocks with `/phasecraft set` or from inside
-the hidden layer. Hidden machinery runs wherever the visible world around it runs. Commands require operator permission level 2. Worlds from earlier builds
+see docs/ARCHITECTURE.md. Build hidden machinery with editing mode (J), with
+`/phasecraft set`, or from inside the hidden layer. Hidden machinery runs
+wherever the visible world around it runs. Commands require operator permission level 2. Worlds from earlier builds
 are upgraded automatically at server start.
 
 Use a **new test world**, not your personal saves: the storage format has
@@ -101,7 +121,7 @@ no migration path yet.
 | `./gradlew build` | Compiles, then runs **every** test below (CI runs this). |
 | `./gradlew runGameTest` | In-game tests: every class named `*GameTests` in `src/gametest`. |
 | `./gradlew restartTest` | Full restart: one server writes hidden cells and shuts down, a second server process loads the same world and checks them. |
-| `./gradlew clientTest` | A real game client, once with OpenGL and once with Vulkan: the overlay's pictures (screenshots in `build/run/clientGameTest*/screenshots`), keys and syncing, singleplayer and on a dedicated server. |
+| `./gradlew clientTest` | A real game client, once with OpenGL and once with Vulkan: the overlay's pictures (screenshots in `build/run/clientGameTest*/screenshots`), keys and syncing, singleplayer and on a dedicated server, and editing mode driven by real key presses and clicks. |
 | `./gradlew installToMinecraft` | `build`, then (only if everything passed) replaces PhaseCraft in your Minecraft mods folder. Restart Minecraft afterwards. |
 
 `installToMinecraft` reads your mods folder from `local.properties`

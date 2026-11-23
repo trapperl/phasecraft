@@ -7,5 +7,10 @@
   "key.phasecraft.overlay_more_opaque": "Hidden layer: more opaque",
   "key.phasecraft.overlay_less_opaque": "Hidden layer: more see-through",
   "phasecraft.overlay.on": "Hidden layer overlay: on (%s%% opaque)",
-  "phasecraft.overlay.off": "Hidden layer overlay: off"
+  "phasecraft.overlay.off": "Hidden layer overlay: off",
+  "key.phasecraft.toggle_editing": "Edit the hidden layer",
+  "phasecraft.edit.on": "Editing the hidden layer: clicks place and break hidden blocks (J to stop)",
+  "phasecraft.edit.off": "Editing the visible world again",
+  "phasecraft.edit.creative_only": "Editing the hidden layer needs Creative mode",
+  "phasecraft.edit.hud": "Editing: hidden layer"
 }

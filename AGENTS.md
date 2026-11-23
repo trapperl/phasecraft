@@ -46,19 +46,19 @@ docs/ARCHITECTURE.md); vanilla runs it. Acceptance target for 1: the
 hidden piston door.
 Power crosses only through phase ports (done). The person wants every
 crossing explicit: a dedicated block, never every position.
-Phase ports, phase pistons, the hidden 2x2 door and the overlay are done.
-The person expects the hidden layer to look like a transparent layer, not a
-separate world.
-1. Editing mode: a key switches which layer you place/break in, staying in
-   the visible world (roadmap step 3), using the overlay to see.
-2. Keep players out of the hidden dimension by accident (portals, death, logout).
-3. Overlay leftovers: hidden block entities and fluids are not drawn.
-4. Stretch: a flying machine with a hidden engine carrying visible blocks.
+Phase ports, phase pistons, the hidden 2x2 door, the overlay and editing
+mode are done. The person expects the hidden layer to look like a
+transparent layer, not a separate world.
+1. Keep players out of the hidden dimension by accident (portals, death, logout).
+2. Overlay and editing leftovers: hidden block entities and fluids are not
+   drawn; middle-click pick and items used on air act on the visible world.
+3. Stretch: a flying machine with a hidden engine carrying visible blocks.
 
 Decided by the person: phase pistons show no visible arm; missing blocks
 are handled as vanilla does. Decided by the agent, open to change: only
 Creative/Spectator players are sent the overlay; ghosts show through
-visible blocks (fainter).
+visible blocks (fainter); in editing mode (J) a click on a visible block
+places the hidden block at that same spot.
 
 ## Local dev server (RCON)
 - `./gradlew runServer` runs a local server in run/ (git-ignored) with RCON
