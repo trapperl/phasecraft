@@ -327,14 +327,77 @@ def stair_lever(on):
                         f"minecraft:lever[face=floor,facing=north,powered={str(on).lower()}]"])
 
 
+# Station 12: the 3x3 flush door, built from its layout file (shared with ThreeByThreeDoorGameTests).
+DOOR3_LAYOUT = pathlib.Path(__file__).resolve().parent.parent / "src/gametest/resources/contraptions/flush_door_3x3.txt"
+DOOR3_ORIGIN = (92, -63, -12)   # layout (0, 0, 0); the tunnel floor (layout y = 2) is the grass level
+
+
+def read_layout(path):
+    """(placements, info): placements are (layer, from, to, block) in file order; info has lever, door."""
+    placements, info = [], {}
+    for raw in open(path):
+        words = raw.split("#", 1)[0].split()
+        if not words:
+            continue
+        if words[0] in ("visible", "hidden"):
+            pos = tuple(int(v) for v in words[1:4])
+            placements.append((words[0], pos, pos, words[4]))
+        elif words[0] == "fill":
+            placements.append((words[1], tuple(int(v) for v in words[2:5]), tuple(int(v) for v in words[5:8]), words[8]))
+        elif words[0] == "lever":
+            info["lever"] = tuple(int(v) for v in words[1:4])
+        elif words[0] == "door":
+            info["door"] = words[1]
+    return placements, info
+
+
+def door3_pos(x, y, z):
+    ox, oy, oz = DOOR3_ORIGIN
+    return (ox + x, oy + y, oz + z)
+
+
+def door3_commands():
+    ox, oy, oz = DOOR3_ORIGIN
+    out = [
+        f"fill {ox - 1} {oy + 3} {oz - 1} {ox + 11} {oy + 12} {oz + 14} minecraft:air",
+        in_dimension(HIDDEN_OVERWORLD, f"fill {ox - 1} {oy} {oz - 1} {ox + 11} {oy + 12} {oz + 14} minecraft:air"),
+    ]
+    placements, _ = read_layout(DOOR3_LAYOUT)
+    for layer, a, b, block in placements:
+        command = (f"fill {coords(door3_pos(*a))} {coords(door3_pos(*b))} {block}" if a != b
+                   else f"setblock {coords(door3_pos(*a))} {block}")
+        out.append(in_dimension(HIDDEN_OVERWORLD, command) if layer == "hidden" else command)
+    out.append(sign((ox - 2, -60, -2), ["12. 3x3 door", "Walk into the", "tunnel and flip", "the lever"]))
+    return out
+
+
+def door3_state():
+    """'closed', 'open' or a picture (D = door block) of the face (z = 6) then the pockets layer (z = 5)."""
+    _, info = read_layout(DOOR3_LAYOUT)
+    cells = [(x, y, z) for z in (6, 5) for y in range(7, 1, -1) for x in range(3, 8)]
+    replies = rcon.send_commands([f"phasecraft get {coords(door3_pos(*c))}" for c in cells])
+    at = {c for c, r in zip(cells, replies) if info["door"] in r.split("visible: ", 1)[1].split(" |")[0]}
+    if at == {(x, y, 6) for x in (4, 5, 6) for y in (3, 4, 5)}:
+        return "closed"
+    if at == {(3, y, 5) for y in (3, 4, 5)} | {(7, y, 5) for y in (3, 4, 5)} | {(5, 2, 5), (5, 6, 5), (5, 7, 5)}:
+        return "open"
+    return "".join("D" if c in at else "." for c in cells)
+
+
+def door3_lever(on):
+    _, info = read_layout(DOOR3_LAYOUT)
+    rcon.send_commands([f"setblock {coords(door3_pos(*info['lever']))} "
+                        f"minecraft:lever[face=floor,facing=north,powered={str(on).lower()}]"])
+
+
 def build_commands():
     commands = [
         "setworldspawn 0 -60 -6",
         "gamerule advance_time false",
         "time set noon",
         "weather clear 1000000",
-        "forceload add -8 -16 88 8",
-        in_dimension(HIDDEN_OVERWORLD, "forceload add -8 -16 88 8"),
+        "forceload add -8 -16 104 8",
+        in_dimension(HIDDEN_OVERWORLD, "forceload add -8 -16 104 8"),
         # Clear the area (visible) and lay a path of andesite under the stations.
         "fill -4 -60 -8 54 -55 4 minecraft:air",
         "fill -4 -61 -8 54 -61 4 minecraft:grass_block",
@@ -347,6 +410,7 @@ def build_commands():
     commands += [in_dimension(HIDDEN_OVERWORLD, f"setblock {coords(pos)} minecraft:smooth_stone") for pos in HIDDEN_SUPPORTS]
     commands += door_commands()
     commands += staircase_commands()
+    commands += door3_commands()
     for station in STATIONS:
         for dimension, pos, *_ in station["hidden"]:
             commands.append(in_dimension(dimension, f"phasecraft clear {coords(pos)}"))
@@ -421,6 +485,16 @@ def main():
     stairs_ok = [s for _, s in stair_steps] == ["closed", "open", "closed"]
     ok &= stairs_ok
     print(f"{'ok ' if stairs_ok else 'BAD'} hidden staircase: " + ", ".join(f"{name}: {state}" for name, state in stair_steps))
+    try:
+        door3_steps = [("before", door3_state())]
+        door3_lever(True); time.sleep(4); door3_steps.append(("lever on", door3_state()))
+        door3_lever(False); time.sleep(4); door3_steps.append(("lever off", door3_state()))
+    except rcon.RconError as error:
+        print(error, file=sys.stderr)
+        return 1
+    door3_ok = [s for _, s in door3_steps] == ["closed", "open", "closed"]
+    ok &= door3_ok
+    print(f"{'ok ' if door3_ok else 'BAD'} 3x3 door: " + ", ".join(f"{name}: {state}" for name, state in door3_steps))
     print("Examples built and verified." if ok else "Some examples did not build as expected.")
     return 0 if ok else 1
 

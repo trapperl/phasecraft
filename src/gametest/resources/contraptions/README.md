@@ -1,0 +1,30 @@
+# Contraption layouts
+
+One file per contraption. The same file is built by the GameTests
+(`ContraptionLayout`), by `tools/examples.py` on the dev server, and checked
+by `tools/redstone_check.py`, so the test, the examples station and the
+check never drift apart.
+
+Coordinates are relative to the test area's corner; lines are applied in
+order (later lines overwrite earlier ones), `#` starts a comment.
+
+```
+size X Y Z                                   the test area (needs a matching empty_XxYxZ structure)
+lever x y z                                  the visible lever that operates it
+door <block>                                 the block the door is made of (for the checks)
+fill visible|hidden x1 y1 z1 x2 y2 z2 <block>
+visible x y z <block>
+hidden x y z <block> @signal                 a hidden redstone part or piston, and the signal it carries
+hidden x y z <block> @out<in                 a repeater or torch that turns signal "in" into "out"
+allow <signal> <other>...                    a part of <signal> may also receive <other> (nested signals)
+```
+
+Blocks use `/setblock` syntax. Place hidden parts in signal order and in
+their settled state (repeaters `powered=true` where powered, pistons
+`extended=true` where they should be), pistons last: the examples tour
+builds everything in one tick, with no time to settle.
+
+`python3 tools/redstone_check.py <file>` reports every part or piston that
+receives a signal other than its own, following vanilla's power rules
+(including quasi-connectivity) roughly. Run it after every change; the
+GameTest decides.

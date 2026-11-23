@@ -6,7 +6,7 @@ redstone and pistons hidden in that layer can act on the blocks of the visible w
 **Target: Minecraft Java Edition 26.3** with Fabric and Java 25. Working on the development branches: the
 hidden layer (a real dimension, run by vanilla), phase ports that carry power between layers, phase pistons
 that move visible blocks from the hidden layer, a hidden 2x2 piston door, a hidden staircase (flat floor
-that opens into stairs down to a cellar), the transparent overlay (press **H** in Creative to see hidden blocks drawn as
+that opens into stairs down to a cellar), a hidden 3x3 flush door, the transparent overlay (press **H** in Creative to see hidden blocks drawn as
 see-through ghosts over the world; `[` and `]` change the opacity) and editing mode (press **J**, and your
 clicks place, use and break blocks in the hidden layer instead of the visible world). See [Getting started](docs/GETTING_STARTED.md) and [Architecture](docs/ARCHITECTURE.md).
 
@@ -19,6 +19,12 @@ The hidden staircase (examples station 11): one lever turns flat floor into stai
 | Closed | Closed, overlay on (H) | Open |
 | --- | --- | --- |
 | ![Flat stone floor](docs/images/stairs-closed.png) | ![The same floor with the hidden pistons and wiring underneath showing through](docs/images/stairs-closed-overlay.png) | ![The floor has opened into stairs down to a cellar with a chest and a lantern](docs/images/stairs-open.png) |
+
+The 3x3 flush door (examples station 12), the famously hard one in vanilla: the centre block has to move twice.
+
+| Closed | Closed, overlay on (H) | Open |
+| --- | --- | --- |
+| ![A tunnel ending in a flush 3x3 wall](docs/images/door3-closed.png) | ![The same view with the hidden pistons and wiring around the door showing through](docs/images/door3-closed-overlay.png) | ![The door has vanished and the tunnel opens to daylight](docs/images/door3-open.png) |
 
 ## Approach
 
