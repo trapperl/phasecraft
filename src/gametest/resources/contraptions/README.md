@@ -13,6 +13,8 @@ size X Y Z                                   the test area (needs a matching emp
 lever x y z                                  the visible lever that operates it
 click x y z <face>                           a visible block a player clicks to operate it (a phased
                                              button or lever hidden there), and the face clicked
+step x y z                                   where a visible mob or player standing operates it (a phased
+                                             pressure plate hidden there)
 door <block>                                 the block the door is made of (for the checks)
 fill visible|hidden x1 y1 z1 x2 y2 z2 <block>
 visible x y z <block>

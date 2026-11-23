@@ -171,6 +171,11 @@ away into the wall; click either switch again and they close.
 
 ![A plain wall of bookshelves](images/secret-room-wall.png)
 
+Station 17 is a trapdoor floor: walk down the raised corridor and, a few
+tiles in, the floor ahead drops away into a pit (a hidden pressure plate on a
+phase block is the trigger). A tunnel leads out of the pit. The floor closes
+again a moment after you leave the trigger tile.
+
 ![A dark stone room lit by a glowstone hidden in its far wall](images/phased-light-room.png)
 
 Save and exit your test world, reopen it, and run `/phasecraft get` again to

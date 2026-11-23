@@ -1,0 +1,74 @@
+# The trapdoor floor (TrapdoorFloorGameTests, examples station 17).
+# Check with: python3 tools/redstone_check.py <this file>
+#
+# A corridor one block wide (x = 4, floor y = 5, walls at x = 3 and x = 5) runs
+# along z. Step on the floor tile at z = 4 and the two tiles after it (z = 5, 6)
+# drop away into a pit (y 2..4), then close again once nobody stands on z = 4.
+# The trigger is a phased pressure plate: hidden, on a hidden phase block at the
+# tile's spot. Nothing redstone is visible. Two stages, as in the staircase:
+# up-facing sticky phase pistons under the tiles hold them up and let them drop
+# one block; then sideways sticky phase pistons push them into pockets under
+# the east wall (x = 5, y = 4). Closing runs the other way round.
+#
+# Signals (@name, @out<in):
+#   P   the plate
+#   D   "open": P at once, held on by S2 delayed (so stage 1 waits for stage 2 to pull back)
+#   S1  stage 1, not D (torches): holds the tiles up while closed
+#   S2  stage 2, P delayed: pushes the dropped tiles into the pockets
+size 11 11 14
+door minecraft:smooth_stone
+step 4 6 4
+fill visible 0 0 0 8 5 9 minecraft:stone
+fill visible 4 5 0 4 5 9 minecraft:smooth_stone
+fill visible 3 6 0 3 7 9 minecraft:stone_bricks
+fill visible 5 6 0 5 7 9 minecraft:stone_bricks
+fill visible 4 2 5 4 4 6 minecraft:air
+fill visible 5 4 5 5 4 6 minecraft:air
+# The trigger: a pressure plate on a phase block at the tile before the trap.
+hidden 4 5 4 phasecraft:phase_block
+hidden 4 6 4 minecraft:stone_pressure_plate[powered=false] @P
+# The stage 2 pistons, before the wire that rests on them.
+hidden 3 4 5 phasecraft:sticky_phase_piston[facing=east,extended=false] @S2
+hidden 3 4 6 phasecraft:sticky_phase_piston[facing=east,extended=false] @S2
+# From the phase block: D at once (east), S2 after a delay (west).
+hidden 5 4 4 minecraft:stone
+hidden 5 5 4 minecraft:repeater[facing=west,delay=1,powered=false] @D<P
+hidden 3 4 4 minecraft:stone
+hidden 3 5 4 minecraft:repeater[facing=east,delay=4,powered=false] @S2<P
+# S2, onto the wire over the stage 2 pistons.
+hidden 2 4 4 minecraft:stone
+hidden 2 5 4 minecraft:redstone_wire @S2
+hidden 2 4 5 minecraft:stone
+hidden 2 5 5 minecraft:redstone_wire @S2
+hidden 3 5 5 minecraft:redstone_wire @S2
+hidden 3 5 6 minecraft:redstone_wire @S2
+# The hold: S2 delayed into D, round the far end of the trap (z = 8).
+hidden 2 4 6 minecraft:stone
+hidden 2 5 6 minecraft:repeater[facing=north,delay=4,powered=false] @D<S2
+hidden 2 4 7 minecraft:stone
+hidden 2 5 7 minecraft:redstone_wire @D
+hidden 2 4 8 minecraft:stone
+hidden 2 5 8 minecraft:redstone_wire @D
+hidden 3 4 8 minecraft:stone
+hidden 3 5 8 minecraft:redstone_wire @D
+hidden 4 4 8 minecraft:stone
+hidden 4 5 8 minecraft:redstone_wire @D
+hidden 5 4 8 minecraft:stone
+hidden 5 5 8 minecraft:redstone_wire @D
+hidden 6 4 8 minecraft:stone
+hidden 6 5 8 minecraft:redstone_wire @D
+hidden 6 4 7 minecraft:stone
+hidden 6 5 7 minecraft:redstone_wire @D
+# D down the east side, onto the blocks that hold the torches.
+hidden 6 4 4 minecraft:stone
+hidden 6 5 4 minecraft:redstone_wire @D
+hidden 6 3 5 minecraft:stone
+hidden 6 4 5 minecraft:redstone_wire @D
+hidden 6 3 6 minecraft:stone
+hidden 6 4 6 minecraft:redstone_wire @D
+# Stage 1: not D. Wall torches beside the pistons, under the pockets.
+hidden 5 3 5 minecraft:redstone_wall_torch[facing=west,lit=true] @S1<D
+hidden 5 3 6 minecraft:redstone_wall_torch[facing=west,lit=true] @S1<D
+# The stage 1 pistons last: extended while closed, so placed once their torches power them.
+hidden 4 3 5 phasecraft:sticky_phase_piston[facing=up,extended=true] @S1
+hidden 4 3 6 phasecraft:sticky_phase_piston[facing=up,extended=true] @S1

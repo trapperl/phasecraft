@@ -430,7 +430,23 @@ has such cells.
      (`[north=side,...]`) for the cross a player places. And `/setblock` of a
      button does not update what is next to the block the button hangs on,
      as a real press does (tools/examples.py re-places the wire there).
-6. **Mob farm:** not a target; the hidden layer does not interact with mobs.
+6. **Trapdoor floor: done.** A corridor floor where stepping on one tile drops
+   the next two away into a pit; they close again once nobody stands on the
+   trigger (`TrapdoorFloorGameTests`, examples station 17; layout in
+   `src/gametest/resources/contraptions/trapdoor_floor.txt`). The trigger is
+   a phased pressure plate hidden on a phase block at the tile's spot, so the
+   floor looks like plain floor; vanilla needs a visible plate or tripwire.
+   - Two stages, as in the staircase: up-facing sticky phase pistons under
+     the tiles hold them up (powered through torches while closed) and let
+     them drop one block; sideways sticky phase pistons push them into
+     pockets under the wall. "Open" is the plate at once, held on by stage 2
+     delayed, so on closing stage 1 waits until stage 2 has pulled back.
+   - The plate is on the tile before the trap, not on the trap tiles: a plate
+     strongly powers the phase block it stands on, which would power the
+     pistons around it (and, through quasi-connectivity, stage 1).
+   - Placed by a layout, an extended piston must come after whatever powers
+     it, or it retracts on placement.
+7. **Mob farm:** not a target; the hidden layer does not interact with mobs.
 
 ## Validation status
 

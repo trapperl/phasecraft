@@ -35,6 +35,12 @@ A secret room behind a bookshelf wall (examples station 16): click the right boo
 | --- | --- |
 | ![A plain wall of bookshelves](docs/images/secret-room-wall.png) | ![The same wall with the hidden pistons, wiring and a copper bulb showing through](docs/images/secret-room-wall-overlay.png) |
 
+A trapdoor floor (examples station 17): step on the wrong tile of a plain corridor and the floor ahead drops away into a pit. The trigger is a pressure plate hidden in the floor.
+
+| Overlay off | Overlay on (H) |
+| --- | --- |
+| ![A narrow corridor with a plain stone floor](docs/images/trap-corridor.png) | ![The same corridor with the hidden pressure plate and pistons under the floor showing through](docs/images/trap-corridor-overlay.png) |
+
 A flying machine with a hidden engine (examples station 15): a vanilla engine in the hidden layer carries a phase piston that pushes a visible gold block one block ahead each cycle, so the gold block flies by itself.
 
 ## Approach
