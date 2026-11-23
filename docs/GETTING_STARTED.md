@@ -114,7 +114,15 @@ other machines, and `pause-when-empty-seconds=0`: by default a server with
 nobody online stops ticking after 60 seconds, and then nothing crosses
 between layers (crossing happens on the next tick). `/phasecraft link` shows
 the cross-layer counters; `pending` that never drains means no ticks. `tools/rcon.py` reads the host, port and password from that
-file. Join from the Fabric 26.3 profile at `localhost`; to use `/phasecraft`
+file. Join from the Fabric 26.3 profile at `localhost`, with the same
+PhaseCraft build in your mods folder (`./gradlew installToMinecraft`;
+otherwise the server refuses the join over the new blocks).
+
+**WSL2 (Windows):** in WSL's default NAT networking, Windows' `localhost`
+does not reach a server bound to 127.0.0.1 inside WSL. Set `server-ip` to
+WSL's own address (`ip -4 addr show eth0`, e.g. 172.23.x.x) and join at that
+address; it is only reachable from this PC, and may change after a reboot.
+Alternatively switch WSL to mirrored networking. Then, to use `/phasecraft`
 in game, make yourself an operator with
 `python3 tools/rcon.py "op <your name>"`.
 
