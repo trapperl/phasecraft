@@ -105,7 +105,6 @@ public final class PhasedLights {
             LIGHTS.clear();
             SENT.clear();
             TO_SCAN.clear();
-            KICK.clear();
         });
     }
 
@@ -188,26 +187,25 @@ public final class PhasedLights {
             // between ticks; a server with none (a busy one, or GameTests, which run
             // ticks back to back) could leave this check waiting indefinitely. The
             // check reaches the queue through another thread, so it may not be there
-            // yet: start the engine now and on the next ticks too.
+            // yet: start the engine now, and every tick (see kick).
             server.tryScheduleUpdate();
-            KICK.put(server, KICK_TICKS);
         }
     }
 
-    /** Light engines to start again on the next ticks, with how many ticks left (server thread only). */
-    private static final Map<ThreadedLevelLightEngine, Integer> KICK = new HashMap<>();
-    private static final int KICK_TICKS = 40;
-
-    private static void kick() {
-        KICK.entrySet().removeIf(entry -> {
-            entry.getKey().tryScheduleUpdate();
-            entry.setValue(entry.getValue() - 1);
-            return entry.getValue() <= 0;
-        });
+    /**
+     * Every tick, starts the light engine of every level with a hidden twin, as vanilla
+     * does whenever the server has spare time (one cheap check when there is no work).
+     */
+    private static void kick(MinecraftServer server) {
+        for (ServerLevel level : server.getAllLevels()) {
+            if (HiddenDimensions.hiddenOf(level.dimension()).isPresent()) {
+                level.getChunkSource().getLightEngine().tryScheduleUpdate();
+            }
+        }
     }
 
     private static void tick(MinecraftServer server) {
-        kick();
+        kick(server);
         if (!TO_SCAN.isEmpty()) {
             for (Map.Entry<ResourceKey<Level>, LongOpenHashSet> entry : TO_SCAN.entrySet()) {
                 ServerLevel hidden = server.getLevel(entry.getKey());
