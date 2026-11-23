@@ -39,12 +39,17 @@ hidden piston door.
 Power crosses only through phase ports (done). The person wants every
 crossing explicit: a dedicated block, never every position.
 Phase ports, phase pistons and the hidden 2x2 door are done.
-1. Keep players out of the hidden layer by accident (portals, death, logout).
-2. Overlay rendering, only after server behaviour is sound.
-3. Stretch: a flying machine with a hidden engine carrying visible blocks.
+1. Overlay: hidden blocks near the player drawn as translucent ghosts over
+   the visible world (key toggle, adjustable opacity). The person expects the
+   hidden layer to look like a transparent layer, not a separate world.
+   Verify with Fabric client GameTests and screenshots before handing over.
+2. Editing mode: a key switches which layer you place/break in, staying in
+   the visible world (roadmap step 3).
+3. Keep players out of the hidden dimension by accident (portals, death, logout).
+4. Stretch: a flying machine with a hidden engine carrying visible blocks.
 
-Open questions for the person (do not decide alone): what to do with old
-list cells whose block no longer exists.
+Decided by the person: phase pistons show no visible arm; missing blocks
+are handled as vanilla does.
 
 ## Local dev server (RCON)
 - `./gradlew runServer` runs a local server in run/ (git-ignored) with RCON

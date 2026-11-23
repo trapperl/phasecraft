@@ -100,20 +100,26 @@ The pre-26.3 (Minecraft 1.21.1) prototype's file
 (`<world>/data/phasecraft_layer_1.dat`, `Cells` of `{Pos, Block}`) is **not
 migrated**: no world in use was created with that build.
 
-**Known risk (old list only):** a cell whose block no longer exists cannot be
-decoded and is lost at the next save. In the hidden dimension, Minecraft's own
-handling of missing blocks applies, as for any world.
+**Missing blocks: decided, treated as vanilla does** (2026-11-22). In the
+hidden dimension, a block that no longer exists (a removed mod, a block a
+Minecraft update drops) is handled by Minecraft as in any world. In the old
+block list, read only during the one-time upgrade, such a cell cannot be
+decoded: the parse error is logged and that cell is dropped. No world in use
+has such cells.
 
 ## Open work and decisions
 
-- **Phase-piston arm:** a phase piston leaves the visible space in front of
-  it empty when extended, where vanilla would show the head. Sliding doors
-  therefore need somewhere hidden to slide into (see the door below). An
-  alternative would be a visible "arm" block; not decided.
+- **Phase-piston arm: decided, no visible arm** (2026-11-22). A phase piston
+  leaves the visible space in front of it empty when extended, where vanilla
+  would show the head. Sliding doors therefore need somewhere hidden to
+  slide into (see the door below).
 - **Keeping players out:** portals built in the hidden layer, and deaths or
   logouts while in it.
-- **Overlay:** hidden blocks drawn over the visible world; server state must
-  reach observing clients first.
+- **Overlay** (next): hidden blocks drawn as translucent ghosts over the
+  visible world near the player, toggled by a key, adjustable opacity, so
+  nobody needs to visit the hidden dimension. Then an editing mode: a key
+  switches which layer you place and break in, while staying in the visible
+  world. Server state must reach observing clients first.
 
 ### Acceptance targets
 
