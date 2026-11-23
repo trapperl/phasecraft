@@ -177,4 +177,28 @@ public class HiddenEditingGameTests {
         layer.removeBlock(far);
         helper.succeed();
     }
+
+    /** Middle click on a hidden block puts that block in the hand; Survival players and far clicks get nothing. */
+    @GameTest
+    public void pickPutsTheHiddenBlockInHand(GameTestHelper helper) {
+        BlockPos at = helper.absolutePos(TARGET);
+        HiddenLayer layer = HiddenLayer.of(helper.getLevel());
+        helper.setBlock(TARGET, Blocks.STONE);
+        layer.setBlock(at, Blocks.REDSTONE_LAMP.defaultBlockState());
+        layer.setBlock(at.east(20), Blocks.REDSTONE_LAMP.defaultBlockState());
+        withPlayer(helper, GameType.CREATIVE, player -> {
+            hold(player, Items.OAK_PLANKS);
+            helper.assertFalse(HiddenEditing.pick(player, at.east(20)), "picked out of reach");
+            helper.assertTrue(HiddenEditing.pick(player, at), "pick reported nothing picked");
+            helper.assertTrue(player.getMainHandItem().is(Items.REDSTONE_LAMP),
+                    "hand holds " + player.getMainHandItem() + ", not the hidden lamp (the visible block is stone)");
+        });
+        withPlayer(helper, GameType.SURVIVAL, player -> {
+            hold(player, Items.OAK_PLANKS);
+            helper.assertFalse(HiddenEditing.pick(player, at), "survival player picked a hidden block");
+        });
+        layer.removeBlock(at);
+        layer.removeBlock(at.east(20));
+        helper.succeed();
+    }
 }

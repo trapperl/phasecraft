@@ -86,7 +86,8 @@ What a click acts on is outlined in purple:
 
 - **Aiming at a hidden block** (even one inside a wall, as the overlay shows
   it): right click uses it (flip a hidden lever, set a hidden repeater's
-  delay) or places your block next to it; left click breaks it.
+  delay) or places your block next to it; left click breaks it; middle click
+  picks it into your hand.
 - **Aiming at a visible block with nothing hidden there:** right click puts
   your block in the hidden layer *at that same spot*, overlapping the
   visible block. That is how you hide a lamp inside a wall or a port under a
@@ -96,7 +97,8 @@ Placing follows vanilla rules in the hidden layer, so hidden wire, repeaters
 and floor levers need a hidden block under them: right click the visible
 floor with stone first (it goes into the floor), then place on top of that.
 Press J again to go back to normal building. The overlay is shown while you
-edit, even if H turned it off.
+edit, even if H turned it off. Buckets do nothing while editing: put hidden
+water or lava in with `/phasecraft set` (they show in the overlay).
 
 ![Editing mode: a hidden lamp placed at the spot of a visible stone block, outlined in purple](images/editing.png)
 

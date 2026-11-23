@@ -53,12 +53,19 @@ docs/ARCHITECTURE.md); vanilla runs it. Acceptance target for 1: the
 hidden piston door.
 Power crosses only through phase ports (done). The person wants every
 crossing explicit: a dedicated block, never every position.
-Phase ports, phase pistons, the hidden 2x2 door, the overlay, editing
-mode and keeping players out of the hidden layer are done. The person expects the hidden layer to look like a
+Phase ports, phase pistons, the hidden 2x2 door, the overlay (including
+chests, signs and fluids), editing mode (including pick) and keeping players
+out of the hidden layer are done. The person expects the hidden layer to look like a
 transparent layer, not a separate world.
-1. Overlay and editing leftovers: hidden block entities and fluids are not
-   drawn; middle-click pick and items used on air act on the visible world.
+1. Famous redstone contraptions, PhaseCraft style (the person's idea; a
+   Mumbo Jumbo video inspired the mod). Build them as examples stations with
+   GameTests, machinery all hidden, showing what vanilla cannot do. Let the
+   person pick the order; suggested: hidden staircase, 3x3 flush piston door,
+   secret room behind a wall, trapdoor floor. Not block-for-block copies of
+   anyone's builds.
 2. Stretch: a flying machine with a hidden engine carrying visible blocks.
+3. Known gaps: buckets do nothing in editing mode; picking a hidden chest
+   does not copy its contents.
 
 Decided by the person: phase pistons show no visible arm; missing blocks
 are handled as vanilla does. Decided by the agent, open to change: only
@@ -74,5 +81,10 @@ places the hidden block at that same spot.
   shows `pending` stuck above 0).
 - Use it for real-world checks (restart, joining with a client). It does not
   replace GameTests: anything worth checking twice belongs in a test.
+- The dev server's world (run/, level `phasecraft-examples`) is throwaway dev
+  data and only the person plays on it: tearing it down, rebuilding it
+  (`tools/examples.py`) or restarting the server needs no permission (the
+  person said so, 2026-11-22). Still never touch their own Minecraft saves
+  or mods folder without asking.
 - `python3 tools/examples.py` rebuilds and verifies the examples area. When a
   milestone adds something a person can see or try, add a station for it.

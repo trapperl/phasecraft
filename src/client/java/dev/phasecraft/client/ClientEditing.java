@@ -131,6 +131,22 @@ public final class ClientEditing {
         }
     }
 
+    /**
+     * Middle click while editing: a hidden block is picked by the server; a
+     * visible block (where a new hidden block would go) by vanilla's pick.
+     */
+    public static void pick(Minecraft minecraft, boolean includeData) {
+        if (target == null) {
+            return;
+        }
+        BlockPos pos = target.hit().getBlockPos();
+        if (target.hidden()) {
+            ClientPlayNetworking.send(new HiddenEditing.Pick(pos));
+        } else {
+            minecraft.gameMode.handlePickItemFromBlock(pos, includeData);
+        }
+    }
+
     /** Purple outline around the target: the hidden block, or the spot a new hidden block would go. */
     static void submitOutline(LevelRenderContext context) {
         Target current = target;
@@ -168,7 +184,7 @@ public final class ClientEditing {
     }
 
     /** The hidden blocks the client holds, as a BlockGetter (for shapes and raycasts). */
-    record GhostGetter(GhostLayer layer, net.minecraft.world.level.LevelHeightAccessor height) implements BlockGetter {
+    public record GhostGetter(GhostLayer layer, net.minecraft.world.level.LevelHeightAccessor height) implements BlockGetter {
         @Override
         public @Nullable BlockEntity getBlockEntity(BlockPos pos) {
             return null;
