@@ -2,6 +2,7 @@ package dev.phasecraft.test;
 
 import dev.phasecraft.PhaseCraftBlocks;
 import dev.phasecraft.layer.HiddenLayer;
+import dev.phasecraft.phased.PhasedLights;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -85,7 +86,10 @@ public class PhasedLightGameTests {
                 .thenWaitUntil(() -> assertLight(helper, SPOT, 15, "visible light from the lit phased lamp"))
                 .thenExecute(() -> hidden.removeBlock(power))
                 .thenWaitUntil(() -> assertLight(helper, SPOT, 0, "visible light after the phased lamp went out (hidden lamp: "
-                        + hidden.getBlock(helper.absolutePos(SPOT)) + ")"))
+                        + hidden.getBlock(helper.absolutePos(SPOT)) + "; phased light recorded there: "
+                        + PhasedLights.emission(helper.getLevel(), helper.absolutePos(SPOT).asLong())
+                        + "; visible light east: " + visibleBlockLight(helper, SPOT.east())
+                        + ", two east: " + visibleBlockLight(helper, SPOT.east(2)) + ")"))
                 .thenSucceed();
     }
 
