@@ -12,6 +12,7 @@ import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestServerContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
+import net.minecraft.client.CloudStatus;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -74,6 +75,9 @@ public class OverlayClientGameTest implements FabricClientGameTest {
             context.runOnClient(minecraft -> {
                 PhaseCraftClient.settings().setEnabled(true);
                 PhaseCraftClient.settings().setOpacity(0.45F);
+                // Clouds drift even with time stopped and would change the sky
+                // pixels between screenshots.
+                minecraft.options.cloudStatus().set(CloudStatus.OFF);
             });
             world.getConnection().waitForChunksRender();
             waitForGhost(context, GOLD, Blocks.GOLD_BLOCK);

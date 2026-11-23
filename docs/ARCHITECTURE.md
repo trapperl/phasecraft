@@ -45,7 +45,10 @@ under the visible lever; to send it up, put it in the visible layer.
 
 **Hidden chunks tick with the visible world.** A chunk ticket (`phasecraft:phase_link`)
 in the hidden layer follows each visible chunk's ticking status, so hidden
-machinery runs wherever the world around it runs, and nowhere else. The
+machinery runs wherever the world around it runs, and nowhere else: blocks
+tick where visible blocks tick, and entities (falling sand, TNT, items,
+minecarts) where visible entities tick. (Until 2026-11-22 only blocks did,
+so hidden falling blocks hung in the air.) The
 hidden layer's own chunks around a player standing in it also tick, as usual.
 
 **Phase piston / sticky phase piston** (Redstone tab). Placed in the hidden
@@ -167,6 +170,23 @@ nothing for the hidden layer.
 same position. Only Creative or Spectator players may enter: the hidden layer
 has no ground of its own.
 
+### Nobody ends up in the hidden layer by accident (`HiddenLayerGuard`)
+
+- **Only Creative and Spectator players may be there.** Any other player
+  found in a hidden dimension at the end of a tick (switched to Survival
+  inside, a forced game mode on login, a teleport by command) is moved to the
+  visible layer at the same spot, or the first spot above it where they fit,
+  with a message. Logging out inside is fine: you come back where you were,
+  and the same rule applies.
+- **No respawn point in the hidden layer.** Beds and respawn anchors used
+  there do not set your spawn (`ServerPlayerRespawnMixin`), so a death never
+  brings you back over the void.
+- **Portals in the hidden layer do nothing** (`EntityPortalMixin`, on
+  `Entity.setAsInsidePortal`, which every portal block goes through). They
+  would lead into the real Nether or End and build a visible portal there.
+- **No mobs spawn there naturally:** the hidden dimensions use the void
+  biome, which has no mob spawns.
+
 ### Decision: real dimension, not a block list (decided 2026-11-22)
 
 The first prototype kept hidden blocks as a per-dimension list in saved data.
@@ -208,8 +228,7 @@ has such cells.
   leaves the visible space in front of it empty when extended, where vanilla
   would show the head. Sliding doors therefore need somewhere hidden to
   slide into (see the door below).
-- **Keeping players out:** portals built in the hidden layer, and deaths or
-  logouts while in it.
+- **Keeping players out: done** (see above).
 - **Overlay: done** (see above). Not yet shown: hidden block entities and
   fluids.
 - **Editing mode: done** (see above). Middle-click pick, and items that act
@@ -258,6 +277,11 @@ All of these run on every `./gradlew build`, locally and in CI:
   - editing mode on the server: placing at a visible block's spot, next to a
     hidden block, facing as in vanilla, using a hidden lever, breaking only
     the hidden block; Survival players and clicks out of reach refused;
+  - keeping out: a player switched to Survival inside the hidden layer is
+    moved out at the same spot (lifted out of visible blocks if needed);
+    Creative and Spectator players stay; no respawn point can be set there; a
+    mob standing in a hidden Nether portal stays put; hidden entities tick
+    where visible ones do (hidden sand falls and lands);
   - the hidden 2x2 door opens and closes from one visible lever (and jams
     half-closed if the hold repeater is removed);
   - phase pistons push visible blocks (12 yes, 13 no, obsidian never), a
