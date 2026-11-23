@@ -42,7 +42,8 @@ import net.minecraft.world.level.block.Blocks;
  * off. The screenshots are kept in build/run/clientGameTest/screenshots.</p>
  *
  * <p>Then sync: hidden changes reach the client; out-of-range chunks are
- * dropped and come back; Survival players and players inside the hidden
+ * dropped and come back; Survival players (only while the game rule
+ * phasecraft:survival_access is off), and players inside the hidden
  * layer are sent nothing.</p>
  */
 public class OverlayClientGameTest implements FabricClientGameTest {
@@ -190,11 +191,16 @@ public class OverlayClientGameTest implements FabricClientGameTest {
             server.runCommand("tp @a 0.5 -60 0.5 0 0");
             waitForGhost(context, STONE, Blocks.LAPIS_BLOCK);
 
-            // Survival players are sent nothing, and lose what they had.
+            // Survival players keep the overlay while the rule is on; with it off they
+            // are sent nothing, and lose what they had.
             server.runCommand("gamemode survival @a");
-            waitUntil(context, "survival player loses the overlay", minecraft -> PhaseCraftClient.layer().isEmpty());
             context.waitTicks(10);
-            assertTrue(context.computeOnClient(minecraft -> PhaseCraftClient.layer().isEmpty()), "survival player was sent hidden blocks");
+            waitForGhost(context, GOLD, Blocks.GOLD_BLOCK);
+            server.runCommand("gamerule phasecraft:survival_access false");
+            waitUntil(context, "survival player (rule off) loses the overlay", minecraft -> PhaseCraftClient.layer().isEmpty());
+            context.waitTicks(10);
+            assertTrue(context.computeOnClient(minecraft -> PhaseCraftClient.layer().isEmpty()), "survival player (rule off) was sent hidden blocks");
+            server.runCommand("gamerule phasecraft:survival_access true");
             server.runCommand("gamemode creative @a");
             waitForGhost(context, GOLD, Blocks.GOLD_BLOCK);
 

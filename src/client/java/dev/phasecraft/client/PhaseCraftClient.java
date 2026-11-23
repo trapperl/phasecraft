@@ -2,6 +2,7 @@ package dev.phasecraft.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import dev.phasecraft.PhaseCraft;
+import dev.phasecraft.layer.Access;
 import dev.phasecraft.overlay.OverlayPayloads;
 import dev.phasecraft.phased.PhasedLights;
 import net.fabricmc.api.ClientModInitializer;
@@ -66,6 +67,7 @@ public final class PhaseCraftClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(OverlayPayloads.Reset.TYPE,
                 (payload, context) -> LAYER.clear());
         ClientPlayNetworking.registerGlobalReceiver(PhasedLights.Sync.TYPE, (payload, context) -> PhasedLightsClient.apply(payload));
+        ClientPlayNetworking.registerGlobalReceiver(Access.Allowed.TYPE, (payload, context) -> ClientEditing.setAllowed(payload.edit()));
         // A new connection starts empty: nothing from the last world or server
         // may show here. Queued before any of the new connection's payloads.
         ClientPlayConnectionEvents.INIT.register((handler, client) -> client.execute(() -> {

@@ -41,6 +41,11 @@ public final class ClientEditing {
 
     private static boolean editing;
     private static @Nullable Target target;
+    /** Whether the server lets this player edit (Creative; Survival while its game rule is on). */
+    private static boolean allowed;
+    /** Survival: the hidden block being mined, and how far (1 = mined). */
+    private static @Nullable BlockPos mining;
+    private static float progress;
 
     private ClientEditing() {}
 
@@ -55,9 +60,17 @@ public final class ClientEditing {
         return target;
     }
 
-    /** Editing needs a Creative player; switching to another mode ends it. */
-    static boolean active(Minecraft minecraft) {
-        return editing && minecraft.player != null && minecraft.player.isCreative();
+    /** Editing needs a player the server lets edit; losing that (game mode, game rule) ends it. */
+    public static boolean active(Minecraft minecraft) {
+        return editing && minecraft.player != null && mayEdit(minecraft.player);
+    }
+
+    private static boolean mayEdit(LocalPlayer player) {
+        return allowed || player.isCreative();
+    }
+
+    static void setAllowed(boolean value) {
+        allowed = value;
     }
 
     static void toggle(Minecraft minecraft) {
@@ -65,8 +78,8 @@ public final class ClientEditing {
         if (player == null) {
             return;
         }
-        if (!editing && !player.isCreative()) {
-            player.sendOverlayMessage(Component.translatable("phasecraft.edit.creative_only"));
+        if (!editing && !mayEdit(player)) {
+            player.sendOverlayMessage(Component.translatable("phasecraft.edit.not_allowed"));
             return;
         }
         editing = !editing;
@@ -77,6 +90,9 @@ public final class ClientEditing {
     static void reset() {
         editing = false;
         target = null;
+        allowed = false;
+        mining = null;
+        progress = 0;
     }
 
     /** After vanilla picks what the crosshair is on: pick in the hidden layer instead, and hide vanilla's pick. */
@@ -116,10 +132,60 @@ public final class ClientEditing {
     /** Left click while editing: break the hidden block aimed at. */
     public static void attack(Minecraft minecraft) {
         if (target != null && target.hidden()) {
-            ClientPlayNetworking.send(new HiddenEditing.Break(target.hit().getBlockPos()));
-            minecraft.player.swing(InteractionHand.MAIN_HAND,
-                    minecraft.player.getItemInHand(InteractionHand.MAIN_HAND).getAttackAnimation(), false);
+            BlockPos pos = target.hit().getBlockPos();
+            if (minecraft.player.hasInfiniteMaterials()) {
+                ClientPlayNetworking.send(new HiddenEditing.Break(pos));
+            } else {
+                startMining(minecraft, pos);
+            }
+            swing(minecraft);
         }
+    }
+
+    /**
+     * Left button held while editing. Survival: mine the hidden block aimed at,
+     * at vanilla's speed for this player and tool, showing vanilla's cracks; the
+     * server checks the time again before it lets the block go.
+     */
+    public static void continueAttack(Minecraft minecraft, boolean down) {
+        LocalPlayer player = minecraft.player;
+        if (!down || player.hasInfiniteMaterials() || target == null || !target.hidden()) {
+            stopMining(minecraft);
+            return;
+        }
+        BlockPos pos = target.hit().getBlockPos();
+        if (!pos.equals(mining)) {
+            startMining(minecraft, pos);
+        }
+        GhostGetter ghosts = new GhostGetter(PhaseCraftClient.layer(), minecraft.level);
+        progress += ghosts.getBlockState(pos).getDestroyProgress(player, ghosts, pos);
+        swing(minecraft);
+        if (progress >= 1.0F) {
+            ClientPlayNetworking.send(new HiddenEditing.Break(pos));
+            stopMining(minecraft);
+        } else {
+            minecraft.level.destroyBlockProgress(player.getId(), pos, (int) (progress * 10.0F) - 1);
+        }
+    }
+
+    private static void startMining(Minecraft minecraft, BlockPos pos) {
+        stopMining(minecraft);
+        mining = pos.immutable();
+        progress = 0;
+        ClientPlayNetworking.send(new HiddenEditing.StartBreak(mining));
+    }
+
+    private static void stopMining(Minecraft minecraft) {
+        if (mining != null && minecraft.level != null) {
+            minecraft.level.destroyBlockProgress(minecraft.player.getId(), mining, -1);
+        }
+        mining = null;
+        progress = 0;
+    }
+
+    private static void swing(Minecraft minecraft) {
+        minecraft.player.swing(InteractionHand.MAIN_HAND,
+                minecraft.player.getItemInHand(InteractionHand.MAIN_HAND).getAttackAnimation(), false);
     }
 
     /** Right click while editing: use or place in the hidden layer. */

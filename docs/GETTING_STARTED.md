@@ -64,7 +64,7 @@ Flip the (visible) lever and the hidden lamp next to the hidden port lights.
 
 ### Seeing the hidden layer: the overlay
 
-In Creative or Spectator, hidden blocks near you (about 70 blocks around)
+In Creative, Spectator, or Survival (see "Survival play" below), hidden blocks near you (about 70 blocks around)
 are drawn as see-through ghosts over the visible world: clearly where
 nothing visible is in front of them, fainter through visible blocks, so
 machinery inside a wall or under the floor still shows.
@@ -74,13 +74,14 @@ machinery inside a wall or under the floor still shows.
 | **H** | Show or hide the overlay |
 | **]** / **[** | More opaque / more see-through (15% to 100%, in steps of 10) |
 
-The setting is kept in `config/phasecraft-client.properties`. Survival
-players are sent nothing, so hidden doors stay hidden from them. The
-overlay needs PhaseCraft on the client as well as on the server.
+The setting is kept in `config/phasecraft-client.properties`. Adventure
+players, and Survival players when the game rule is off, are sent nothing,
+so hidden doors stay hidden from them. The overlay needs PhaseCraft on the
+client as well as on the server.
 
 ### Building in the hidden layer: editing mode
 
-Press **J** (Creative) and "Editing: hidden layer" shows in the top left.
+Press **J** (Creative, or Survival, see below) and "Editing: hidden layer" shows in the top left.
 Your clicks now go to the hidden layer; the visible world is not touched.
 What a click acts on is outlined in purple:
 
@@ -101,6 +102,32 @@ edit, even if H turned it off. Buckets do nothing while editing: put hidden
 water or lava in with `/phasecraft set` (they show in the overlay).
 
 ![Editing mode: a hidden lamp placed at the spot of a visible stone block, outlined in purple](images/editing.png)
+
+### Survival play
+
+PhaseCraft works in Survival. The game rule `phasecraft:survival_access`
+(on by default) lets Survival players use the overlay and editing mode, by
+Survival rules:
+
+- placing a hidden block uses up the item;
+- breaking one takes its normal mining time with your tool (cracks show on
+  it); it drops in the visible world, if your tool is right for it, and the
+  tool wears;
+- middle click selects a matching item you carry; it never makes one;
+- going into the hidden layer itself stays Creative/Spectator only.
+
+`/gamerule phasecraft:survival_access false` turns it off: on a public
+server, Survival editing lets players build inside other people's walls
+(claim mods only watch the visible world). Adventure players never can.
+
+Recipes (a starting point for balancing):
+
+| Item | Recipe |
+| --- | --- |
+| Phase Block x4 | an amethyst shard in the middle, redstone dust on the four sides, cobblestone in the corners |
+| Phase Port | Phase Block + redstone torch |
+| Phase Piston | piston + Phase Block |
+| Sticky Phase Piston | Phase Piston + slime ball, or sticky piston + Phase Block |
 
 ### Secret switches: the phase block
 

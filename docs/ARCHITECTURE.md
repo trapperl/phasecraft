@@ -221,9 +221,11 @@ changes what is phased.
   lights of their dimension, and changes; the client's light engine uses
   them through the same mixin. Players without PhaseCraft see what the
   server sends, which can go stale.
-  GameTests run ticks far faster than 20 a second, while light is computed
-  on its own thread at its own pace: light tests wait in real time (long
-  tick limits), or they fail at random.
+  Vanilla starts queued light work only when the server has spare time
+  between ticks; GameTests run ticks back to back with none, so a phased
+  light check could wait indefinitely (light tests failed at random, on CI
+  too). After queuing a check PhasedLights asks the light engine to run
+  (`tryScheduleUpdate`). Light tests still allow long tick limits.
 
 ### Decision: one phase block, not a phased variant of each block (decided by the person, 2026-11-23)
 
@@ -233,6 +235,23 @@ one rule ("what stands on it is phased") for every kind of block, and still
 an explicit crossing. It costs a hidden cell under or behind each phased
 block; phase pistons and ports stay separate blocks for that reason (the
 staircase stacks pistons with no room for one).
+
+### Who may see and edit: `Access` (Survival play, decided by the person, 2026-11-23)
+
+Creative always; Spectator may see (overlay), not edit; Survival while the
+game rule `phasecraft:survival_access` is on (default on; servers can turn
+it off: Survival editing can build inside other people's walls, past claim
+mods); Adventure never. Each client is told whether it may edit, so J can
+say why not. Survival edits by Survival rules (`HiddenEditing`): placing
+uses the item (Creative's count is restored); breaking needs a start
+message and then the block's mining time by vanilla's own measure
+(`getDestroyProgress` for this player and tool, with vanilla's 70%
+allowance for lag), drops go to the visible world with vanilla's loot and
+tool rules, the tool wears, stats and exhaustion count; middle click only
+selects what is carried. The client mines at vanilla's speed with vanilla's
+cracks. Recipes are data (`data/phasecraft/recipe`), the person's starting
+point for balancing; each unlocks in the recipe book from amethyst shards
+(Phase Block) or Phase Blocks (the rest).
 
 ### Nobody ends up in the hidden layer by accident (`HiddenLayerGuard`)
 
@@ -387,6 +406,12 @@ All of these run on every `./gradlew build`, locally and in CI:
     sneaking with a block places it as usual; a visible pig presses and
     releases a phased plate, but not an unphased one; pistons cannot move a
     phase block (each check shown to fail when its code is removed);
+  - Survival play: who may see and edit (Creative, Survival with the rule
+    on, never Adventure); Survival placing uses the item; breaking is
+    refused before the mining time, then drops in the visible world and
+    wears the tool; with the rule off nothing is placed or broken; middle
+    click never makes items; the recipes craft what they should (each
+    shown to fail with its code removed);
   - phased light: hidden glowstone on a phase block lights the visible
     world (15, fading by vanilla's rules), also high in empty sky; without
     a phase block it does not; a phased lamp follows hidden redstone;

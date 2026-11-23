@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "key": {
+    "C": "minecraft:cobblestone",
+    "R": "minecraft:redstone",
+    "A": "minecraft:amethyst_shard"
+  },
+  "pattern": [
+    "CRC",
+    "RAR",
+    "CRC"
+  ],
+  "result": {
+    "id": "phasecraft:phase_block",
+    "count": 4
+  }
+}

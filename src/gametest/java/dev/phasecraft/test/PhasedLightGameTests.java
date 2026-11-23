@@ -16,9 +16,10 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
  * Without a phase block, hidden light stays in the hidden layer.
  *
  * <p>Light is computed on the server's light thread, at its own pace, while the
- * GameTest server runs ticks as fast as it can (80 ticks can pass in a second).
- * So these tests allow many ticks: they wait for the light in real time, not in
- * game time.</p>
+ * GameTest server runs ticks as fast as it can (80 ticks can pass in a second),
+ * so these tests allow many ticks. (Vanilla also starts queued light work only
+ * in a server's spare time between ticks, which a GameTest server has none of;
+ * PhasedLights starts it itself.)</p>
  */
 public class PhasedLightGameTests {
     /** The spot of the hidden light; visible air. */

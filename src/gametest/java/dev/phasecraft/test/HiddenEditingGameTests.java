@@ -143,20 +143,21 @@ public class HiddenEditingGameTests {
         helper.succeed();
     }
 
-    /** Survival players cannot edit the hidden layer. */
+    /** Adventure players cannot edit the hidden layer. (Survival: see SurvivalPlayGameTests.) */
     @GameTest
-    public void survivalPlayersCannotEdit(GameTestHelper helper) {
+    public void adventurePlayersCannotEdit(GameTestHelper helper) {
         BlockPos at = helper.absolutePos(TARGET);
         HiddenLayer layer = HiddenLayer.of(helper.getLevel());
         helper.setBlock(TARGET, Blocks.STONE);
         layer.setBlock(at.east(), Blocks.REDSTONE_LAMP.defaultBlockState());
-        withPlayer(helper, GameType.SURVIVAL, player -> {
+        withPlayer(helper, GameType.ADVENTURE, player -> {
             hold(player, Items.OAK_PLANKS);
             HiddenEditing.use(player, InteractionHand.MAIN_HAND, click(at, Direction.UP));
+            HiddenEditing.startBreaking(player, at.east());
             HiddenEditing.breakBlock(player, at.east());
         });
-        helper.assertTrue(layer.getBlock(at).isAir(), "survival player placed a hidden block");
-        helper.assertTrue(layer.getBlock(at.east()).is(Blocks.REDSTONE_LAMP), "survival player broke a hidden block");
+        helper.assertTrue(layer.getBlock(at).isAir(), "adventure player placed a hidden block");
+        helper.assertTrue(layer.getBlock(at.east()).is(Blocks.REDSTONE_LAMP), "adventure player broke a hidden block");
         layer.removeBlock(at.east());
         helper.succeed();
     }
@@ -178,7 +179,7 @@ public class HiddenEditingGameTests {
         helper.succeed();
     }
 
-    /** Middle click on a hidden block puts that block in the hand; Survival players and far clicks get nothing. */
+    /** Middle click on a hidden block puts that block in the hand; Adventure players and far clicks get nothing. */
     @GameTest
     public void pickPutsTheHiddenBlockInHand(GameTestHelper helper) {
         BlockPos at = helper.absolutePos(TARGET);
@@ -193,9 +194,9 @@ public class HiddenEditingGameTests {
             helper.assertTrue(player.getMainHandItem().is(Items.REDSTONE_LAMP),
                     "hand holds " + player.getMainHandItem() + ", not the hidden lamp (the visible block is stone)");
         });
-        withPlayer(helper, GameType.SURVIVAL, player -> {
+        withPlayer(helper, GameType.ADVENTURE, player -> {
             hold(player, Items.OAK_PLANKS);
-            helper.assertFalse(HiddenEditing.pick(player, at), "survival player picked a hidden block");
+            helper.assertFalse(HiddenEditing.pick(player, at), "adventure player picked a hidden block");
         });
         layer.removeBlock(at);
         layer.removeBlock(at.east(20));

@@ -78,12 +78,18 @@ transparent layer, not a separate world.
       person can try it and reassess. First step done (station 13). Second step (the person, 2026-11-23:
       "lights would be cool"): phased light sources light the visible
       world at their spot. Done (station 14).
-   c. Survival play: one game rule, on by default, that lets Survival
+   c. Survival play (done): one game rule, on by default, that lets Survival
       players use the overlay and editing mode (with Survival rules:
       placing uses the item, breaking takes mining time and the right tool
       and drops the block, normal reach), plus crafting recipes for phase
-      pistons, ports and the phase block; the person picks the recipe
-      costs. Entering the hidden layer stays Creative/Spectator only.
+      pistons, ports and the phase block. Recipes, the person's starting
+      point for balancing (2026-11-23; an ender pearl was "pretty
+      expensive"): Phase Block x4 = amethyst shard in the middle, redstone
+      dust on the 4 sides, cobblestone in the corners; Phase Port = Phase
+      Block + redstone torch; Phase Piston = piston + Phase Block; Sticky
+      Phase Piston = Phase Piston + slime ball (or sticky piston + Phase
+      Block). Cheaper fallback if needed: a copper ingot instead of the
+      shard. Entering the hidden layer stays Creative/Spectator only.
       Servers can turn the rule off (on a public server Survival editing
       can build inside other people's walls, past claim mods).
    d. Overlay performance for large hidden builds.
@@ -99,8 +105,10 @@ transparent layer, not a separate world.
    does not copy its contents.
 
 Decided by the person: phase pistons show no visible arm; missing blocks
-are handled as vanilla does. Decided by the agent, open to change: only
-Creative/Spectator players are sent the overlay; ghosts show through
+are handled as vanilla does; Survival players may see and edit while the
+game rule phasecraft:survival_access is on (default). Decided by the agent,
+open to change: Spectators see the overlay but cannot edit, Adventure
+players neither; ghosts show through
 visible blocks (fainter); in editing mode (J) a click on a visible block
 places the hidden block at that same spot.
 
