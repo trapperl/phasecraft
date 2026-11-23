@@ -67,5 +67,10 @@ places the hidden block at that same spot.
   shows `pending` stuck above 0).
 - Use it for real-world checks (restart, joining with a client). It does not
   replace GameTests: anything worth checking twice belongs in a test.
+- The dev server's world (run/, level `phasecraft-examples`) is throwaway dev
+  data and only the person plays on it: tearing it down, rebuilding it
+  (`tools/examples.py`) or restarting the server needs no permission (the
+  person said so, 2026-11-22). Still never touch their own Minecraft saves
+  or mods folder without asking.
 - `python3 tools/examples.py` rebuilds and verifies the examples area. When a
   milestone adds something a person can see or try, add a station for it.
