@@ -32,8 +32,8 @@ import net.minecraft.world.level.block.Blocks;
  *       ahead and to the left;</li>
  *   <li>a visible 3x3 stone wall around (3, -59, 5), to the left, with a hidden
  *       emerald block behind its middle, which must show through it, fainter;</li>
- *   <li>up in the sky, a hidden chest (no ordinary model: shown as its shape)
- *       and hidden lava.</li>
+ *   <li>up in the sky, a hidden chest (no ordinary model: shown as its shape),
+ *       and later, briefly, hidden lava (it spreads by vanilla rules).</li>
  * </ul>
  * <p>Screenshots with the overlay on and off are compared where each block
  * appears on screen: the ghosts must tint those pixels toward their own
@@ -73,7 +73,6 @@ public class OverlayClientGameTest implements FabricClientGameTest {
                 }
                 layer.setBlock(BEHIND_WALL, Blocks.EMERALD_BLOCK.defaultBlockState());
                 layer.setBlock(CHEST, Blocks.CHEST.defaultBlockState());
-                layer.setBlock(LAVA, Blocks.LAVA.defaultBlockState());
                 layer.setBlock(GOLD, Blocks.GOLD_BLOCK.defaultBlockState());
                 layer.setBlock(STONE, Blocks.LAPIS_BLOCK.defaultBlockState());
                 layer.setBlock(BURIED, Blocks.REDSTONE_BLOCK.defaultBlockState());
@@ -91,7 +90,6 @@ public class OverlayClientGameTest implements FabricClientGameTest {
             waitForGhost(context, BURIED, Blocks.REDSTONE_BLOCK);
             waitForGhost(context, BEHIND_WALL, Blocks.EMERALD_BLOCK);
             waitForGhost(context, CHEST, Blocks.CHEST);
-            waitForGhost(context, LAVA, Blocks.LAVA);
             context.getInput().pressKey(options -> options.keyToggleGui);
             context.waitTicks(5);
 
@@ -135,13 +133,10 @@ public class OverlayClientGameTest implements FabricClientGameTest {
             double offWall = wall.mean(off, Channel.GREEN_MINUS_RED);
             assertTrue(Math.abs(offWall) < 12, "wall not grey with the overlay off: " + offWall);
 
-            // A chest (drawn by a special renderer, so shown as its shape) and lava, up in the sky.
+            // A chest (drawn by a special renderer, so shown as its shape), up in the sky.
             Box chest = box(on45, CHEST);
-            Box lava = project(on45, LAVA.getX() + 0.5, LAVA.getY() + 0.4, LAVA.getZ(), 4);
             double chestTint = chest.mean(on45, Channel.RED_MINUS_BLUE) - chest.mean(off, Channel.RED_MINUS_BLUE);
-            double lavaTint = lava.mean(on45, Channel.RED_MINUS_BLUE) - lava.mean(off, Channel.RED_MINUS_BLUE);
             assertTrue(chestTint > 40, "hidden chest not drawn: tint " + chestTint + " at " + chest);
-            assertTrue(lavaTint > 40, "hidden lava not drawn: tint " + lavaTint + " at " + lava);
 
             // Improved transparency (order-independent) draws ghosts too.
             context.runOnClient(minecraft -> {
@@ -156,6 +151,20 @@ public class OverlayClientGameTest implements FabricClientGameTest {
             assertTrue(improvedWall > 10, "see-through ghost not drawn with improved transparency: " + improvedWall);
             context.runOnClient(minecraft -> minecraft.options.improvedTransparency().set(false));
             context.waitTicks(5);
+
+            // Hidden lava, up in the sky. It is real lava and spreads after 30 ticks,
+            // so it is only there for two quick screenshots.
+            server.runOnServer(minecraft -> HiddenLayer.of(minecraft.overworld()).setBlock(LAVA, Blocks.LAVA.defaultBlockState()));
+            waitForGhost(context, LAVA, Blocks.LAVA);
+            BufferedImage lavaOn = screenshot(context, "lava_on");
+            context.runOnClient(minecraft -> PhaseCraftClient.settings().setEnabled(false));
+            context.waitTicks(1);
+            BufferedImage lavaOff = screenshot(context, "lava_off");
+            context.runOnClient(minecraft -> PhaseCraftClient.settings().setEnabled(true));
+            server.runOnServer(minecraft -> HiddenLayer.of(minecraft.overworld()).removeBlock(LAVA));
+            Box lava = project(lavaOn, LAVA.getX() + 0.5, LAVA.getY() + 0.4, LAVA.getZ(), 4);
+            double lavaTint = lava.mean(lavaOn, Channel.RED_MINUS_BLUE) - lava.mean(lavaOff, Channel.RED_MINUS_BLUE);
+            assertTrue(lavaTint > 40, "hidden lava not drawn: tint " + lavaTint + " at " + lava);
 
             // Sync: removing a hidden block removes the ghost.
             server.runOnServer(minecraft -> HiddenLayer.of(minecraft.overworld()).removeBlock(GOLD));
