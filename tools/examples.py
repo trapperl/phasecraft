@@ -840,6 +840,54 @@ def vault_check():
     return all(steps.values()), steps
 
 
+# Station 22: the giant iris door, built from its layout file (shared with IrisDoorGameTests; written by
+# tools/gen_iris.py). Its wiring reaches 10 blocks under the floor, so the door stands on a raised platform
+# (the world's bottom is -64) with steps up at the front.
+IRIS_LAYOUT = pathlib.Path(__file__).resolve().parent.parent / "src/gametest/resources/contraptions/iris_door.txt"
+IRIS_ORIGIN = (222, -64, -18)   # layout (0, 0, 0); the floor (layout y = 9) is at -55, the door at z = 0
+
+
+def iris_pos(x, y, z):
+    ox, oy, oz = IRIS_ORIGIN
+    return (ox + x, oy + y, oz + z)
+
+
+def iris_commands():
+    ox, oy, oz = IRIS_ORIGIN
+    out = [
+        # hidden first, so blocks the shifters still hold are put back, then cleared
+        in_dimension(HIDDEN_OVERWORLD, f"fill {ox} {oy} {oz} {ox + 28} {oy + 18} {oz + 36} minecraft:air"),
+        f"fill {ox} -60 {oz} {ox + 28} {oy + 18} {oz + 36} minecraft:air",
+        # the platform under the layout's floor (layout x 0..14, z 11..25), and steps up at the front
+        f"fill {coords(iris_pos(0, 4, 11))} {coords(iris_pos(14, 8, 25))} minecraft:stone",
+    ]
+    for i in range(6):
+        out.append(f"fill {coords(iris_pos(5, 4 + i, 5 + i))} {coords(iris_pos(7, 4 + i, 5 + i))} "
+                   "minecraft:stone_brick_stairs[facing=south]")
+    placements, _ = read_layout(IRIS_LAYOUT)
+    for layer, a, b, block in placements:
+        command = (f"fill {coords(iris_pos(*a))} {coords(iris_pos(*b))} {block}" if a != b
+                   else f"setblock {coords(iris_pos(*a))} {block}")
+        out.append(in_dimension(HIDDEN_OVERWORLD, command) if layer == "hidden" else command)
+    out.append(sign(iris_pos(4, 10, 13), ["22. Iris door", "Flip the lever:", "it opens from", "the middle out"]))
+    return out
+
+
+def iris_state():
+    """'closed', 'open' or a picture (D = door block) of the 37 door blocks, bottom row first."""
+    placements, info = read_layout(IRIS_LAYOUT)
+    cells = [a for layer, a, b, block in placements if layer == "visible" and block == info["door"]]
+    replies = rcon.send_commands([f"phasecraft get {coords(iris_pos(*c))}" for c in cells])
+    at = "".join("D" if info["door"] in r.split("visible: ", 1)[1].split(" |")[0] else "." for r in replies)
+    return "closed" if at == "D" * len(cells) else "open" if at == "." * len(cells) else at
+
+
+def iris_lever(on):
+    _, info = read_layout(IRIS_LAYOUT)
+    rcon.send_commands([f"setblock {coords(iris_pos(*info['lever']))} "
+                        f"minecraft:lever[face=floor,facing=north,powered={str(on).lower()}]"])
+
+
 def flying_observer_commands():
     """The engine's two observers, sent a second after flying_commands(): placed in the same
     batch, the engine starts on its own. They are placed "strict" because a plain setblock
@@ -864,8 +912,8 @@ def build_commands():
         "gamerule advance_time false",
         "time set noon",
         "weather clear 1000000",
-        "forceload add -8 -16 220 8",
-        in_dimension(HIDDEN_OVERWORLD, "forceload add -8 -16 220 8"),
+        "forceload add -8 -18 252 18",
+        in_dimension(HIDDEN_OVERWORLD, "forceload add -8 -18 252 18"),
         # Clear the area (visible) and lay a path of andesite under the stations.
         "fill -4 -60 -8 54 -55 4 minecraft:air",
         "fill -4 -61 -8 54 -61 4 minecraft:grass_block",
@@ -902,6 +950,7 @@ def build_commands():
     commands += room_commands()
     commands += trap_commands()
     commands += shifter_commands()
+    commands += iris_commands()
     for station in STATIONS:
         for dimension, pos, *_ in station["hidden"]:
             commands.append(in_dimension(dimension, f"phasecraft clear {coords(pos)}"))
@@ -1058,6 +1107,16 @@ def main():
         return 1
     ok &= vault_ok
     print(f"{'ok ' if vault_ok else 'BAD'} vault: {vault_steps}")
+    try:
+        iris_steps = [("before", iris_state())]
+        iris_lever(True); time.sleep(5); iris_steps.append(("lever on", iris_state()))
+        iris_lever(False); time.sleep(5); iris_steps.append(("lever off", iris_state()))
+    except rcon.RconError as error:
+        print(error, file=sys.stderr)
+        return 1
+    iris_ok = [s for _, s in iris_steps] == ["closed", "open", "closed"]
+    ok &= iris_ok
+    print(f"{'ok ' if iris_ok else 'BAD'} iris door: " + ", ".join(f"{name}: {state}" for name, state in iris_steps))
     print("Examples built and verified." if ok else "Some examples did not build as expected.")
     return 0 if ok else 1
 

@@ -548,7 +548,50 @@ has such cells.
      pistons around it (and, through quasi-connectivity, stage 1).
    - Placed by a layout, an extended piston must come after whatever powers
      it, or it retracts on placement.
-7. **Mob farm:** not a target; the hidden layer does not interact with mobs.
+7. **Giant iris door: done.** A round 7x7 door (37 blocks) flush in a wall:
+   one visible lever opens it from the centre outward, ring by ring, and
+   closes it from the outside in (the person's idea, 2026-11-23: "you can't
+   really do that in normal Minecraft"; `IrisDoorGameTests`, examples station
+   22). Rings by distance from the centre: 1, 8, 12 and 16 blocks, 4 redstone
+   ticks apart; the centre opens 2.3 s after the lever.
+   - Each door block is held by a hidden phase shifter at its own spot, so no
+     block travels: the hard part is only getting each ring its signal at the
+     right moment, through a solid 7x7 wall of shifters, all hidden.
+   - The layout (`contraptions/iris_door.txt`, about 1,700 hidden blocks) is
+     written by `tools/gen_iris.py`, which also sets every repeater's delay
+     and the resting state of every part; change the generator, not the file.
+   - Feeding a shifter: through a stone right behind it, powered by a
+     repeater. A shifter is a solid block, so a repeater pointing into it
+     would power it strongly and switch its neighbours too. Even rows are
+     fed from behind the wall, odd rows from in front, so every repeater has
+     a free row under it for the glass it stands on.
+   - In each row, a run of same-ring blocks shares a wire; a redstone torch
+     tower right behind it brings that ring's signal up from under the
+     floor. Towers of upper rows stand deeper than lower rows' wiring, which
+     they pass. Where the tower would leave the signal upside down, a torch
+     on the tower's top block turns it over.
+   - Under the floor, each ring has its own level (y = -3 to -9 below the
+     floor) with a wire along x = 9 (the bus) and a branch to each tower.
+   - The controller: the lever (a phase port under it) feeds a staircase of
+     wire down past the four levels. On each level two lines of different
+     delay merge: the ring rises with the short line and falls with the long
+     one. Rings 2 and 3 do this on the inverted lever signal and are turned
+     back on the way up, so they rise with the long line and fall with the
+     short one: opening runs centre first, closing outside first.
+   - Lessons: dust fades one level per block, so long wires need repeaters
+     (the checker does not model strength: the ring 3 bus ran dry under the
+     front rows, which stood open); a wire must be placed after the block it
+     stands on, or the next update pops it; the resting state written to the
+     layout must match the settled one (two bus repeaters started off, and
+     the inverted rings flickered open after building). Built by RCON over
+     many ticks, the door flickers for about half a second while it settles;
+     built in one tick (the GameTest), it does not. And vanilla's
+     `GameTestHelper.relativePos` turns an unrotated test half round.
+   - `tools/redstone_check.py` now checks shifters (each must get its own
+     signal and no other), and a torch now goes out only on a direct signal
+     into its block, as in vanilla (`SignalGetter.getSignal` of a
+     conductor): side-by-side towers are fine.
+8. **Mob farm:** not a target; the hidden layer does not interact with mobs.
 
 ## Validation status
 

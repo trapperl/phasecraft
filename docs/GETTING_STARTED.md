@@ -228,6 +228,13 @@ Station 21 is a vault: a chest built into a small wall. Click the brick
 above it and the chest is gone, contents and all; click again and it is
 back.
 
+Station 22 is the giant iris door, on a raised platform (take the steps at
+the front). Flip the lever beside it: a round hole opens in the middle of the
+wall and grows outward, ring by ring, until the whole 7x7 doorway is open;
+flip it back and it closes from the outside in. Every door block is held by
+a hidden phase shifter, and all its wiring is hidden: turn the overlay on to
+see how much of it there is.
+
 ![A dark stone room lit by a glowstone hidden in its far wall](images/phased-light-room.png)
 
 Save and exit your test world, reopen it, and run `/phasecraft get` again to

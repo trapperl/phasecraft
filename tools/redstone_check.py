@@ -17,6 +17,9 @@ reports every place a part or piston receives a signal other than its own:
 - a piston is powered from any side but its front, and also (quasi-
   connectivity) by anything powering the cell above it, from any side but
   below;
+- a phase shifter is powered from any side, like a copper bulb; a torch
+  goes out only when its block has a direct signal (a wire on or pointing
+  into it, a repeater pointing into it, a torch under it);
 - a button or pressure plate is a source like a lever, and strongly powers
   the block it hangs on or stands on; a copper bulb is powered from any side; a comparator is a diode like a
   repeater, and one reading a copper bulb carries the bulb's signal.
@@ -219,7 +222,7 @@ def check(path):
             if bad:
                 print(f"LEAK       wire at {p} (@{signal}): picks up {sorted(bad)}")
                 problems += 1
-        elif "bulb" in k:
+        elif "bulb" in k or k == "phase_shifter":
             got = layout.into(p)
             bad = got - ok
             if signal not in got:
@@ -254,7 +257,9 @@ def check(path):
                 problems += 1
         elif k in ("redstone_torch", "redstone_wall_torch"):
             held = add(p, OPPOSITE[props["facing"]]) if k == "redstone_wall_torch" else add(p, "down")
-            got = layout.strong(held) | layout.into(held) if layout.is_conductor(held) else set()
+            # vanilla: a torch goes out when its block has a direct signal (SignalGetter.getSignal of a
+            # conductor is getDirectSignalTo): a torch or a powered block beside that block does not count
+            got = layout.strong(held) if layout.is_conductor(held) else set()
             want = inputs.get(p)
             bad = got - {want, None} - allow.get(want, set())
             if bad or want not in got:
