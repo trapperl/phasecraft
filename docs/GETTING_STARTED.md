@@ -235,6 +235,13 @@ flip it back and it closes from the outside in. Every door block is held by
 a hidden phase shifter, and all its wiring is hidden: turn the overlay on to
 see how much of it there is.
 
+Station 23 is a waterfall: five ribbons of water fall from a pool on a cliff
+between rock ribs. Climb up and flip the lever on the pool's rim: the middle
+ribbon stops, then the two beside it, then the outer two, each draining from
+the top down, and a lit cave appears behind; flip it back and they pour again
+from the outside in. A hidden phase shifter at the top of each ribbon puts a
+stone back to stop it.
+
 ![A dark stone room lit by a glowstone hidden in its far wall](images/phased-light-room.png)
 
 Save and exit your test world, reopen it, and run `/phasecraft get` again to

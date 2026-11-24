@@ -888,6 +888,50 @@ def iris_lever(on):
                         f"minecraft:lever[face=floor,facing=north,powered={str(on).lower()}]"])
 
 
+# Station 23: the parting waterfall, built from its layout file (shared with WaterfallGameTests; written by
+# tools/gen_waterfall.py). The basin's floor (layout y = 0) is one below the grass; the cliff's face at z = 0.
+FALLS_LAYOUT = pathlib.Path(__file__).resolve().parent.parent / "src/gametest/resources/contraptions/waterfall.txt"
+FALLS_ORIGIN = (254, -62, -8)   # layout (0, 0, 0)
+
+
+def falls_pos(x, y, z):
+    ox, oy, oz = FALLS_ORIGIN
+    return (ox + x, oy + y, oz + z)
+
+
+def falls_commands():
+    ox, oy, oz = FALLS_ORIGIN
+    out = [
+        in_dimension(HIDDEN_OVERWORLD, f"fill {ox} {oy} {oz} {ox + 29} {oy + 16} {oz + 21} minecraft:air"),
+        f"fill {ox} -60 {oz} {ox + 29} {oy + 16} {oz + 21} minecraft:air",
+    ]
+    placements, _ = read_layout(FALLS_LAYOUT)
+    for layer, a, b, block in placements:
+        command = (f"fill {coords(falls_pos(*a))} {coords(falls_pos(*b))} {block}" if a != b
+                   else f"setblock {coords(falls_pos(*a))} {block}")
+        out.append(in_dimension(HIDDEN_OVERWORLD, command) if layer == "hidden" else command)
+    out.append(sign(falls_pos(4, 2, 1), ["23. Waterfall", "Flip the lever", "on the cliff:", "it parts"]))
+    return out
+
+
+def falls_gates():
+    placements, _ = read_layout(FALLS_LAYOUT)
+    return [a for layer, a, b, block in placements if layer == "hidden" and "phase_shifter" in block]
+
+
+def falls_state():
+    """'running', 'parted' or a picture (~ water, . dry) of the five ribbons halfway down."""
+    replies = rcon.send_commands([f"phasecraft get {coords(falls_pos(g[0], g[1] - 7, g[2] - 1))}" for g in falls_gates()])
+    at = "".join("~" if "minecraft:water" in r.split("visible: ", 1)[1].split(" |")[0] else "." for r in replies)
+    return "running" if at == "~~~~~" else "parted" if at == "....." else at
+
+
+def falls_lever(on):
+    _, info = read_layout(FALLS_LAYOUT)
+    rcon.send_commands([f"setblock {coords(falls_pos(*info['lever']))} "
+                        f"minecraft:lever[face=floor,facing=north,powered={str(on).lower()}]"])
+
+
 def flying_observer_commands():
     """The engine's two observers, sent a second after flying_commands(): placed in the same
     batch, the engine starts on its own. They are placed "strict" because a plain setblock
@@ -912,8 +956,8 @@ def build_commands():
         "gamerule advance_time false",
         "time set noon",
         "weather clear 1000000",
-        "forceload add -8 -18 252 18",
-        in_dimension(HIDDEN_OVERWORLD, "forceload add -8 -18 252 18"),
+        "forceload add -8 -18 286 18",
+        in_dimension(HIDDEN_OVERWORLD, "forceload add -8 -18 286 18"),
         # Clear the area (visible) and lay a path of andesite under the stations.
         "fill -4 -60 -8 54 -55 4 minecraft:air",
         "fill -4 -61 -8 54 -61 4 minecraft:grass_block",
@@ -951,6 +995,7 @@ def build_commands():
     commands += trap_commands()
     commands += shifter_commands()
     commands += iris_commands()
+    commands += falls_commands()
     for station in STATIONS:
         for dimension, pos, *_ in station["hidden"]:
             commands.append(in_dimension(dimension, f"phasecraft clear {coords(pos)}"))
@@ -1117,6 +1162,17 @@ def main():
     iris_ok = [s for _, s in iris_steps] == ["closed", "open", "closed"]
     ok &= iris_ok
     print(f"{'ok ' if iris_ok else 'BAD'} iris door: " + ", ".join(f"{name}: {state}" for name, state in iris_steps))
+    try:
+        time.sleep(6)      # the water finds its way down the cliff
+        falls_steps = [("before", falls_state())]
+        falls_lever(True); time.sleep(6); falls_steps.append(("lever on", falls_state()))
+        falls_lever(False); time.sleep(6); falls_steps.append(("lever off", falls_state()))
+    except rcon.RconError as error:
+        print(error, file=sys.stderr)
+        return 1
+    falls_ok = [s for _, s in falls_steps] == ["running", "parted", "running"]
+    ok &= falls_ok
+    print(f"{'ok ' if falls_ok else 'BAD'} waterfall: " + ", ".join(f"{name}: {state}" for name, state in falls_steps))
     print("Examples built and verified." if ok else "Some examples did not build as expected.")
     return 0 if ok else 1
 

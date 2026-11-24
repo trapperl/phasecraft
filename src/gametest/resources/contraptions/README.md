@@ -30,8 +30,10 @@ their settled state (repeaters `powered=true` where powered, pistons
 `extended=true` where they should be), pistons last: the examples tour
 builds everything in one tick, with no time to settle.
 
-A layout too big to write by hand can come from a generator: `iris_door.txt` is written by
-`tools/gen_iris.py` (with its GameTest area, `iris_door.snbt`); change the generator and run it again.
+A layout too big to write by hand can come from a generator: `iris_door.txt` and `waterfall.txt` are
+written by `tools/gen_iris.py` and `tools/gen_waterfall.py` (with their GameTest areas, `<name>.snbt`), both
+through `tools/gen_door.py` (doors of phase shifters switching in rings); change the generator and run it
+again.
 
 `python3 tools/redstone_check.py <file>` reports every part or piston that
 receives a signal other than its own, following vanilla's power rules

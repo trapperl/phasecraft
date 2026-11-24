@@ -118,4 +118,10 @@ public final class ContraptionLayout {
     public Block door() {
         return door;
     }
+
+    /** Where the layout places the given block in the hidden layer (single placements, not fills). */
+    public List<BlockPos> hidden(Block block) {
+        return placements.stream().filter(p -> p.hidden() && p.from().equals(p.to()) && p.state().is(block))
+                .map(Placement::from).toList();
+    }
 }
