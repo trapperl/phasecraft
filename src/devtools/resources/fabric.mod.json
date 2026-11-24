@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "phasecraft-devtools",
+  "version": "1.0.0",
+  "name": "PhaseCraft dev tools",
+  "description": "Commands for building and inspecting on the dev server (tools/mcb). Loaded only by runServer; not shipped with the mod.",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["dev.phasecraft.devtools.McbCommands"]
+  },
+  "depends": {
+    "phasecraft": "*",
+    "fabric-command-api-v2": "*"
+  }
+}
