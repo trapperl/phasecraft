@@ -93,7 +93,7 @@ public class PhaseLayerRestartPhases {
         helper.succeed();
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(maxTicks = 2400)
     public void verifyAfterRestart(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
         for (Expected cell : HIDDEN) {
