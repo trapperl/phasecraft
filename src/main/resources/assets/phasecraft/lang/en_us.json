@@ -15,5 +15,6 @@
   "phasecraft.guard.moved_out": "Moved back to the visible layer: only Creative and Spectator players can be in the hidden layer (it has no ground)",
   "phasecraft.guard.no_respawn": "You cannot set your respawn point in the hidden layer",
   "block.phasecraft.phase_block": "Phase Block",
-  "phasecraft.edit.not_allowed": "Editing the hidden layer needs Creative, or Survival with the game rule phasecraft:survival_access on"
+  "phasecraft.edit.not_allowed": "Editing the hidden layer needs Creative, or Survival with the game rule phasecraft:survival_access on",
+  "block.phasecraft.phase_shifter": "Phase Shifter"
 }

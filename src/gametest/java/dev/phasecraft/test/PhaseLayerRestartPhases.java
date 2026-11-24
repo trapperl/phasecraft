@@ -5,7 +5,10 @@ import dev.phasecraft.layer.HiddenLayer;
 import dev.phasecraft.layer.PhaseLayerData;
 import java.util.List;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
+import dev.phasecraft.PhaseCraftBlocks;
+import dev.phasecraft.shifter.PhaseShifterBlockEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceKey;
@@ -38,6 +41,8 @@ public class PhaseLayerRestartPhases {
 
     /** Where a phased glowstone is stored; after the restart it must light the visible world there. */
     private static final BlockPos PHASED_LIGHT = new BlockPos(10, 70, 30);
+    /** A phase shifter holding a visible gold block across the restart. */
+    private static final BlockPos SHIFTED = new BlockPos(10, 70, 40);
 
     /** Same XYZ in every dimension, plus a cell far outside any loaded chunk. */
     private static final List<Expected> HIDDEN = List.of(
@@ -79,6 +84,12 @@ public class PhaseLayerRestartPhases {
             PhaseLayerData.get(level).setBlock(cell.pos(), cell.block());
             level.getDataStorage().saveAndJoin();
         }
+        ServerLevel overworld = server.overworld();
+        HiddenLayer layer = HiddenLayer.of(overworld);
+        overworld.setBlock(SHIFTED, Blocks.GOLD_BLOCK.defaultBlockState(), Block.UPDATE_ALL);
+        layer.setBlock(SHIFTED, PhaseCraftBlocks.PHASE_SHIFTER.defaultBlockState());
+        layer.setBlock(SHIFTED.above(), Blocks.REDSTONE_BLOCK.defaultBlockState());
+        helper.assertValueEqual(overworld.getBlockState(SHIFTED).getBlock(), Blocks.AIR, "visible gold taken by the shifter before restart");
         helper.succeed();
     }
 
@@ -97,8 +108,16 @@ public class PhaseLayerRestartPhases {
             helper.assertValueEqual(PhaseLayerData.get(level).size(), 0,
                     "old-style cells left in " + cell.dimension().identifier());
         }
+        ServerLevel overworld = server.overworld();
+        HiddenLayer layer = HiddenLayer.of(overworld);
+        helper.assertValueEqual(overworld.getBlockState(SHIFTED).getBlock(), Blocks.AIR, "visible spot of the shifted gold after restart");
+        helper.assertTrue(layer.level().getBlockEntity(SHIFTED) instanceof PhaseShifterBlockEntity entity
+                && entity.held() != null && entity.held().is(Blocks.GOLD_BLOCK), "the shifter still holds the gold after restart");
+        layer.removeBlock(SHIFTED.above());
         // Light is computed on its own thread: wait for it (in real time; see PhasedLightGameTests).
         helper.startSequence()
+                .thenWaitUntil(() -> helper.assertValueEqual(overworld.getBlockState(SHIFTED).getBlock(), Blocks.GOLD_BLOCK,
+                        "the gold put back after restart"))
                 .thenWaitUntil(() -> helper.assertValueEqual(
                         server.overworld().getBrightness(LightLayer.BLOCK, PHASED_LIGHT), 15,
                         "visible block light at the phased glowstone after restart"))
