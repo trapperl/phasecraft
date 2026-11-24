@@ -2,6 +2,7 @@ package dev.phasecraft.piston;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -72,6 +73,7 @@ final class PhasePistonMover {
             toUpdate[updateIndex++] = state;
         }
 
+        List<PhasePistonAnimation.Moving> moving = new ArrayList<>();
         for (int i = toPush.size() - 1; i >= 0; i--) {
             BlockPos pos = toPush.get(i);
             BlockState blockState = level.getBlockState(pos);
@@ -80,7 +82,11 @@ final class PhasePistonMover {
             BlockState actualState = Blocks.MOVING_PISTON.defaultBlockState().setValue(BlockStateProperties.FACING, direction);
             level.setBlock(pos, actualState, 324);
             level.setBlockEntity(MovingPistonBlock.newMovingBlockEntity(pos, actualState, toPushShapes.get(i), direction, extending, false));
+            moving.add(new PhasePistonAnimation.Moving(pos.immutable(), toPushShapes.get(i), direction, extending));
             toUpdate[updateIndex++] = blockState;
+        }
+        if (level instanceof ServerLevel serverLevel) {
+            PhasePistonAnimation.send(serverLevel, moving);
         }
 
         // Vanilla places the moving piston arm here. A phase piston's arm is not in the visible layer.
