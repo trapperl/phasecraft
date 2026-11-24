@@ -58,12 +58,29 @@ exporting it back found both, and it now matches block for block.
 watchtower, paths, a forest); `--place X Y Z` builds it on the dev server (it stands at
 300, -61, 200 there).
 
+## Wire router (`mcb.router`)
+
+`router.route(scene, start, start_from, end, end_into, box, delay=None)` finds the shortest safe
+line of redstone (A*) from a start to an end through a crowded layer, and `.apply(scene)` adds
+it. Both ends are repeaters, so the line takes its signal only from `start_from` and powers only
+`end_into`. Its rules, each one a lesson from the iris door:
+- every wire and repeater gets a block to stand on, placed before it;
+- nothing new touches another circuit's redstone, even diagonally (wire joins diagonal steps),
+  or anything but air, glass or the line itself, and the line never passes next to itself;
+- steps up and down stand the upper wire on stone, as vanilla joins a step only over a
+  conductor (a glass step breaks the line), with nothing else touching that stone;
+- a repeater comes before the signal has faded;
+- with `delay=` (redstone ticks) the delays are set, and repeaters added, to arrive then.
+
+Tested in the simulator (around a wall, over a ridge, a long line, an exact delay, across a busy
+area next to another circuit, no route when walled in), and the crossing case on the dev server.
+
 ## Modules
 
 `nbt` (NBT files), `structure` (vanilla structure files), `scene` (a build as blocks
 per layer; from and to layout files and structures; `diff` to compare a build with what the
 server has), `server` (RCON and the `/mcb` commands), `render` (pictures), `redstone` (the simulator),
-`verify` (the simulator against the real game), `shapes` (buildings and scenery), `examples`.
+`verify` (the simulator against the real game), `shapes` (buildings and scenery), `router` (wiring), `examples`.
 
 Why: building a layout over RCON takes one command per block, spread over many ticks, so
 half-built redstone runs while it is placed (the iris door flickered for half a second after
@@ -75,5 +92,5 @@ Tests: `python3 -B -m unittest discover -s tools/mcb/tests -t tools` (run by `./
 `-B`: a mutation restored within the same second, at the same size, otherwise runs from Python's
 stale bytecode cache.
 
-Next: a wire router; pistons and comparators in the simulator. No MCP
+Next: pistons and comparators in the simulator, when a build needs them. No MCP
 server (the person, 2026-11-24: "Let's drop MCP").
