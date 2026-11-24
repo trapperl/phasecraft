@@ -244,6 +244,28 @@ STATIONS.append({
     ],
 })
 
+# Station 21: the shifter takes a chest with what is in it ("vault"). A chest
+# sits in the bottom middle of a small wall. The brick above it hides a phased
+# lever (on a phase block behind the wall) right over a hidden phase shifter at
+# the chest's spot: click the brick and the chest is gone, contents and all;
+# click again and it is back, exactly as it was.
+VAULT_CHEST = (212, Y, 0)
+VAULT_LEVER = (212, Y + 1, 0)
+STATIONS.append({
+    "x": 209,
+    "sign": ["21. Vault", "Click the brick", "above the chest", "to hide it"],
+    "visible": [((x, y, 0), "minecraft:stone_bricks") for x in (211, 213) for y in (Y, Y + 1)] + [
+        (VAULT_LEVER, "minecraft:stone_bricks"),
+        (VAULT_CHEST, "minecraft:chest[facing=north]"),
+    ],
+    "hidden": [
+        ("minecraft:overworld", (212, Y + 1, 1), "phasecraft:phase_block"),
+        ("minecraft:overworld", VAULT_LEVER, "minecraft:lever[face=wall,facing=north]",
+         "minecraft:lever[face=wall,facing=north,powered=false]"),
+        ("minecraft:overworld", VAULT_CHEST, "phasecraft:phase_shifter", "phasecraft:phase_shifter[powered=false]"),
+    ],
+})
+
 WELCOME = ["PhaseCraft", "H: see hidden", "J: edit hidden", "[ ] = opacity"]
 
 # Hidden blocks that need something under them (vanilla rules: wire, repeaters
@@ -800,6 +822,24 @@ def mail_check():
     return all(steps.values()), steps
 
 
+def vault_check():
+    """Station 21, over RCON: a chest with items goes when the hidden lever is on and comes back, items and all.
+    Returns (ok, steps)."""
+    x, y, z = VAULT_CHEST
+    rcon.send_commands([f'data merge block {x} {y} {z} {{Items:[{{Slot:4b,id:"minecraft:gold_ingot",count:9}}]}}'])
+    lever = f"setblock {coords(VAULT_LEVER)} minecraft:lever[face=wall,facing=north,powered=%s]"
+    visible = lambda: rcon.send_commands([f"phasecraft get {coords(VAULT_CHEST)}"])[0].split("visible: ", 1)[1].split(" |")[0]
+    rcon.send_commands([in_dimension(HIDDEN_OVERWORLD, lever % "true")])
+    time.sleep(1)
+    gone = "minecraft:air" in visible()
+    rcon.send_commands([in_dimension(HIDDEN_OVERWORLD, lever % "false")])
+    time.sleep(1)
+    back = "minecraft:chest" in visible()
+    items = rcon.send_commands([f"data get block {x} {y} {z} Items"])[0]
+    steps = {"gone": gone, "back": back, "gold kept": "gold_ingot" in items and "count: 9" in items}
+    return all(steps.values()), steps
+
+
 def flying_observer_commands():
     """The engine's two observers, sent a second after flying_commands(): placed in the same
     batch, the engine starts on its own. They are placed "strict" because a plain setblock
@@ -824,8 +864,8 @@ def build_commands():
         "gamerule advance_time false",
         "time set noon",
         "weather clear 1000000",
-        "forceload add -8 -16 212 8",
-        in_dimension(HIDDEN_OVERWORLD, "forceload add -8 -16 212 8"),
+        "forceload add -8 -16 220 8",
+        in_dimension(HIDDEN_OVERWORLD, "forceload add -8 -16 220 8"),
         # Clear the area (visible) and lay a path of andesite under the stations.
         "fill -4 -60 -8 54 -55 4 minecraft:air",
         "fill -4 -61 -8 54 -61 4 minecraft:grass_block",
@@ -838,10 +878,13 @@ def build_commands():
         # Station 14's hut: solid, hollowed out, a doorway in front; dark inside.
         "fill 114 -60 -4 124 -54 7 minecraft:air",
         in_dimension(HIDDEN_OVERWORLD, "fill 114 -61 -4 124 -54 7 minecraft:air"),
+        # Station 21's area: hidden first, so a chest the shifter still holds is put back, then cleared.
+        in_dimension(HIDDEN_OVERWORLD, "fill 209 -61 -3 216 -55 5 minecraft:air"),
+        "fill 209 -60 -3 216 -55 5 minecraft:air",
         # Station 20's area (its hidden ground cleared down to the phase blocks).
-        "fill 197 -60 -3 208 -55 5 minecraft:air",
-        "fill 197 -61 -3 208 -61 5 minecraft:grass_block",
-        in_dimension(HIDDEN_OVERWORLD, "fill 197 -62 -3 208 -55 5 minecraft:air"),
+        "fill 197 -60 -3 207 -55 5 minecraft:air",
+        "fill 197 -61 -3 207 -61 5 minecraft:grass_block",
+        in_dimension(HIDDEN_OVERWORLD, "fill 197 -62 -3 207 -55 5 minecraft:air"),
         # Station 19's area.
         "fill 177 -60 -3 196 -55 5 minecraft:air",
         "fill 177 -61 -3 196 -61 5 minecraft:grass_block",   # ground (the mark sits in it)
@@ -1008,6 +1051,13 @@ def main():
         return 1
     ok &= mail_ok
     print(f"{'ok ' if mail_ok else 'BAD'} item mail: {mail_steps}")
+    try:
+        vault_ok, vault_steps = vault_check()
+    except rcon.RconError as error:
+        print(error, file=sys.stderr)
+        return 1
+    ok &= vault_ok
+    print(f"{'ok ' if vault_ok else 'BAD'} vault: {vault_steps}")
     print("Examples built and verified." if ok else "Some examples did not build as expected.")
     return 0 if ok else 1
 

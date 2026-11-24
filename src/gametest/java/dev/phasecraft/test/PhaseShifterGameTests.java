@@ -11,6 +11,14 @@ import net.minecraft.world.entity.animal.pig.Pig;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.network.chat.Component;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.component.DataComponentMap;
+import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.world.level.block.state.properties.ChestType;
+import net.minecraft.world.level.block.ChestBlock;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -68,14 +76,14 @@ public class PhaseShifterGameTests {
                 .thenSucceed();
     }
 
-    /** What a piston cannot push stays: obsidian, bedrock, a chest. Nothing to take (air) is fine. */
+    /** What a piston cannot push, or would break, stays: obsidian, bedrock, a torch. Nothing to take (air) is fine. */
     @GameTest(maxTicks = 40)
     public void leavesWhatAPistonCannotMove(GameTestHelper helper) {
         floor(helper);
         BlockPos[] spots = {SPOT.west(2), SPOT, SPOT.east(2), SPOT.south(2)};
         helper.setBlock(spots[0], Blocks.OBSIDIAN);
         helper.setBlock(spots[1], Blocks.BEDROCK);
-        helper.setBlock(spots[2], Blocks.CHEST);
+        helper.setBlock(spots[2], Blocks.TORCH);
         for (BlockPos spot : spots) {
             shifter(helper, spot);
         }
@@ -90,7 +98,7 @@ public class PhaseShifterGameTests {
                 .thenExecute(() -> {
                     helper.assertBlockPresent(Blocks.OBSIDIAN, spots[0]);
                     helper.assertBlockPresent(Blocks.BEDROCK, spots[1]);
-                    helper.assertBlockPresent(Blocks.CHEST, spots[2]);
+                    helper.assertBlockPresent(Blocks.TORCH, spots[2]);
                     helper.assertBlockPresent(Blocks.AIR, spots[3]);
                 })
                 .thenSucceed();
@@ -164,6 +172,95 @@ public class PhaseShifterGameTests {
                         new AABB(helper.absolutePos(other)).inflate(2), item -> item.getItem().is(Items.DIAMOND_BLOCK)).isEmpty(),
                         "the diamond block did not drop"))
                 .thenExecute(() -> helper.assertBlockPresent(Blocks.STONE, other))
+                .thenSucceed();
+    }
+
+    /**
+     * A chest goes with everything in it, and its name: nothing spills while it is away,
+     * and it comes back exactly as it was (the person's list, 2026-11-24: "the shifter taking chests").
+     */
+    @GameTest(maxTicks = 60)
+    public void takesAChestWithItsContents(GameTestHelper helper) {
+        floor(helper);
+        helper.setBlock(SPOT, Blocks.CHEST);
+        ChestBlockEntity chest = helper.getBlockEntity(SPOT, ChestBlockEntity.class);
+        // Named as an anvil-named chest is when placed (the name lives in the chest's own data). Before
+        // filling it: applying components also sets the chest's items from them.
+        chest.applyComponents(DataComponentMap.builder().set(DataComponents.CUSTOM_NAME, Component.literal("Loot")).build(),
+                DataComponentPatch.EMPTY);
+        chest.setItem(3, new ItemStack(Items.DIAMOND, 5));
+        shifter(helper, SPOT);
+        helper.startSequence()
+                .thenIdle(2)
+                .thenExecute(() -> power(helper, SPOT, true))
+                .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.AIR, SPOT))
+                .thenIdle(5)
+                .thenExecute(() -> helper.assertTrue(helper.getLevel().getEntitiesOfClass(ItemEntity.class,
+                        new AABB(helper.absolutePos(SPOT)).inflate(3)).isEmpty(), "something spilled when the chest was taken"))
+                .thenExecute(() -> power(helper, SPOT, false))
+                .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.CHEST, SPOT))
+                .thenExecute(() -> {
+                    ChestBlockEntity back = helper.getBlockEntity(SPOT, ChestBlockEntity.class);
+                    helper.assertTrue(back.getItem(3).is(Items.DIAMOND) && back.getItem(3).getCount() == 5,
+                            "the diamonds did not come back: " + back.getItem(3));
+                    helper.assertValueEqual(back.getCustomName(), Component.literal("Loot"), "the chest's name");
+                })
+                .thenSucceed();
+    }
+
+    /** One half of a double chest goes and comes back; the two halves join up again (or it stands alone if the other half is gone). */
+    @GameTest(maxTicks = 80)
+    public void doubleChestHalfComesBackJoined(GameTestHelper helper) {
+        floor(helper);
+        BlockState left = Blocks.CHEST.defaultBlockState().setValue(ChestBlock.FACING, Direction.NORTH).setValue(ChestBlock.TYPE, ChestType.LEFT);
+        BlockState right = left.setValue(ChestBlock.TYPE, ChestType.RIGHT);
+        helper.setBlock(SPOT, left);
+        helper.setBlock(SPOT.east(), right);
+        helper.getBlockEntity(SPOT, ChestBlockEntity.class).setItem(0, new ItemStack(Items.EMERALD, 2));
+        shifter(helper, SPOT);
+        helper.startSequence()
+                .thenIdle(2)
+                .thenExecute(() -> power(helper, SPOT, true))
+                .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.AIR, SPOT))
+                .thenExecute(() -> helper.assertBlockProperty(SPOT.east(), ChestBlock.TYPE, ChestType.SINGLE))
+                .thenExecute(() -> power(helper, SPOT, false))
+                .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.CHEST, SPOT))
+                .thenExecute(() -> {
+                    helper.assertBlockProperty(SPOT, ChestBlock.TYPE, ChestType.LEFT);
+                    helper.assertBlockProperty(SPOT.east(), ChestBlock.TYPE, ChestType.RIGHT);
+                    helper.assertValueEqual(helper.getBlockEntity(SPOT, ChestBlockEntity.class).getItem(0).getCount(), 2, "emeralds back");
+                })
+                // Again, but the other half is gone by the time it comes back: it stands alone.
+                .thenExecute(() -> power(helper, SPOT, true))
+                .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.AIR, SPOT))
+                .thenExecute(() -> helper.setBlock(SPOT.east(), Blocks.AIR))
+                .thenExecute(() -> power(helper, SPOT, false))
+                .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.CHEST, SPOT))
+                .thenExecute(() -> helper.assertBlockProperty(SPOT, ChestBlock.TYPE, ChestType.SINGLE))
+                .thenSucceed();
+    }
+
+    /** Removed while holding a chest whose spot is taken: the chest and everything in it drop as items. */
+    @GameTest(maxTicks = 60)
+    public void removedShifterDropsChestAndContents(GameTestHelper helper) {
+        floor(helper);
+        helper.setBlock(SPOT, Blocks.CHEST);
+        helper.getBlockEntity(SPOT, ChestBlockEntity.class).setItem(0, new ItemStack(Items.DIAMOND, 4));
+        shifter(helper, SPOT);
+        helper.startSequence()
+                .thenIdle(2)
+                .thenExecute(() -> power(helper, SPOT, true))
+                .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.AIR, SPOT))
+                .thenExecute(() -> {
+                    helper.setBlock(SPOT, Blocks.STONE);
+                    hidden(helper).removeBlock(helper.absolutePos(SPOT));
+                })
+                .thenWaitUntil(() -> {
+                    var items = helper.getLevel().getEntitiesOfClass(ItemEntity.class, new AABB(helper.absolutePos(SPOT)).inflate(2));
+                    helper.assertTrue(items.stream().anyMatch(item -> item.getItem().is(Items.CHEST)), "the chest did not drop");
+                    helper.assertValueEqual(items.stream().filter(item -> item.getItem().is(Items.DIAMOND))
+                            .mapToInt(item -> item.getItem().getCount()).sum(), 4, "diamonds dropped");
+                })
                 .thenSucceed();
     }
 

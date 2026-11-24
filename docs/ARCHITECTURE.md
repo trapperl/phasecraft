@@ -90,18 +90,30 @@ the visible world and holds it (`PhaseShifterBlockEntity`, saved with the
 world); when the power goes, it puts that block back exactly as it was.
 Nothing shows and nothing is heard in the visible world: the block is held,
 not placed in the hidden layer, so it never collides with hidden machinery.
-- It takes what a piston could push without breaking (vanilla's
-  `PistonBaseBlock.isPushable`): not air, fluids, fragile blocks (torches,
-  flowers), immovable ones (obsidian, bedrock) or blocks with contents
-  (chests). It takes only when the power arrives, so a block placed in the
-  gap while it is powered stays.
+- It takes what a piston could push without breaking, and blocks with
+  contents too (vanilla's `PistonBaseBlock.isPushable` without its last
+  rule, "no block entities": pistons refuse those because they would carry
+  them somewhere else, while the shifter always puts a block back at its
+  own spot). Not air, fluids, fragile blocks (torches, flowers) or
+  immovable ones (obsidian, bedrock). It takes only when the power arrives,
+  so a block placed in the gap while it is powered stays.
+- Contents (2026-11-24, from the person's list): a chest, furnace, barrel...
+  goes with what is in it and its name. The block entity is saved with
+  `saveWithoutMetadata` (its data and components) into the shifter's
+  `held_data`, and the visible block removed with
+  `UPDATE_SKIP_BLOCK_ENTITY_SIDEEFFECTS` so nothing spills; put back, the
+  data is loaded into the new block entity. The block is put back with the
+  shape its neighbours give it now (`updateFromNeighbourShapes`, as a placed
+  block): half of a double chest joins its other half again, or stands
+  alone if that half is gone.
 - Putting back waits, retrying every tick, while the spot is taken by a
   block or by a mob or player standing there.
 - Removed while holding a block, it puts it back if the spot is free, or
-  drops it there as an item: never lost, never doubled.
-- `PhaseShifterGameTests`, and `PhaseLayerRestartPhases` (a held block
-  survives a restart). Examples station 18: four bricks of a wall vanish
-  into a doorway.
+  drops it there as an item, with its contents: never lost, never doubled.
+- `PhaseShifterGameTests`, and `PhaseLayerRestartPhases` (a held block, and
+  a held chest with its items, survive a restart). Examples station 18:
+  four bricks of a wall vanish into a doorway; station 21: a chest in a
+  wall vanishes with its contents.
 
 ## The overlay: seeing the hidden layer from the visible world
 

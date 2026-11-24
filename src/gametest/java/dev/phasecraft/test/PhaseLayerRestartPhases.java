@@ -17,6 +17,9 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
@@ -43,6 +46,8 @@ public class PhaseLayerRestartPhases {
     private static final BlockPos PHASED_LIGHT = new BlockPos(10, 70, 30);
     /** A phase shifter holding a visible gold block across the restart. */
     private static final BlockPos SHIFTED = new BlockPos(10, 70, 40);
+    /** A phase shifter holding a visible chest with seven diamonds in it across the restart. */
+    private static final BlockPos SHIFTED_CHEST = SHIFTED.east(2);
 
     /** Same XYZ in every dimension, plus a cell far outside any loaded chunk. */
     private static final List<Expected> HIDDEN = List.of(
@@ -90,6 +95,11 @@ public class PhaseLayerRestartPhases {
         layer.setBlock(SHIFTED, PhaseCraftBlocks.PHASE_SHIFTER.defaultBlockState());
         layer.setBlock(SHIFTED.above(), Blocks.REDSTONE_BLOCK.defaultBlockState());
         helper.assertValueEqual(overworld.getBlockState(SHIFTED).getBlock(), Blocks.AIR, "visible gold taken by the shifter before restart");
+        overworld.setBlock(SHIFTED_CHEST, Blocks.CHEST.defaultBlockState(), Block.UPDATE_ALL);
+        ((ChestBlockEntity) overworld.getBlockEntity(SHIFTED_CHEST)).setItem(4, new ItemStack(Items.DIAMOND, 7));
+        layer.setBlock(SHIFTED_CHEST, PhaseCraftBlocks.PHASE_SHIFTER.defaultBlockState());
+        layer.setBlock(SHIFTED_CHEST.above(), Blocks.REDSTONE_BLOCK.defaultBlockState());
+        helper.assertValueEqual(overworld.getBlockState(SHIFTED_CHEST).getBlock(), Blocks.AIR, "visible chest taken by the shifter before restart");
         helper.succeed();
     }
 
@@ -114,10 +124,15 @@ public class PhaseLayerRestartPhases {
         helper.assertTrue(layer.level().getBlockEntity(SHIFTED) instanceof PhaseShifterBlockEntity entity
                 && entity.held() != null && entity.held().is(Blocks.GOLD_BLOCK), "the shifter still holds the gold after restart");
         layer.removeBlock(SHIFTED.above());
+        helper.assertValueEqual(overworld.getBlockState(SHIFTED_CHEST).getBlock(), Blocks.AIR, "visible spot of the shifted chest after restart");
+        layer.removeBlock(SHIFTED_CHEST.above());
         // Light is computed on its own thread: wait for it (in real time; see PhasedLightGameTests).
         helper.startSequence()
                 .thenWaitUntil(() -> helper.assertValueEqual(overworld.getBlockState(SHIFTED).getBlock(), Blocks.GOLD_BLOCK,
                         "the gold put back after restart"))
+                .thenWaitUntil(() -> helper.assertTrue(overworld.getBlockEntity(SHIFTED_CHEST) instanceof ChestBlockEntity chest
+                        && chest.getItem(4).is(Items.DIAMOND) && chest.getItem(4).getCount() == 7,
+                        "the chest put back after restart, with its seven diamonds"))
                 .thenWaitUntil(() -> helper.assertValueEqual(
                         server.overworld().getBrightness(LightLayer.BLOCK, PHASED_LIGHT), 15,
                         "visible block light at the phased glowstone after restart"))
