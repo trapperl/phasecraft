@@ -78,7 +78,17 @@ transparent layer, not a separate world.
       bookshelf wall (done, station 16: the switch is a bookshelf hiding a
       phased button, a hidden copper bulb keeps the state), trapdoor floor
       (done, station 17: a phased pressure plate before the trap drops the
-      next two tiles into a pit). More ideas welcome from the person.
+      next two tiles into a pit). A giant iris door (the person's idea,
+      2026-11-23) is on hold ("we can hold off on the iris for now"); the
+      phase shifter (below) should make it much simpler.
+   a2. The phase shifter (the person's idea, 2026-11-23: "pulling blocks
+      from the main world into the sub world and then putting them back";
+      "let's build it"): a hidden block that, powered, takes the visible
+      block at its own spot out of the visible world and holds it, and puts
+      it back when unpowered. Done (station 18). Piston rules decide what it
+      can take (no chests yet); instant, no effect (the agent's default,
+      open to change); no recipe yet (Creative only): the cost is the
+      person's call.
    b. The phase block (decided by the person, replacing dedicated
       plate/button blocks): a hidden block standing on a phase block, or
       hanging on its side, is phased: it reacts to the visible world at its
@@ -89,7 +99,9 @@ transparent layer, not a separate world.
       just don't react (list the supported ones in the docs). Built so the
       person can try it and reassess. First step done (station 13). Second step (the person, 2026-11-23:
       "lights would be cool"): phased light sources light the visible
-      world at their spot. Done (station 14).
+      world at their spot. Done (station 14). Third step (the person,
+      2026-11-23: "we can just move right into the other ones"):
+      observers, comparators, tripwire.
    c. Survival play (done): one game rule, on by default, that lets Survival
       players use the overlay and editing mode (with Survival rules:
       placing uses the item, breaking takes mining time and the right tool
@@ -118,8 +130,9 @@ transparent layer, not a separate world.
    GameTest and examples.py with the shared loaders.
 2. Stretch (done as 1e): a flying machine with a hidden engine moving
    visible blocks.
-3. Known gaps: fish buckets are refused in editing mode. (Buckets work,
-   and Ctrl + middle click copies a hidden chest's contents, 2026-11-23.)
+3. Fish buckets stay refused in editing mode (the person, 2026-11-23:
+   "let's not do anything"). Buckets work, and Ctrl + middle click copies a
+   hidden chest's contents.
 
 Decided by the person: phase pistons show no visible arm; missing blocks
 are handled as vanilla does; Survival players may see and edit while the

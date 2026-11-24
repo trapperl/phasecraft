@@ -180,6 +180,12 @@ tiles in, the floor ahead drops away into a pit (a hidden pressure plate on a
 phase block is the trigger). A tunnel leads out of the pit. The floor closes
 again a moment after you leave the trigger tile.
 
+Station 18 shows the phase shifter: a plain stone-brick wall where one brick
+(right of the middle) hides a lever. Click it and four bricks vanish, leaving
+a doorway; click again and they come back. Behind each of those bricks a
+hidden phase shifter holds the brick while it is powered. The Phase Shifter
+is in the Redstone tab (Creative only for now: it has no recipe yet).
+
 ![A dark stone room lit by a glowstone hidden in its far wall](images/phased-light-room.png)
 
 Save and exit your test world, reopen it, and run `/phasecraft get` again to

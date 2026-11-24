@@ -1,5 +1,10 @@
 package dev.phasecraft;
 
+import dev.phasecraft.shifter.PhaseShifterBlock;
+import dev.phasecraft.shifter.PhaseShifterBlockEntity;
+import java.util.Set;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+
 import dev.phasecraft.link.PhasePortBlock;
 import dev.phasecraft.phased.PhaseBlock;
 import dev.phasecraft.piston.PhasePistonBlock;
@@ -38,6 +43,14 @@ public final class PhaseCraftBlocks {
                     .pushReaction(PushReaction.IMMOVEABLE));
     public static final Item PHASE_BLOCK_ITEM = item("phase_block", PHASE_BLOCK);
 
+    public static final Block PHASE_SHIFTER = block("phase_shifter", PhaseShifterBlock::new,
+            BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_PURPLE).strength(1.5F).sound(SoundType.AMETHYST)
+                    .pushReaction(PushReaction.IMMOVEABLE));
+    public static final Item PHASE_SHIFTER_ITEM = item("phase_shifter", PHASE_SHIFTER);
+    public static final BlockEntityType<PhaseShifterBlockEntity> PHASE_SHIFTER_ENTITY = Registry.register(
+            BuiltInRegistries.BLOCK_ENTITY_TYPE, id("phase_shifter"),
+            new BlockEntityType<>(PhaseShifterBlockEntity::new, Set.of(PHASE_SHIFTER)));
+
     private static Identifier id(String path) {
         return Identifier.fromNamespaceAndPath(PhaseCraft.MOD_ID, path);
     }
@@ -63,6 +76,7 @@ public final class PhaseCraftBlocks {
                     output.accept(PHASE_PISTON_ITEM);
                     output.accept(STICKY_PHASE_PISTON_ITEM);
                     output.accept(PHASE_BLOCK_ITEM);
+                    output.accept(PHASE_SHIFTER_ITEM);
                 });
     }
 }

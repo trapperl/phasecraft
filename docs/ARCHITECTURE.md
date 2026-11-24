@@ -83,6 +83,26 @@ phase piston pulls the visible block back by one on retracting, with
 vanilla's sticky rules. Placed in the visible layer it does nothing.
 `PhasePistonMover` is vanilla's `moveBlocks` minus the arm.
 
+**Phase shifter** (`phasecraft:phase_shifter`, Redstone tab, Creative only
+for now; the person's idea, 2026-11-23). Placed in the hidden layer: when
+hidden power reaches it, it takes the visible block at its own spot out of
+the visible world and holds it (`PhaseShifterBlockEntity`, saved with the
+world); when the power goes, it puts that block back exactly as it was.
+Nothing shows and nothing is heard in the visible world: the block is held,
+not placed in the hidden layer, so it never collides with hidden machinery.
+- It takes what a piston could push without breaking (vanilla's
+  `PistonBaseBlock.isPushable`): not air, fluids, fragile blocks (torches,
+  flowers), immovable ones (obsidian, bedrock) or blocks with contents
+  (chests). It takes only when the power arrives, so a block placed in the
+  gap while it is powered stays.
+- Putting back waits, retrying every tick, while the spot is taken by a
+  block or by a mob or player standing there.
+- Removed while holding a block, it puts it back if the spot is free, or
+  drops it there as an item: never lost, never doubled.
+- `PhaseShifterGameTests`, and `PhaseLayerRestartPhases` (a held block
+  survives a restart). Examples station 18: four bricks of a wall vanish
+  into a doorway.
+
 ## The overlay: seeing the hidden layer from the visible world
 
 The hidden layer is a separate dimension, but it is meant to be seen as a

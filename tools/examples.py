@@ -596,6 +596,64 @@ def trap_walker(present):
     rcon.send_commands(commands)
 
 
+# Station 18: the phase shifter. A stone-brick wall; the brick right of the
+# middle hides a phased lever (on a phase block behind it). The lever powers
+# four hidden phase shifters at the same spots as four wall bricks, which take
+# those bricks out of the visible world: a doorway appears; click again and the
+# bricks come back. Hidden wire runs over the top row and behind the wall.
+SHIFT_X = 171                     # the doorway: x 171..172, y Y..Y+1, z 0
+SHIFT_LEVER = (173, Y + 1, 0)     # the secret brick
+
+
+def shifter_commands():
+    h = lambda pos, block: in_dimension(HIDDEN_OVERWORLD, f"setblock {coords(pos)} {block}")
+    x0 = SHIFT_X
+    lx, ly, lz = SHIFT_LEVER
+    wire = "minecraft:redstone_wire"
+    out = [
+        "fill 168 -60 -3 176 -55 3 minecraft:air",
+        in_dimension(HIDDEN_OVERWORLD, "fill 168 -61 -3 176 -55 3 minecraft:air"),
+        f"fill 169 {Y} 0 174 {Y + 2} 0 minecraft:stone_bricks",
+        sign((168, Y, -2), ["18. Shifter", "Click the brick", "right of the", "middle"]),
+        # The secret lever on a phase block behind the wall.
+        h((lx, ly, lz + 1), "phasecraft:phase_block"),
+        h(SHIFT_LEVER, "minecraft:lever[face=wall,facing=north,powered=false]"),
+        # The shifters, at the doorway's four bricks.
+    ] + [h((x, y, 0), "phasecraft:phase_shifter") for x in (x0, x0 + 1) for y in (Y, Y + 1)] + [
+        # Top row: wire over the shifters, from the wire on the phase block.
+        h((lx, ly + 1, lz + 1), wire),
+        h((x0 + 1, ly, lz + 1), "minecraft:stone"),
+        h((x0 + 1, ly + 1, lz + 1), wire),
+        h((x0 + 1, ly + 1, 0), wire),
+        h((x0, ly + 1, 0), wire),
+        # Bottom row: wire under the phase block, round behind, into repeaters facing the shifters.
+        h((lx, Y - 1, lz + 1), "minecraft:stone"),
+        h((lx, Y, lz + 1), wire),
+    ] + [h((x, Y - 1, 2), "minecraft:stone") for x in (x0, x0 + 1, lx)] + [
+        h((x, Y, 2), wire) for x in (x0, x0 + 1, lx)] + [
+        h((x, Y - 1, 1), "minecraft:stone") for x in (x0, x0 + 1)] + [
+        h((x, Y, 1), "minecraft:repeater[facing=south,delay=1]") for x in (x0, x0 + 1)]
+    return out
+
+
+def shifter_state():
+    """'closed' (all four doorway bricks there), 'open' (none) or a picture."""
+    cells = [(x, y, 0) for y in (Y + 1, Y) for x in (SHIFT_X, SHIFT_X + 1)]
+    replies = rcon.send_commands([f"phasecraft get {coords(c)}" for c in cells])
+    there = ["minecraft:stone_bricks" in r.split("visible: ", 1)[1].split(" |")[0] for r in replies]
+    return "closed" if all(there) else "open" if not any(there) else "".join("B" if t else "." for t in there)
+
+
+def shifter_lever(on):
+    """Flips the hidden lever (RCON cannot click), then places the wire next to its phase block again:
+    /setblock does not update what is next to the block a lever hangs on, as a real flip does."""
+    lx, ly, lz = SHIFT_LEVER
+    commands = [f"setblock {coords(SHIFT_LEVER)} minecraft:lever[face=wall,facing=north,powered={str(on).lower()}]"]
+    for pos in ((lx, ly + 1, lz + 1), (lx, Y, lz + 1)):
+        commands += [f"setblock {coords(pos)} minecraft:air", f"setblock {coords(pos)} minecraft:redstone_wire"]
+    rcon.send_commands([in_dimension(HIDDEN_OVERWORLD, c) for c in commands])
+
+
 def flying_observer_commands():
     """The engine's two observers, sent a second after flying_commands(): placed in the same
     batch, the engine starts on its own. They are placed "strict" because a plain setblock
@@ -646,6 +704,7 @@ def build_commands():
     commands += flying_commands()
     commands += room_commands()
     commands += trap_commands()
+    commands += shifter_commands()
     for station in STATIONS:
         for dimension, pos, *_ in station["hidden"]:
             commands.append(in_dimension(dimension, f"phasecraft clear {coords(pos)}"))
@@ -770,6 +829,16 @@ def main():
     trap_ok = [s for _, s in trap_steps] == ["closed", "open", "closed"]
     ok &= trap_ok
     print(f"{'ok ' if trap_ok else 'BAD'} trapdoor floor: " + ", ".join(f"{name}: {state}" for name, state in trap_steps))
+    try:
+        shift_steps = [("before", shifter_state())]
+        shifter_lever(True); time.sleep(2); shift_steps.append(("lever on", shifter_state()))
+        shifter_lever(False); time.sleep(2); shift_steps.append(("lever off", shifter_state()))
+    except rcon.RconError as error:
+        print(error, file=sys.stderr)
+        return 1
+    shift_ok = [s for _, s in shift_steps] == ["closed", "open", "closed"]
+    ok &= shift_ok
+    print(f"{'ok ' if shift_ok else 'BAD'} phase shifter: " + ", ".join(f"{name}: {state}" for name, state in shift_steps))
     print("Examples built and verified." if ok else "Some examples did not build as expected.")
     return 0 if ok else 1
 
