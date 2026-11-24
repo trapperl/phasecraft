@@ -144,3 +144,45 @@ class RouteAllTest(unittest.TestCase):
         s, nets, _ = crossing(3, gap=2)
         with self.assertRaises(router.NoRoute):
             router.route_all(s, nets, ((-1, 0, -1), (22, 2, 5)), rounds=8)
+
+
+class TreeTest(unittest.TestCase):
+    def test_one_lever_reaches_every_end_when_the_tree_says(self):
+        s = Scene()
+        s.set("hidden", (0, 0, 0), "minecraft:stone")
+        s.set("hidden", (0, 1, 0), LEVER)
+        targets = [(20, 1, 0), (18, 1, 9), (24, 3, -6), (9, 1, 14)]
+        for t in targets:
+            s.set("hidden", t, "phasecraft:phase_shifter")
+        ends = [((x - 1, y, z), "east") for x, y, z in targets]
+        tr = router.tree(s, (1, 1, 0), "west", ends, ((-2, 0, -9), (27, 8, 17))).apply(s)
+        sim = Sim(s)
+        sim.run(5)
+        self.assertEqual(sim.popped, [])
+        self.assertEqual(sim.powered_shifters(), set())
+        sim.set_input((0, 1, 0), True)
+        sim.run(200)
+        when = {p: t for t, p, _, v in sim.events if v}
+        for (end, _), target in zip(ends, targets):
+            self.assertEqual(when.get(target), 5 + 2 * tr.ends[end], f"{target}: the tree says {tr.ends[end]}")
+
+    def test_trees_that_must_cross_reach_only_their_own_ends(self):
+        s = Scene()
+        nets, mine = [], {}
+        for i, z in enumerate((0, 8)):
+            s.set("hidden", (0, 0, z), "minecraft:stone")
+            s.set("hidden", (0, 1, z), LEVER)
+            targets = [(20, 1, 8 - z + dz) for dz in (-3, 0, 3)]       # the other lever's side
+            for t in targets:
+                s.set("hidden", t, "phasecraft:phase_shifter")
+            mine[(0, 1, z)] = set(targets)
+            nets.append(router.TreeNet((1, 1, z), "west", [((x - 1, y, tz), "east") for x, y, tz in targets]))
+        for r in router.route_all(s, nets, ((-1, 0, -5), (22, 8, 13))):
+            r.apply(s)
+        for lever, targets in mine.items():
+            sim = Sim(s)
+            sim.run(5)
+            self.assertEqual(sim.popped, [])
+            sim.set_input(lever, True)
+            sim.run(200)
+            self.assertEqual(sim.powered_shifters(), targets, f"lever at {lever}")
