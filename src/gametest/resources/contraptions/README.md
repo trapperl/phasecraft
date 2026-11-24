@@ -1,5 +1,7 @@
 # Contraption layouts
 
+Every layout follows docs/BUILD_RULES.md.
+
 One file per contraption. The same file is built by the GameTests
 (`ContraptionLayout`), by `tools/examples.py` on the dev server, and checked
 by `tools/redstone_check.py`, so the test, the examples station and the

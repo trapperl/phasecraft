@@ -504,8 +504,11 @@ def write(g, groups, opens):
     # the GameTest's empty area, sized to the layout (the test builds everything itself)
     D.structure.write_text("{\n    DataVersion: 2730,\n    size: [%d, %d, %d],\n    data: [],\n    palette: []\n}\n" % size)
     hidden = len(g.parts) + len(cells())
-    print(f"wrote {D.out.relative_to(ROOT)}: size {size[0]}x{size[1]}x{size[2]}, {hidden} hidden blocks, "
-          f"first ring {opens} redstone ticks after the lever")
+    from mcb.report import hidden_size
+    shifters = [((x, y, 0), "phasecraft:phase_shifter") for x, y in cells()]
+    print(f"wrote {D.out.relative_to(ROOT)}: area {size[0]}x{size[1]}x{size[2]}; "
+          + hidden_size([(p, v[0]) for p, v in g.parts.items()] + shifters)
+          + f"; first ring {opens} redstone ticks after the lever")
 
 
 def build():

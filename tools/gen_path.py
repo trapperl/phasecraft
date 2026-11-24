@@ -264,7 +264,9 @@ def write():
     out.write_text("\n".join(lines) + "\n")
     structure = ROOT / f"src/gametest/resources/data/phasecraft-test/gametest/structure/{NAME}.snbt"
     structure.write_text("{\n    DataVersion: 2730,\n    size: [%d, %d, %d],\n    data: [],\n    palette: []\n}\n" % size)
-    print(f"wrote {out.relative_to(ROOT)}: size {size[0]}x{size[1]}x{size[2]}, {len(parts)} hidden blocks")
+    from mcb.report import hidden_size
+    print(f"wrote {out.relative_to(ROOT)}: area {size[0]}x{size[1]}x{size[2]}; "
+          + hidden_size((pos, state) for pos, state, _ in parts))
 
 
 if __name__ == "__main__":

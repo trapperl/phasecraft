@@ -148,6 +148,9 @@ transparent layer, not a separate world.
       the hidden layer carries a phase piston that pushes the visible cargo
       each cycle (station 15). Option B (one structure spanning both layers,
       new rules) was not chosen.
+   Every contraption follows docs/BUILD_RULES.md (the person, 2026-11-24:
+   "Let's build out rules for what we do", and adopt redstone projects'
+   rules where they can); add a rule when a build teaches one.
    Stacking phase pistons? Read the quasi-connectivity lesson under the
    staircase in docs/ARCHITECTURE.md first. New contraptions: write a
    layout file (src/gametest/resources/contraptions/README.md), run
