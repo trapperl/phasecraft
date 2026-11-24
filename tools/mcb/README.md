@@ -29,7 +29,7 @@ sim = Sim(Scene.from_layout("../src/gametest/resources/contraptions/iris_door.tx
 sim.run(40); sim.set_input(port, True); sim.run(100); sim.events   # [(tick, pos, "shifter", True), ...]
 ```
 
-It reproduces the iris door's GameTest to the tick (rings at 46, 54, 62 and 70 game ticks after
+It reproduces the iris door's GameTest to the tick (rings at 44, 52, 60 and 68 game ticks after
 the lever), and the two bugs of its first build: the faded bus (strength 0, 0, 1, 2, 3 where the
 server showed the same) and the rings that stood open. `tools/gen_iris.py` now checks every
 layout it writes this way. 1,700 parts, 240 ticks: under 3 s.

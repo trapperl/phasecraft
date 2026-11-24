@@ -3,7 +3,7 @@
 #
 # A pool on a cliff spills in five ribbons; their gates are at y = 15, z = 8, x = 4..12 by 2.
 # Lever on: a hidden phase shifter at each gate puts a stone back, the middle first, then outward,
-# 3 redstone ticks apart, the first 14 redstone ticks after the lever; each ribbon drains
+# 3 redstone ticks apart, the first 13 redstone ticks after the lever; each ribbon drains
 # and the cave behind appears. Lever off: the stones are taken again, the outer ribbons first.
 # Signals: L the lever; P<k>.. ring k's controller; B<k> ring k's bus; r<row>x<x>.. a gate's wiring.
 size 30 17 22
@@ -303,7 +303,7 @@ hidden 15 15 11 minecraft:repeater[delay=1,facing=west,powered=false] @L
 hidden 16 14 11 minecraft:glass
 hidden 16 15 11 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @L
 hidden 17 14 11 minecraft:glass
-hidden 17 15 11 minecraft:repeater[delay=1,facing=west,powered=false] @L
+hidden 17 15 11 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @L
 hidden 18 14 11 minecraft:glass
 hidden 18 15 11 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @L
 hidden 19 14 11 minecraft:glass

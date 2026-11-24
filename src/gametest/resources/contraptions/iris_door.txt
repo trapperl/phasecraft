@@ -3,7 +3,7 @@
 #
 # A round 7x7 door (37 blocks) in a wall at z = 18, centre (6, 13, 18). One visible lever
 # opens it from the centre outward and closes it from the outside in: every door block is held by a
-# hidden phase shifter at its own spot; rings switch 4 redstone ticks apart, the first 23
+# hidden phase shifter at its own spot; rings switch 4 redstone ticks apart, the first 22
 # redstone ticks after the lever. Signals: L the lever; P<k>.. ring k's controller; B<k> ring k's bus;
 # r<row>x<x>.. a run of one ring's blocks in a row, from column x (b branch, t tower, U the blocks' feed).
 size 29 19 37
@@ -1291,7 +1291,7 @@ hidden 13 9 16 minecraft:repeater[delay=1,facing=west,powered=false] @L
 hidden 14 8 16 minecraft:glass
 hidden 14 9 16 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @L
 hidden 15 8 16 minecraft:glass
-hidden 15 9 16 minecraft:repeater[delay=1,facing=west,powered=false] @L
+hidden 15 9 16 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @L
 hidden 16 8 16 minecraft:glass
 hidden 16 9 16 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @L
 hidden 17 8 16 minecraft:glass

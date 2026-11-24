@@ -81,7 +81,7 @@ class RedstoneTest(unittest.TestCase):
             times = {}
             for t, p, _, v in sim.events:
                 times.setdefault(ring(p), set()).add(t - t0)
-            self.assertEqual([times[r] for r in order], [{46}, {54}, {62}, {70}])
+            self.assertEqual([times[r] for r in order], [{44}, {52}, {60}, {68}])
 
     def test_a_bus_without_repeaters_fades_and_front_rings_stand_open(self):
         scene = Scene.from_layout(IRIS)
