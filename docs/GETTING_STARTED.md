@@ -153,7 +153,8 @@ its side, is *phased*: it reacts to the visible world at its own spot.
   A hidden lamp inside a wall, on a phase block, lights the room in front of
   it; hidden redstone switches it. A wall torch counts as hanging on the
   block behind it, a hanging lantern on the block above.
-- Their sounds are heard in the visible world.
+- They make no sound in the visible world, and neither do phase pistons:
+  hidden machinery is silent there.
 
 Not supported yet (phased, they act as ordinary hidden blocks): other
 blocks, and arrows on wooden buttons. Pistons cannot move a phase block.

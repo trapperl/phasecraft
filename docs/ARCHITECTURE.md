@@ -225,9 +225,11 @@ changes what is phased.
   plate, so `PhasedInput` keeps a list of the plates in loaded hidden chunks
   (block changes and chunk loads) and checks the released ones every tick;
   once pressed, the plate's own scheduled ticks keep counting.
-- **Sounds** (`ServerLevelPhasedSoundMixin`): a sound played at a phased
-  block's spot in a hidden level is also played in the visible level, to
-  everyone (the clicking player included).
+- **No sound:** hidden blocks make no sound in the visible world (the
+  person, 2026-11-23: "Let's make them silent in the overworld"), phased or
+  not: a phased button's click and a phase piston's push are heard only in
+  the hidden layer (`SilentHiddenGameTests`). Until then the clicks were
+  echoed into the visible world.
 - **Light** (`PhasedLights`, `BlockLightEnginePhasedMixin`): the server
   keeps the light each phased hidden block gives off, per visible
   dimension, from hidden block changes and hidden chunk loads (a loaded
