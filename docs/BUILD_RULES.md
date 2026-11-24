@@ -133,8 +133,8 @@ wiki and the tools.
   a redstone tick to both lines. [wiki: Transmission]
 - **R10. Routers rip up and reroute**: route every net, let conflicts happen, then reroute the conflicted
   ones until none remain (Dewey: a maze router with rip-up and reroute; FPGA tools: PathFinder's negotiated
-  congestion). A router must say when it cannot route, never loop. [Dewey] To do: mcb's router (one net at
-  a time today).
+  congestion). A router must say when it cannot route, never loop. [Dewey] Checked by: `mcb.router.route_all`
+  (two-ended lines; trees, one source to many ends, to do).
 - **R11. Say how a build tiles**: whether copies placed side by side (or stacked) stay independent, and at
   what pitch ("1-wide tileable"). Our planes are this (C3). [wiki: Redstone circuits]
 - **R12. Give sizes the wiki's way**: shortest horizontal x other horizontal x height, support blocks

@@ -76,6 +76,15 @@ it. Both ends are repeaters, so the line takes its signal only from `start_from`
 Tested in the simulator (around a wall, over a ridge, a long line, an exact delay, across a busy
 area next to another circuit, no route when walled in), and the crossing case on the dev server.
 
+`router.route_all(scene, [router.Net(start, start_from, end, end_into, delay=None), ...], box)` routes
+many lines at once so that none touches another (the same spot, beside it, or a step above or
+below it): negotiated congestion, as FPGA routers do it (PathFinder). Every round each line is
+routed again, paying for cells other lines want, more each round, and for cells that stayed
+contested; it stops when none is contested, or raises `NoRoute` after `rounds` rounds (it never
+loops). Lines that must cross find their way over and under each other, which routing them one
+at a time cannot: the first line's parts wall in the others. Tested in the simulator: four lines
+whose ends are in the reverse order, each lever powering only its own target.
+
 ## Modules
 
 `nbt` (NBT files), `structure` (vanilla structure files), `scene` (a build as blocks

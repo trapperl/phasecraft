@@ -19,6 +19,8 @@ The rules, from building the iris door:
 - a repeater comes before the signal has faded (every 15 blocks of wire at most);
 - with delay= (redstone ticks), repeater delays are set, and repeaters added on straight stretches, to arrive then.
 Check a route in mcb.redstone before trusting it.
+
+route_all routes many lines together so that none touches another (negotiated congestion, PathFinder).
 """
 
 import heapq
@@ -98,10 +100,12 @@ def _can_hold(space, c, mine_supports):
         "glass", "stone", "smooth_stone", "stone_bricks")
 
 
-def route(scene, start, start_from, end, end_into, box, layer="hidden", delay=None, turn_cost=0.6):
+def route(scene, start, start_from, end, end_into, box, layer="hidden", delay=None, turn_cost=0.6, extra=None,
+          space=None):
     """The shortest safe line of wire from start to end (A*), with repeaters at both ends and where the signal
-    would fade, and delays set for `delay` redstone ticks if given. Raises NoRoute."""
-    space = _Space(scene, layer, box)
+    would fade, and delays set for `delay` redstone ticks if given. Raises NoRoute.
+    extra(cell) adds to a cell's cost (route_all: the price of space other lines want)."""
+    space = space or _Space(scene, layer, box)
     first_dir = OPPOSITE[start_from]      # the line leaves start this way
     last_dir = end_into                   # and reaches end going this way
     allow_start = {add(start, DIRS[start_from])}
@@ -155,7 +159,7 @@ def route(scene, start, start_from, end, end_into, box, layer="hidden", delay=No
                     continue
                 if dy == -1 and not step_support(space, (c[0], c[1] - 1, c[2]), path, mine=True):
                     continue
-                cost = 1 + (turn_cost if d != heading else 0) + (0.4 if dy else 0)
+                cost = 1 + (turn_cost if d != heading else 0) + (0.4 if dy else 0) + (extra(n) if extra else 0)
                 heapq.heappush(frontier, (g + cost + h(n), g + cost, n, d, path + (n,)))
     raise NoRoute(f"no line from {start} to {end} inside {box}")
 
@@ -239,3 +243,83 @@ def _finish(scene, space, cells, first_dir, last_dir, delay):
         else:
             parts.append((c, "minecraft:redstone_wire[east=side,north=side,south=side,west=side]"))
     return Route(parts, sum(delays.values()), cells)
+
+
+# --- many lines at once: negotiated congestion (PathFinder, as FPGA routers do it; docs/BUILD_RULES.md, R10) ---
+def _halo(c):
+    """Where another line's wire would join or touch a wire at c: the same spot, beside it, or a step above or
+    below it (wire connects along x and z only, never across a corner)."""
+    out = []
+    for dy in (-1, 0, 1):
+        for dx, dz in ((0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)):
+            out.append((c[0] + dx, c[1] + dy, c[2] + dz))
+    return out
+
+
+class Net:
+    """One line to route: as route()'s arguments."""
+
+    def __init__(self, start, start_from, end, end_into, delay=None, name=None):
+        self.start, self.start_from, self.end, self.end_into = start, start_from, end, end_into
+        self.delay, self.name = delay, name or f"{start}->{end}"
+
+
+def route_all(scene, nets, box, layer="hidden", rounds=40, present=0.6, growth=1.6, history=0.4):
+    """Routes every net so that no two touch (see _halo), negotiating: each round every net is routed again, paying
+    for cells other nets use (more each round) and for cells that stayed contested (history), until no cell is
+    contested. Returns [Route] in the nets' order; raises NoRoute if a net has no route at all, or if they still
+    conflict after `rounds` rounds. Existing blocks are hard obstacles, as in route()."""
+    space = _Space(scene, layer, box)
+    near = {}                  # cell -> {net: count}: nets whose wire is at, beside, or a step from it (_halo)
+    fills = {}                 # cell -> {net: count}: nets with a part (wire, repeater, support) there
+    hist = {}
+    routes = [None] * len(nets)
+
+    def bump(table, cell, i, sign):
+        m = table.setdefault(cell, {})
+        m[i] = m.get(i, 0) + sign
+        if m[i] == 0:
+            del m[i]
+
+    def mark(i, r, sign):
+        for c in r.cells:
+            for q in _halo(c):
+                bump(near, q, i, sign)
+        for pos, _ in r.parts:
+            bump(fills, pos, i, sign)
+
+    def others(i, c):
+        """Nets a wire of net i at c would touch."""
+        return len((set(near.get(c, ())) | set(fills.get(c, ()))) - {i})
+
+    def conflicted(i):
+        """Net i's cells another net touches: its wires (within another's halo, or on another's part) and its
+        supports (on another's part)."""
+        r = routes[i]
+        bad = [c for c in r.cells if others(i, c)]
+        bad += [pos for pos, _ in r.parts if pos not in r.cells and set(fills.get(pos, ())) - {i}]
+        return bad
+
+    factor = 0.0
+    for rnd in range(rounds):
+        for i, net in enumerate(nets):
+            if routes[i] is not None and rnd and not conflicted(i):
+                continue
+            if routes[i] is not None:
+                mark(i, routes[i], -1)
+
+            def extra(c, i=i):
+                return hist.get(c, 0) + factor * others(i, c) * (1 + hist.get(c, 0))
+            try:
+                routes[i] = route(scene, net.start, net.start_from, net.end, net.end_into, box, layer, net.delay,
+                                  extra=extra, space=space)
+            except NoRoute as e:
+                raise NoRoute(f"{net.name}: {e}") from None
+            mark(i, routes[i], +1)
+        contested = {c for i in range(len(nets)) for c in conflicted(i)}
+        if not contested:
+            return routes
+        for c in contested:
+            hist[c] = hist.get(c, 0) + history
+        factor = present if factor == 0 else factor * growth
+    raise NoRoute(f"{len(contested)} cells still contested after {rounds} rounds: {sorted(contested)[:6]}")
