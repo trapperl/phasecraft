@@ -249,6 +249,30 @@ changes what is phased.
   plate, so `PhasedInput` keeps a list of the plates in loaded hidden chunks
   (block changes and chunk loads) and checks the released ones every tick;
   once pressed, the plate's own scheduled ticks keep counting.
+- **Watchers** (`PhasedWatchers`; the third step, as the person approved
+  it, 2026-11-23):
+  - A phased **observer** watches the visible block in front of it. Every
+    visible block change (the same server hook as the link) looks for
+    hidden observers on phase blocks facing that spot and starts their
+    pulse, as vanilla's `updateShape` does. The visible block at the
+    observer's own spot is not in front of it and is not watched.
+  - A phased **comparator** reads the visible block behind it, by vanilla's
+    rules: a block with a reading right behind it (a chest's fill level, a
+    cake, a composter...), or, behind one solid block, the block or item
+    frame after it (`ComparatorBlockMixin`; the higher of the hidden and
+    visible readings wins). It never reads visible redstone power: the
+    phase block carries no power (`phasedComparatorIgnoresVisiblePower`).
+    It looks again when a visible block within two of it changes, or when
+    a visible container's contents change (`LevelOutputSignalMixin`, on
+    vanilla's `updateNeighbourForOutputSignal`).
+  - A hidden **tripwire** string whose line ends at a hook on a phase block
+    (the hook counts as hanging on the block behind it; one phased hook is
+    enough) is tripped by visible players, mobs and items at the string's
+    spot. As for plates, `PhasedInput` checks released strings every tick,
+    and `TripWireBlockMixin` makes vanilla's own check (and its rechecks
+    every 10 ticks while tripped) count the visible entities.
+  Hidden observers, comparators and tripwire not on a phase block see only
+  the hidden layer, as before.
 - **No sound:** hidden blocks make no sound in the visible world (the
   person, 2026-11-23: "Let's make them silent in the overworld"), phased or
   not: a phased button's click and a phase piston's push are heard only in
@@ -442,7 +466,8 @@ has such cells.
      observers in the same command batch as the rest started the engine
      early. tools/examples.py places them `strict`, a second later.
    - Hidden observers ignore visible changes in front of them (checked on
-     the dev server): the layers stay separate.
+     the dev server): the layers stay separate. Only an observer standing
+     on a phase block watches the visible world (see Watchers above).
 
    What the pieces do (`SlimeAcrossLayersGameTests`): a phase piston pushing
    a visible slime block drags the visible blocks stuck to it; hidden blocks

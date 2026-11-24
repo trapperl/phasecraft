@@ -108,7 +108,8 @@ transparent layer, not a separate world.
       of it; a phased comparator reads the visible block behind it (a
       chest's fill level...); hidden tripwire hooks on phase blocks with
       hidden string are tripped by visible players and mobs at the
-      string's spots.
+      string's spots. Done (station 19); one phased hook is enough for a
+      line (the agent's default, open to change).
    c. Survival play (done): one game rule, on by default, that lets Survival
       players use the overlay and editing mode (with Survival rules:
       placing uses the item, breaking takes mining time and the right tool

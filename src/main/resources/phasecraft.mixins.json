@@ -4,6 +4,7 @@
   "compatibilityLevel": "JAVA_25",
   "mixins": ["ServerLevelPhaseLinkMixin", "ServerPlayerRespawnMixin", "EntityPortalMixin", "BasePressurePlateAccessor",
              "BasePressurePlateMixin", "LightEngineAccessor",
-             "BlockLightEnginePhasedMixin", "ServerLevelPhaseBridgeMixin"],
+             "BlockLightEnginePhasedMixin", "ServerLevelPhaseBridgeMixin",
+             "ComparatorBlockMixin", "LevelOutputSignalMixin", "TripWireBlockMixin", "TripWireBlockAccessor"],
   "injectors": {"defaultRequire": 1}
 }

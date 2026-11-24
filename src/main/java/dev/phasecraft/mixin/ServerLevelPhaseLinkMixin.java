@@ -4,6 +4,7 @@ import dev.phasecraft.link.PhaseLink;
 import dev.phasecraft.overlay.OverlaySync;
 import dev.phasecraft.phased.PhasedInput;
 import dev.phasecraft.phased.PhasedLights;
+import dev.phasecraft.phased.PhasedWatchers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.state.BlockState;
@@ -28,5 +29,6 @@ abstract class ServerLevelPhaseLinkMixin {
         OverlaySync.onBlockChanged(level, pos, newState);
         PhasedInput.onBlockChanged(level, pos, oldState, newState);
         PhasedLights.onBlockChanged(level, pos, oldState, newState);
+        PhasedWatchers.onBlockChanged(level, pos);
     }
 }

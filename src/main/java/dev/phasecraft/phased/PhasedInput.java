@@ -3,6 +3,7 @@ package dev.phasecraft.phased;
 import dev.phasecraft.layer.HiddenDimensions;
 import dev.phasecraft.layer.HiddenLayer;
 import dev.phasecraft.mixin.BasePressurePlateAccessor;
+import dev.phasecraft.mixin.TripWireBlockAccessor;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import java.util.HashMap;
@@ -28,7 +29,10 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BasePressurePlateBlock;
 import net.minecraft.world.level.block.ButtonBlock;
 import net.minecraft.world.level.block.LeverBlock;
+import net.minecraft.world.level.block.TripWireBlock;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.phys.AABB;
@@ -49,13 +53,22 @@ import net.minecraft.world.phys.BlockHitResult;
  *       released; once pressed, the plate's own vanilla ticks keep counting
  *       (and {@code BasePressurePlateMixin} makes them count visible
  *       entities).</li>
+ *   <li><b>Tripwire:</b> a hidden string whose line ends at a hook on a
+ *       phase block is checked the same way while released; once tripped,
+ *       vanilla's rechecks count visible entities ({@code TripWireBlockMixin},
+ *       {@link PhasedWatchers}).</li>
  * </ul>
  * Phased blocks make no sound in the visible world (the person, 2026-11-23);
  * their sounds play in the hidden layer only.
  */
 public final class PhasedInput {
-    /** Every pressure plate in loaded hidden chunks, per hidden dimension. */
+    /** Every pressure plate and tripwire string in loaded hidden chunks, per hidden dimension. */
     private static final Map<ResourceKey<Level>, LongOpenHashSet> PLATES = new HashMap<>();
+
+    /** Blocks that visible entities can press once phased: pressure plates and tripwire string. */
+    private static boolean pressable(Block block) {
+        return block instanceof BasePressurePlateBlock || block instanceof TripWireBlock;
+    }
 
     private PhasedInput() {}
 
@@ -102,9 +115,9 @@ public final class PhasedInput {
         if (!HiddenDimensions.isHidden(level.dimension())) {
             return;
         }
-        if (newState.getBlock() instanceof BasePressurePlateBlock) {
+        if (pressable(newState.getBlock())) {
             PLATES.computeIfAbsent(level.dimension(), key -> new LongOpenHashSet()).add(pos.asLong());
-        } else if (oldState.getBlock() instanceof BasePressurePlateBlock) {
+        } else if (pressable(oldState.getBlock())) {
             LongOpenHashSet plates = PLATES.get(level.dimension());
             if (plates != null) {
                 plates.remove(pos.asLong());
@@ -119,14 +132,14 @@ public final class PhasedInput {
         LevelChunkSection[] sections = chunk.getSections();
         for (int index = 0; index < sections.length; index++) {
             LevelChunkSection section = sections[index];
-            if (section.hasOnlyAir() || !section.maybeHas(state -> state.getBlock() instanceof BasePressurePlateBlock)) {
+            if (section.hasOnlyAir() || !section.maybeHas(state -> pressable(state.getBlock()))) {
                 continue;
             }
             int baseY = SectionPos.sectionToBlockCoord(chunk.getSectionYFromSectionIndex(index));
             for (int y = 0; y < 16; y++) {
                 for (int z = 0; z < 16; z++) {
                     for (int x = 0; x < 16; x++) {
-                        if (section.getBlockState(x, y, z).getBlock() instanceof BasePressurePlateBlock) {
+                        if (pressable(section.getBlockState(x, y, z).getBlock())) {
                             PLATES.computeIfAbsent(level.dimension(), key -> new LongOpenHashSet()).add(
                                     BlockPos.asLong(chunk.getPos().getMinBlockX() + x, baseY + y, chunk.getPos().getMinBlockZ() + z));
                         }
@@ -150,6 +163,10 @@ public final class PhasedInput {
                     continue;
                 }
                 BlockState state = hidden.getBlockState(pos);
+                if (state.getBlock() instanceof TripWireBlock string) {
+                    checkString(hidden, visible, pos, state, string);
+                    continue;
+                }
                 if (!(state.getBlock() instanceof BasePressurePlateBlock plate)) {
                     plates.remove();
                     continue;
@@ -165,5 +182,18 @@ public final class PhasedInput {
                 }
             }
         }
+    }
+
+    /** A released, attached hidden string with a visible entity at its spot: vanilla's check decides, if the string is phased. */
+    private static void checkString(ServerLevel hidden, ServerLevel visible, BlockPos pos, BlockState state, TripWireBlock string) {
+        if (state.getValue(BlockStateProperties.POWERED) || !state.getValue(BlockStateProperties.ATTACHED)) {
+            return;
+        }
+        AABB box = state.getShape(hidden, pos).bounds().move(pos);
+        if (visible.getEntities((Entity) null, box, entity -> !entity.isIgnoringBlockTriggers()).isEmpty()
+                || PhasedWatchers.phasedStringWatches(hidden, pos) == null) {
+            return;
+        }
+        ((TripWireBlockAccessor) string).phasecraft$checkPressed(hidden, pos);
     }
 }

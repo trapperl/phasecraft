@@ -154,6 +154,16 @@ its side, is *phased*: it reacts to the visible world at its own spot.
   A hidden lamp inside a wall, on a phase block, lights the room in front of
   it; hidden redstone switches it. A wall torch counts as hanging on the
   block behind it, a hanging lantern on the block above.
+- **Observers:** a phased observer watches the visible block in front of
+  it: place, break or change a block there and it pulses.
+- **Comparators:** a phased comparator reads the visible block behind it: a
+  chest's fill level, a cake, a composter, a full item frame behind a solid
+  block, as vanilla does. It never reads visible redstone power (that is
+  what phase ports are for).
+- **Tripwire:** hidden tripwire hooks hanging on phase blocks, with hidden
+  string between them, are tripped by players, mobs and items walking
+  through the string's spots in the visible world. One hook on a phase
+  block is enough.
 - They make no sound in the visible world, and neither do phase pistons:
   hidden machinery is silent there.
 
@@ -162,6 +172,11 @@ blocks, and arrows on wooden buttons. Pistons cannot move a phase block.
 Examples station 13 has a secret brick and a secret plate, each lighting a
 visible lamp through a hidden phase port next to its phase block; station 14 is a dark hut with a secret
 brick that switches on a lamp hidden in its wall.
+
+Station 19 has three watchers, each lighting a visible lamp: put anything in
+the chest (a phased comparator reads it), walk through the narrow doorway (a
+phased tripwire), or place or break a block on the chiseled brick (a phased
+observer toggles a hidden copper bulb).
 
 Station 15 is a flying machine with a hidden engine: click the top of the
 post and a gold block slides east by itself, pushed each cycle by a phase
