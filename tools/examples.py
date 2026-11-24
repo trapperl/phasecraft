@@ -159,6 +159,64 @@ STATIONS.append({
     ],
 })
 
+# Station 19: phased watchers (phase block, third step). Three hidden watchers,
+# each on a hidden phase block, each lighting a visible lamp through a hidden
+# phase port; nothing of the hidden layer shows.
+#   x 180: a phased comparator reads the chest behind it: put anything in the
+#          chest and the lamp on the brick behind it lights.
+#   x 184..188: a 1-wide doorway; hidden tripwire hooks on phase blocks inside
+#          the pillars, hidden string in the gap: walk through and the lamp
+#          on the left pillar lights.
+#   x 192: a phased observer watches the spot over the chiseled brick: place
+#          or break a block there and the lamp at the end of the low wall
+#          toggles (the observer's pulse toggles a hidden copper bulb, which a
+#          hidden comparator reads).
+WATCH_CHEST = (180, Y, 0)
+WATCH_CHEST_LAMP = (180, Y + 1, 2)
+WATCH_STRING = (186, Y, 0)
+WATCH_DOOR_LAMP = (184, Y + 2, 0)
+WATCH_SPOT = (192, Y, 0)
+WATCH_SPOT_LAMP = (192, Y + 1, 4)
+STATIONS.append({
+    "x": 178,
+    "sign": ["19. Watchers", "Fill the chest,", "walk the door,", "build on mark"],
+    "visible": [
+        (WATCH_CHEST, "minecraft:chest[facing=north]"),
+        ((180, Y, 1), "minecraft:stone_bricks"),
+        ((180, Y, 2), "minecraft:stone_bricks"),
+        (WATCH_CHEST_LAMP, "minecraft:redstone_lamp"),
+    ] + [((x, y, 0), "minecraft:stone_bricks") for x in (184, 185, 187, 188) for y in (Y, Y + 1)] + [
+        ((x, Y + 2, 0), "minecraft:stone_bricks") for x in (185, 186, 187, 188)] + [
+        (WATCH_DOOR_LAMP, "minecraft:redstone_lamp"),
+        ((192, Y - 1, 0), "minecraft:chiseled_stone_bricks"),
+    ] + [((192, Y, z), "minecraft:stone_bricks") for z in (1, 2, 3, 4)] + [
+        (WATCH_SPOT_LAMP, "minecraft:redstone_lamp"),
+    ],
+    "hidden": [
+        # The chest: comparator on a phase block, reading north, into a port under the lamp.
+        ("minecraft:overworld", (180, Y - 1, 1), "phasecraft:phase_block"),
+        ("minecraft:overworld", (180, Y, 1), "minecraft:comparator[facing=north]", "minecraft:comparator[facing=north,powered=false]"),
+        ("minecraft:overworld", (180, Y, 2), "phasecraft:phase_port", "phasecraft:phase_port[up=0]"),
+        # The doorway: hooks on phase blocks inside the pillars, string in the gap, a port under the lamp.
+        ("minecraft:overworld", (184, Y, 0), "phasecraft:phase_block"),
+        ("minecraft:overworld", (188, Y, 0), "phasecraft:phase_block"),
+        ("minecraft:overworld", (185, Y, 0), "minecraft:tripwire_hook[facing=east]",
+         "minecraft:tripwire_hook[attached=true,facing=east,powered=false]"),
+        ("minecraft:overworld", (187, Y, 0), "minecraft:tripwire_hook[facing=west]",
+         "minecraft:tripwire_hook[attached=true,facing=west,powered=false]"),
+        ("minecraft:overworld", WATCH_STRING, "minecraft:tripwire", "minecraft:tripwire[attached=true,powered=false]"),
+        ("minecraft:overworld", (184, Y + 1, 0), "phasecraft:phase_port", "phasecraft:phase_port[up=0]"),
+        # The mark: observer on a phase block watching north, a copper bulb behind it,
+        # a comparator (on plain hidden stone) reading the bulb, a port under the lamp.
+        ("minecraft:overworld", (192, Y - 1, 1), "phasecraft:phase_block"),
+        ("minecraft:overworld", (192, Y, 1), "minecraft:observer[facing=north]", "minecraft:observer[facing=north,powered=false]"),
+        ("minecraft:overworld", (192, Y, 2), "minecraft:waxed_copper_bulb", "minecraft:waxed_copper_bulb[lit=false]"),
+        ("minecraft:overworld", (192, Y - 1, 3), "minecraft:stone"),
+        ("minecraft:overworld", (192, Y, 3), "minecraft:comparator[facing=north]", "minecraft:comparator[facing=north,powered=false]"),
+        ("minecraft:overworld", (192, Y, 4), "phasecraft:phase_port", "phasecraft:phase_port[up=0]"),
+    ],
+})
+
 WELCOME = ["PhaseCraft", "H: see hidden", "J: edit hidden", "[ ] = opacity"]
 
 # Hidden blocks that need something under them (vanilla rules: wire, repeaters
@@ -654,6 +712,43 @@ def shifter_lever(on):
     rcon.send_commands([in_dimension(HIDDEN_OVERWORLD, c) for c in commands])
 
 
+def lamp_lit(pos):
+    """Whether the visible redstone lamp at pos is lit."""
+    reply = rcon.send_commands([f"phasecraft get {coords(pos)}"])[0]
+    return "lit=true" in reply.split("visible: ", 1)[1].split(" |")[0]
+
+
+def watchers_check():
+    """Station 19, driven over RCON: (name, ok, steps) for the chest, the doorway and the mark."""
+    results = []
+    cx, cy, cz = WATCH_CHEST
+    steps = [lamp_lit(WATCH_CHEST_LAMP)]
+    rcon.send_commands([f'data merge block {cx} {cy} {cz} {{Items:[{{Slot:0b,id:"minecraft:cobblestone",count:64}}]}}'])
+    time.sleep(1); steps.append(lamp_lit(WATCH_CHEST_LAMP))
+    rcon.send_commands([f"data merge block {cx} {cy} {cz} {{Items:[]}}"])
+    time.sleep(1); steps.append(lamp_lit(WATCH_CHEST_LAMP))
+    results.append(("chest lamp (empty, filled, emptied)", steps == [False, True, False], steps))
+    sx, sy, sz = WATCH_STRING
+    # Items trip tripwire too (vanilla): clear any left in the doorway, and send the
+    # pig out of the world below rather than killing it there, where it would drop some.
+    rcon.send_commands([f"kill @e[type=minecraft:item,x={sx + 0.5},y={sy},z={sz + 0.5},distance=..3]"])
+    time.sleep(1)
+    steps = [lamp_lit(WATCH_DOOR_LAMP)]
+    rcon.send_commands([f"summon minecraft:pig {sx + 0.5} {sy} {sz + 0.5} {{NoAI:1b,Tags:[\"phasecraft_watch\"]}}"])
+    time.sleep(1); steps.append(lamp_lit(WATCH_DOOR_LAMP))
+    rcon.send_commands([f"tp @e[type=minecraft:pig,tag=phasecraft_watch] {sx + 0.5} -300 {sz + 0.5}"])
+    time.sleep(2); steps.append(lamp_lit(WATCH_DOOR_LAMP))
+    results.append(("doorway lamp (before, pig in the door, pig gone)", steps == [False, True, False], steps))
+    first = lamp_lit(WATCH_SPOT_LAMP)
+    rcon.send_commands([f"setblock {coords(WATCH_SPOT)} minecraft:oak_planks"])
+    time.sleep(1); placed = lamp_lit(WATCH_SPOT_LAMP)
+    rcon.send_commands([f"setblock {coords(WATCH_SPOT)} minecraft:air"])
+    time.sleep(1); broken = lamp_lit(WATCH_SPOT_LAMP)
+    steps = [first, placed, broken]
+    results.append(("mark lamp (before, block placed, block broken)", placed != first and broken == first, steps))
+    return results
+
+
 def flying_observer_commands():
     """The engine's two observers, sent a second after flying_commands(): placed in the same
     batch, the engine starts on its own. They are placed "strict" because a plain setblock
@@ -678,8 +773,8 @@ def build_commands():
         "gamerule advance_time false",
         "time set noon",
         "weather clear 1000000",
-        "forceload add -8 -16 176 8",
-        in_dimension(HIDDEN_OVERWORLD, "forceload add -8 -16 176 8"),
+        "forceload add -8 -16 200 8",
+        in_dimension(HIDDEN_OVERWORLD, "forceload add -8 -16 200 8"),
         # Clear the area (visible) and lay a path of andesite under the stations.
         "fill -4 -60 -8 54 -55 4 minecraft:air",
         "fill -4 -61 -8 54 -61 4 minecraft:grass_block",
@@ -692,6 +787,10 @@ def build_commands():
         # Station 14's hut: solid, hollowed out, a doorway in front; dark inside.
         "fill 114 -60 -4 124 -54 7 minecraft:air",
         in_dimension(HIDDEN_OVERWORLD, "fill 114 -61 -4 124 -54 7 minecraft:air"),
+        # Station 19's area.
+        "fill 177 -60 -3 196 -55 5 minecraft:air",
+        "fill 177 -61 -3 196 -61 5 minecraft:grass_block",   # ground (the mark sits in it)
+        in_dimension(HIDDEN_OVERWORLD, "fill 177 -61 -3 196 -55 5 minecraft:air"),
         "fill 116 -60 -1 122 -56 5 minecraft:stone_bricks",
         "fill 117 -60 0 121 -57 3 minecraft:air",
         "fill 119 -60 -1 119 -59 -1 minecraft:air",
@@ -839,6 +938,14 @@ def main():
     shift_ok = [s for _, s in shift_steps] == ["closed", "open", "closed"]
     ok &= shift_ok
     print(f"{'ok ' if shift_ok else 'BAD'} phase shifter: " + ", ".join(f"{name}: {state}" for name, state in shift_steps))
+    try:
+        watch_results = watchers_check()
+    except rcon.RconError as error:
+        print(error, file=sys.stderr)
+        return 1
+    for name, good, steps in watch_results:
+        ok &= good
+        print(f"{'ok ' if good else 'BAD'} watchers, {name}: {steps}")
     print("Examples built and verified." if ok else "Some examples did not build as expected.")
     return 0 if ok else 1
 

@@ -10,6 +10,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.FaceAttachedHorizontalDirectionalBlock;
 import net.minecraft.world.level.block.LanternBlock;
 import net.minecraft.world.level.block.RedstoneWallTorchBlock;
+import net.minecraft.world.level.block.TripWireHookBlock;
 import net.minecraft.world.level.block.WallTorchBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -19,13 +20,15 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
  * on its side. A phased block reacts to the visible world at its own spot.
  * Supported so far: buttons and levers (right-click the visible block at
  * their spot, {@link PhasedInput}), pressure plates (visible entities on
- * their spot press them) and light sources (they light the visible world,
- * {@link PhasedLights}). Other phased blocks do nothing different yet.
+ * their spot press them), light sources (they light the visible world,
+ * {@link PhasedLights}), and observers, comparators and tripwire, which watch
+ * the visible world ({@link PhasedWatchers}). Other phased blocks do nothing
+ * different yet.
  */
 public final class Phased {
     private Phased() {}
 
-    /** The block a block rests on: the one a button, lever or wall torch hangs on, above a hanging lantern, otherwise below. */
+    /** The block a block rests on: the one a button, lever, wall torch or tripwire hook hangs on, above a hanging lantern, otherwise below. */
     public static BlockPos supportOf(BlockPos pos, BlockState state) {
         if (state.getBlock() instanceof FaceAttachedHorizontalDirectionalBlock) {
             Direction towardsSupport = switch (state.getValue(BlockStateProperties.ATTACH_FACE)) {
@@ -35,7 +38,8 @@ public final class Phased {
             };
             return pos.relative(towardsSupport);
         }
-        if (state.getBlock() instanceof WallTorchBlock || state.getBlock() instanceof RedstoneWallTorchBlock) {
+        if (state.getBlock() instanceof WallTorchBlock || state.getBlock() instanceof RedstoneWallTorchBlock
+                || state.getBlock() instanceof TripWireHookBlock) {
             return pos.relative(state.getValue(BlockStateProperties.HORIZONTAL_FACING).getOpposite());
         }
         if (state.getBlock() instanceof LanternBlock && state.getValue(LanternBlock.HANGING)) {
