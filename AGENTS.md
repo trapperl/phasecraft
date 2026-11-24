@@ -83,8 +83,10 @@ transparent layer, not a separate world.
       phased button, a hidden copper bulb keeps the state), trapdoor floor
       (done, station 17: a phased pressure plate before the trap drops the
       next two tiles into a pit). A giant iris door (the person's idea,
-      2026-11-23) is on hold ("we can hold off on the iris for now"); the
-      phase shifter (below) should make it much simpler.
+      2026-11-23; once on hold, then on the person's list, 2026-11-24): done
+      (station 22), a round 7x7 door of phase shifters that opens from the
+      centre out and closes from the outside in (the agent's default), its
+      layout written by tools/gen_iris.py.
    a2. The phase shifter (the person's idea, 2026-11-23: "pulling blocks
       from the main world into the sub world and then putting them back";
       "let's build it"): a hidden block that, powered, takes the visible
@@ -123,8 +125,8 @@ transparent layer, not a separate world.
       suggested them): phased hoppers pull from the visible world above
       them; phased droppers and dispensers put out into the visible world
       in front of them, silently (the agent's default, open to change).
-      Done (station 20). Next on the person's list: the iris door (the
-      shifter taking chests with their contents is done).
+      Done (station 20). The person's list (2026-11-24) is done: the
+      shifter takes chests with their contents, and the iris door.
    c. Survival play (done): one game rule, on by default, that lets Survival
       players use the overlay and editing mode (with Survival rules:
       placing uses the item, breaking takes mining time and the right tool

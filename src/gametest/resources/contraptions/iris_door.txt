@@ -1,0 +1,1725 @@
+# The giant iris door (IrisDoorGameTests, examples station 22). Written by tools/gen_iris.py: do not edit,
+# change the generator and run it again; check with: python3 tools/redstone_check.py <this file>
+#
+# A round 7x7 door (37 blocks) in a wall at z = 18, centre (6, 13, 18). One visible lever
+# opens it from the centre outward and closes it from the outside in: every door block is held by a
+# hidden phase shifter at its own spot; rings switch 4 redstone ticks apart, the first 23
+# redstone ticks after the lever. Signals: L the lever; P<k>.. ring k's controller; B<k> ring k's bus;
+# r<row>x<x>.. a run of one ring's blocks in a row, from column x (b branch, t tower, U the blocks' feed).
+size 29 19 37
+lever 12 10 16
+door minecraft:polished_deepslate
+allow P3s P3x
+allow P3x P3s
+allow P3n P3s P3l
+allow P2s P2x
+allow P2x P2s
+allow P2n P2s P2l
+allow P1s P1in
+allow P1in P1s
+allow P1n P1s P1l
+allow P0s P0in
+allow P0in P0s
+allow P0n P0s P0l
+fill visible 0 9 11 14 9 25 minecraft:stone
+fill visible 1 10 18 11 17 18 minecraft:stone_bricks
+visible 5 10 18 minecraft:polished_deepslate
+visible 6 10 18 minecraft:polished_deepslate
+visible 7 10 18 minecraft:polished_deepslate
+visible 4 11 18 minecraft:polished_deepslate
+visible 5 11 18 minecraft:polished_deepslate
+visible 6 11 18 minecraft:polished_deepslate
+visible 7 11 18 minecraft:polished_deepslate
+visible 8 11 18 minecraft:polished_deepslate
+visible 3 12 18 minecraft:polished_deepslate
+visible 4 12 18 minecraft:polished_deepslate
+visible 5 12 18 minecraft:polished_deepslate
+visible 6 12 18 minecraft:polished_deepslate
+visible 7 12 18 minecraft:polished_deepslate
+visible 8 12 18 minecraft:polished_deepslate
+visible 9 12 18 minecraft:polished_deepslate
+visible 3 13 18 minecraft:polished_deepslate
+visible 4 13 18 minecraft:polished_deepslate
+visible 5 13 18 minecraft:polished_deepslate
+visible 6 13 18 minecraft:polished_deepslate
+visible 7 13 18 minecraft:polished_deepslate
+visible 8 13 18 minecraft:polished_deepslate
+visible 9 13 18 minecraft:polished_deepslate
+visible 3 14 18 minecraft:polished_deepslate
+visible 4 14 18 minecraft:polished_deepslate
+visible 5 14 18 minecraft:polished_deepslate
+visible 6 14 18 minecraft:polished_deepslate
+visible 7 14 18 minecraft:polished_deepslate
+visible 8 14 18 minecraft:polished_deepslate
+visible 9 14 18 minecraft:polished_deepslate
+visible 4 15 18 minecraft:polished_deepslate
+visible 5 15 18 minecraft:polished_deepslate
+visible 6 15 18 minecraft:polished_deepslate
+visible 7 15 18 minecraft:polished_deepslate
+visible 8 15 18 minecraft:polished_deepslate
+visible 5 16 18 minecraft:polished_deepslate
+visible 6 16 18 minecraft:polished_deepslate
+visible 7 16 18 minecraft:polished_deepslate
+visible 12 10 16 minecraft:lever[face=floor,facing=north,powered=false]
+hidden 5 10 19 minecraft:stone
+hidden 5 9 20 minecraft:glass
+hidden 5 10 20 minecraft:repeater[delay=1,facing=south,powered=false] @r0x-1U
+hidden 6 10 19 minecraft:stone
+hidden 6 9 20 minecraft:glass
+hidden 6 10 20 minecraft:repeater[delay=1,facing=south,powered=false] @r0x-1U
+hidden 7 10 19 minecraft:stone
+hidden 7 9 20 minecraft:glass
+hidden 7 10 20 minecraft:repeater[delay=1,facing=south,powered=false] @r0x-1U
+hidden 5 9 21 minecraft:glass
+hidden 5 10 21 minecraft:redstone_wire[east=side,north=side,south=none,west=none] @r0x-1U
+hidden 6 9 21 minecraft:glass
+hidden 6 10 21 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @r0x-1U
+hidden 7 9 21 minecraft:glass
+hidden 7 10 21 minecraft:redstone_wire[east=none,north=side,south=none,west=side] @r0x-1U
+hidden 6 10 22 minecraft:redstone_wall_torch[facing=north,lit=false] @r0x-1U<r0x-1t1
+hidden 7 7 23 minecraft:stone
+hidden 6 7 23 minecraft:redstone_wall_torch[facing=west,lit=false] @r0x-1t0<r0x-1b
+hidden 6 8 23 minecraft:stone
+hidden 6 9 23 minecraft:redstone_torch[lit=true] @r0x-1t1<r0x-1t0
+hidden 6 10 23 minecraft:stone
+hidden 8 6 23 minecraft:glass
+hidden 8 7 23 minecraft:repeater[delay=4,facing=east,powered=true] @r0x-1b
+hidden 9 6 23 minecraft:glass
+hidden 9 7 23 minecraft:repeater[delay=2,facing=east,powered=true] @r0x-1b
+hidden 10 6 23 minecraft:glass
+hidden 10 7 23 minecraft:repeater[delay=1,facing=east,powered=true] @r0x-1b
+hidden 11 6 23 minecraft:glass
+hidden 11 7 23 minecraft:repeater[delay=1,facing=east,powered=true] @r0x-1b
+hidden 12 6 23 minecraft:glass
+hidden 12 7 23 minecraft:repeater[delay=1,facing=east,powered=true] @r0x-1b
+hidden 13 6 23 minecraft:glass
+hidden 13 7 23 minecraft:repeater[delay=1,facing=east,powered=true] @r0x-1b
+hidden 14 6 23 minecraft:glass
+hidden 14 7 23 minecraft:repeater[delay=1,facing=east,powered=true] @r0x-1b<B3
+hidden 15 6 23 minecraft:glass
+hidden 15 7 23 minecraft:redstone_wire[east=none,north=side,south=side,west=side] @B3
+hidden 5 12 19 minecraft:stone
+hidden 5 11 20 minecraft:glass
+hidden 5 12 20 minecraft:repeater[delay=1,facing=south,powered=false] @r2x-1U
+hidden 6 12 19 minecraft:stone
+hidden 6 11 20 minecraft:glass
+hidden 6 12 20 minecraft:repeater[delay=1,facing=south,powered=false] @r2x-1U
+hidden 7 12 19 minecraft:stone
+hidden 7 11 20 minecraft:glass
+hidden 7 12 20 minecraft:repeater[delay=1,facing=south,powered=false] @r2x-1U
+hidden 5 11 21 minecraft:glass
+hidden 5 12 21 minecraft:redstone_wire[east=side,north=side,south=side,west=none] @r2x-1U
+hidden 6 11 21 minecraft:glass
+hidden 6 12 21 minecraft:redstone_wire[east=side,north=side,south=none,west=side] @r2x-1U
+hidden 7 11 21 minecraft:glass
+hidden 7 12 21 minecraft:redstone_wire[east=none,north=side,south=none,west=side] @r2x-1U
+hidden 5 12 22 minecraft:redstone_wall_torch[facing=north,lit=false] @r2x-1U<r2x-1t4
+hidden 6 3 23 minecraft:stone
+hidden 5 3 23 minecraft:redstone_wall_torch[facing=west,lit=true] @r2x-1t0<r2x-1b
+hidden 5 4 23 minecraft:stone
+hidden 5 5 23 minecraft:redstone_torch[lit=false] @r2x-1t1<r2x-1t0
+hidden 5 6 23 minecraft:stone
+hidden 5 7 23 minecraft:redstone_torch[lit=true] @r2x-1t2<r2x-1t1
+hidden 5 8 23 minecraft:stone
+hidden 5 9 23 minecraft:redstone_torch[lit=false] @r2x-1t3<r2x-1t2
+hidden 5 10 23 minecraft:stone
+hidden 5 11 23 minecraft:redstone_torch[lit=true] @r2x-1t4<r2x-1t3
+hidden 5 12 23 minecraft:stone
+hidden 7 2 23 minecraft:glass
+hidden 7 3 23 minecraft:repeater[delay=1,facing=east,powered=false] @r2x-1b
+hidden 8 2 23 minecraft:glass
+hidden 8 3 23 minecraft:repeater[delay=1,facing=east,powered=false] @r2x-1b
+hidden 9 2 23 minecraft:glass
+hidden 9 3 23 minecraft:repeater[delay=1,facing=east,powered=false] @r2x-1b
+hidden 10 2 23 minecraft:glass
+hidden 10 3 23 minecraft:repeater[delay=1,facing=east,powered=false] @r2x-1b
+hidden 11 2 23 minecraft:glass
+hidden 11 3 23 minecraft:repeater[delay=1,facing=east,powered=false] @r2x-1b
+hidden 12 2 23 minecraft:glass
+hidden 12 3 23 minecraft:repeater[delay=1,facing=east,powered=false] @r2x-1b
+hidden 13 2 23 minecraft:glass
+hidden 13 3 23 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r2x-1b
+hidden 14 2 23 minecraft:glass
+hidden 14 3 23 minecraft:repeater[delay=1,facing=east,powered=false] @r2x-1b<B1
+hidden 15 2 23 minecraft:glass
+hidden 15 3 23 minecraft:redstone_wire[east=none,north=side,south=side,west=side] @B1
+hidden 4 12 19 minecraft:stone
+hidden 4 11 23 minecraft:glass
+hidden 4 12 23 minecraft:repeater[delay=1,facing=south,powered=false] @r2x-2U
+hidden 4 11 22 minecraft:glass
+hidden 4 12 22 minecraft:repeater[delay=1,facing=south,powered=false] @r2x-2U
+hidden 4 11 21 minecraft:glass
+hidden 4 12 21 minecraft:repeater[delay=1,facing=south,powered=false] @r2x-2U
+hidden 4 11 20 minecraft:glass
+hidden 4 12 20 minecraft:repeater[delay=1,facing=south,powered=false] @r2x-2U
+hidden 4 11 24 minecraft:glass
+hidden 4 12 24 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r2x-2U
+hidden 4 12 25 minecraft:redstone_wall_torch[facing=north,lit=false] @r2x-2U<r2x-2t3
+hidden 5 5 26 minecraft:stone
+hidden 4 5 26 minecraft:redstone_wall_torch[facing=west,lit=false] @r2x-2t0<r2x-2b
+hidden 4 6 26 minecraft:stone
+hidden 4 7 26 minecraft:redstone_torch[lit=true] @r2x-2t1<r2x-2t0
+hidden 4 8 26 minecraft:stone
+hidden 4 9 26 minecraft:redstone_torch[lit=false] @r2x-2t2<r2x-2t1
+hidden 4 10 26 minecraft:stone
+hidden 4 11 26 minecraft:redstone_torch[lit=true] @r2x-2t3<r2x-2t2
+hidden 4 12 26 minecraft:stone
+hidden 6 4 26 minecraft:glass
+hidden 6 5 26 minecraft:repeater[delay=1,facing=east,powered=true] @r2x-2b
+hidden 7 4 26 minecraft:glass
+hidden 7 5 26 minecraft:repeater[delay=1,facing=east,powered=true] @r2x-2b
+hidden 8 4 26 minecraft:glass
+hidden 8 5 26 minecraft:repeater[delay=1,facing=east,powered=true] @r2x-2b
+hidden 9 4 26 minecraft:glass
+hidden 9 5 26 minecraft:repeater[delay=1,facing=east,powered=true] @r2x-2b
+hidden 10 4 26 minecraft:glass
+hidden 10 5 26 minecraft:repeater[delay=1,facing=east,powered=true] @r2x-2b
+hidden 11 4 26 minecraft:glass
+hidden 11 5 26 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r2x-2b
+hidden 12 4 26 minecraft:glass
+hidden 12 5 26 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r2x-2b
+hidden 13 4 26 minecraft:glass
+hidden 13 5 26 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r2x-2b
+hidden 14 4 26 minecraft:glass
+hidden 14 5 26 minecraft:repeater[delay=1,facing=east,powered=true] @r2x-2b<B2
+hidden 15 4 26 minecraft:glass
+hidden 15 5 26 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B2
+hidden 8 12 19 minecraft:stone
+hidden 8 11 25 minecraft:glass
+hidden 8 12 25 minecraft:repeater[delay=1,facing=south,powered=false] @r2x2U
+hidden 8 11 24 minecraft:glass
+hidden 8 12 24 minecraft:repeater[delay=1,facing=south,powered=false] @r2x2U
+hidden 8 11 23 minecraft:glass
+hidden 8 12 23 minecraft:repeater[delay=1,facing=south,powered=false] @r2x2U
+hidden 8 11 22 minecraft:glass
+hidden 8 12 22 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r2x2U
+hidden 8 11 21 minecraft:glass
+hidden 8 12 21 minecraft:repeater[delay=1,facing=south,powered=false] @r2x2U
+hidden 8 11 20 minecraft:glass
+hidden 8 12 20 minecraft:repeater[delay=1,facing=south,powered=false] @r2x2U
+hidden 8 11 26 minecraft:glass
+hidden 8 12 26 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r2x2U
+hidden 8 12 27 minecraft:redstone_wall_torch[facing=north,lit=false] @r2x2U<r2x2t3
+hidden 9 5 28 minecraft:stone
+hidden 8 5 28 minecraft:redstone_wall_torch[facing=west,lit=false] @r2x2t0<r2x2b
+hidden 8 6 28 minecraft:stone
+hidden 8 7 28 minecraft:redstone_torch[lit=true] @r2x2t1<r2x2t0
+hidden 8 8 28 minecraft:stone
+hidden 8 9 28 minecraft:redstone_torch[lit=false] @r2x2t2<r2x2t1
+hidden 8 10 28 minecraft:stone
+hidden 8 11 28 minecraft:redstone_torch[lit=true] @r2x2t3<r2x2t2
+hidden 8 12 28 minecraft:stone
+hidden 10 4 28 minecraft:glass
+hidden 10 5 28 minecraft:repeater[delay=1,facing=east,powered=true] @r2x2b
+hidden 11 4 28 minecraft:glass
+hidden 11 5 28 minecraft:repeater[delay=1,facing=east,powered=true] @r2x2b
+hidden 12 4 28 minecraft:glass
+hidden 12 5 28 minecraft:repeater[delay=1,facing=east,powered=true] @r2x2b
+hidden 13 4 28 minecraft:glass
+hidden 13 5 28 minecraft:repeater[delay=1,facing=east,powered=true] @r2x2b
+hidden 14 4 28 minecraft:glass
+hidden 14 5 28 minecraft:repeater[delay=1,facing=east,powered=true] @r2x2b<B2
+hidden 15 4 28 minecraft:glass
+hidden 15 5 28 minecraft:redstone_wire[east=none,north=side,south=side,west=side] @B2
+hidden 3 12 19 minecraft:stone
+hidden 3 11 20 minecraft:glass
+hidden 3 12 20 minecraft:repeater[delay=1,facing=south,powered=false] @r2x-3t2
+hidden 3 11 21 minecraft:glass
+hidden 3 12 21 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r2x-3t2
+hidden 4 7 22 minecraft:stone
+hidden 3 7 22 minecraft:redstone_wall_torch[facing=west,lit=false] @r2x-3t0<r2x-3b
+hidden 3 8 22 minecraft:stone
+hidden 3 9 22 minecraft:redstone_torch[lit=true] @r2x-3t1<r2x-3t0
+hidden 3 10 22 minecraft:stone
+hidden 3 11 22 minecraft:redstone_torch[lit=false] @r2x-3t2<r2x-3t1
+hidden 3 12 22 minecraft:stone
+hidden 5 6 22 minecraft:glass
+hidden 5 7 22 minecraft:repeater[delay=2,facing=east,powered=true] @r2x-3b
+hidden 6 6 22 minecraft:glass
+hidden 6 7 22 minecraft:repeater[delay=1,facing=east,powered=true] @r2x-3b
+hidden 7 6 22 minecraft:glass
+hidden 7 7 22 minecraft:repeater[delay=1,facing=east,powered=true] @r2x-3b
+hidden 8 6 22 minecraft:glass
+hidden 8 7 22 minecraft:repeater[delay=1,facing=east,powered=true] @r2x-3b
+hidden 9 6 22 minecraft:glass
+hidden 9 7 22 minecraft:repeater[delay=1,facing=east,powered=true] @r2x-3b
+hidden 10 6 22 minecraft:glass
+hidden 10 7 22 minecraft:repeater[delay=1,facing=east,powered=true] @r2x-3b
+hidden 11 6 22 minecraft:glass
+hidden 11 7 22 minecraft:repeater[delay=1,facing=east,powered=true] @r2x-3b
+hidden 12 6 22 minecraft:glass
+hidden 12 7 22 minecraft:repeater[delay=1,facing=east,powered=true] @r2x-3b
+hidden 13 6 22 minecraft:glass
+hidden 13 7 22 minecraft:repeater[delay=1,facing=east,powered=true] @r2x-3b
+hidden 14 6 22 minecraft:glass
+hidden 14 7 22 minecraft:repeater[delay=1,facing=east,powered=true] @r2x-3b<B3
+hidden 15 6 22 minecraft:glass
+hidden 15 7 22 minecraft:redstone_wire[east=none,north=side,south=side,west=side] @B3
+hidden 9 12 19 minecraft:stone
+hidden 9 11 28 minecraft:glass
+hidden 9 12 28 minecraft:repeater[delay=1,facing=south,powered=false] @r2x3t2
+hidden 9 11 27 minecraft:glass
+hidden 9 12 27 minecraft:repeater[delay=1,facing=south,powered=false] @r2x3t2
+hidden 9 11 26 minecraft:glass
+hidden 9 12 26 minecraft:repeater[delay=1,facing=south,powered=false] @r2x3t2
+hidden 9 11 25 minecraft:glass
+hidden 9 12 25 minecraft:repeater[delay=1,facing=south,powered=false] @r2x3t2
+hidden 9 11 24 minecraft:glass
+hidden 9 12 24 minecraft:repeater[delay=1,facing=south,powered=false] @r2x3t2
+hidden 9 11 23 minecraft:glass
+hidden 9 12 23 minecraft:repeater[delay=1,facing=south,powered=false] @r2x3t2
+hidden 9 11 22 minecraft:glass
+hidden 9 12 22 minecraft:repeater[delay=1,facing=south,powered=false] @r2x3t2
+hidden 9 11 21 minecraft:glass
+hidden 9 12 21 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r2x3t2
+hidden 9 11 20 minecraft:glass
+hidden 9 12 20 minecraft:repeater[delay=1,facing=south,powered=false] @r2x3t2
+hidden 9 11 29 minecraft:glass
+hidden 9 12 29 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r2x3t2
+hidden 10 7 30 minecraft:stone
+hidden 9 7 30 minecraft:redstone_wall_torch[facing=west,lit=false] @r2x3t0<r2x3b
+hidden 9 8 30 minecraft:stone
+hidden 9 9 30 minecraft:redstone_torch[lit=true] @r2x3t1<r2x3t0
+hidden 9 10 30 minecraft:stone
+hidden 9 11 30 minecraft:redstone_torch[lit=false] @r2x3t2<r2x3t1
+hidden 9 12 30 minecraft:stone
+hidden 11 6 30 minecraft:glass
+hidden 11 7 30 minecraft:repeater[delay=1,facing=east,powered=true] @r2x3b
+hidden 12 6 30 minecraft:glass
+hidden 12 7 30 minecraft:repeater[delay=1,facing=east,powered=true] @r2x3b
+hidden 13 6 30 minecraft:glass
+hidden 13 7 30 minecraft:repeater[delay=1,facing=east,powered=true] @r2x3b
+hidden 14 6 30 minecraft:glass
+hidden 14 7 30 minecraft:repeater[delay=1,facing=east,powered=true] @r2x3b<B3
+hidden 15 6 30 minecraft:glass
+hidden 15 7 30 minecraft:redstone_wire[east=none,north=side,south=side,west=side] @B3
+hidden 5 14 19 minecraft:stone
+hidden 5 13 23 minecraft:glass
+hidden 5 14 23 minecraft:redstone_wire[east=side,north=side,south=side,west=none] @r4x-1t5
+hidden 5 13 22 minecraft:glass
+hidden 5 14 22 minecraft:repeater[delay=1,facing=south,powered=false] @r4x-1t5
+hidden 5 13 21 minecraft:glass
+hidden 5 14 21 minecraft:redstone_wire[east=side,north=side,south=side,west=none] @r4x-1t5
+hidden 5 13 20 minecraft:glass
+hidden 5 14 20 minecraft:repeater[delay=1,facing=south,powered=false] @r4x-1t5
+hidden 6 14 19 minecraft:stone
+hidden 6 13 23 minecraft:glass
+hidden 6 14 23 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @r4x-1t5
+hidden 6 13 22 minecraft:glass
+hidden 6 14 22 minecraft:repeater[delay=1,facing=south,powered=false] @r4x-1t5
+hidden 6 13 21 minecraft:glass
+hidden 6 14 21 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @r4x-1t5
+hidden 6 13 20 minecraft:glass
+hidden 6 14 20 minecraft:repeater[delay=1,facing=south,powered=false] @r4x-1t5
+hidden 7 14 19 minecraft:stone
+hidden 7 13 23 minecraft:glass
+hidden 7 14 23 minecraft:redstone_wire[east=none,north=side,south=side,west=side] @r4x-1t5
+hidden 7 13 22 minecraft:glass
+hidden 7 14 22 minecraft:repeater[delay=1,facing=south,powered=false] @r4x-1t5
+hidden 7 13 21 minecraft:glass
+hidden 7 14 21 minecraft:redstone_wire[east=none,north=side,south=side,west=side] @r4x-1t5
+hidden 7 13 20 minecraft:glass
+hidden 7 14 20 minecraft:repeater[delay=1,facing=south,powered=false] @r4x-1t5
+hidden 5 13 24 minecraft:glass
+hidden 5 14 24 minecraft:redstone_wire[east=side,north=side,south=none,west=none] @r4x-1t5
+hidden 6 13 24 minecraft:glass
+hidden 6 14 24 minecraft:redstone_wire[east=side,north=side,south=none,west=side] @r4x-1t5
+hidden 7 13 24 minecraft:glass
+hidden 7 14 24 minecraft:redstone_wire[east=none,north=side,south=none,west=side] @r4x-1t5
+hidden 6 3 25 minecraft:stone
+hidden 5 3 25 minecraft:redstone_wall_torch[facing=west,lit=true] @r4x-1t0<r4x-1b
+hidden 5 4 25 minecraft:stone
+hidden 5 5 25 minecraft:redstone_torch[lit=false] @r4x-1t1<r4x-1t0
+hidden 5 6 25 minecraft:stone
+hidden 5 7 25 minecraft:redstone_torch[lit=true] @r4x-1t2<r4x-1t1
+hidden 5 8 25 minecraft:stone
+hidden 5 9 25 minecraft:redstone_torch[lit=false] @r4x-1t3<r4x-1t2
+hidden 5 10 25 minecraft:stone
+hidden 5 11 25 minecraft:redstone_torch[lit=true] @r4x-1t4<r4x-1t3
+hidden 5 12 25 minecraft:stone
+hidden 5 13 25 minecraft:redstone_torch[lit=false] @r4x-1t5<r4x-1t4
+hidden 5 14 25 minecraft:stone
+hidden 7 2 25 minecraft:glass
+hidden 7 3 25 minecraft:repeater[delay=1,facing=east,powered=false] @r4x-1b
+hidden 8 2 25 minecraft:glass
+hidden 8 3 25 minecraft:repeater[delay=1,facing=east,powered=false] @r4x-1b
+hidden 9 2 25 minecraft:glass
+hidden 9 3 25 minecraft:repeater[delay=1,facing=east,powered=false] @r4x-1b
+hidden 10 2 25 minecraft:glass
+hidden 10 3 25 minecraft:repeater[delay=1,facing=east,powered=false] @r4x-1b
+hidden 11 2 25 minecraft:glass
+hidden 11 3 25 minecraft:repeater[delay=1,facing=east,powered=false] @r4x-1b
+hidden 12 2 25 minecraft:glass
+hidden 12 3 25 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r4x-1b
+hidden 13 2 25 minecraft:glass
+hidden 13 3 25 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r4x-1b
+hidden 14 2 25 minecraft:glass
+hidden 14 3 25 minecraft:repeater[delay=1,facing=east,powered=false] @r4x-1b<B1
+hidden 15 2 25 minecraft:glass
+hidden 15 3 25 minecraft:redstone_wire[east=none,north=side,south=none,west=side] @B1
+hidden 4 14 19 minecraft:stone
+hidden 4 13 28 minecraft:glass
+hidden 4 14 28 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r4x-2t4
+hidden 4 13 27 minecraft:glass
+hidden 4 14 27 minecraft:repeater[delay=1,facing=south,powered=false] @r4x-2t4
+hidden 4 13 26 minecraft:glass
+hidden 4 14 26 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r4x-2t4
+hidden 4 13 25 minecraft:glass
+hidden 4 14 25 minecraft:repeater[delay=1,facing=south,powered=false] @r4x-2t4
+hidden 4 13 24 minecraft:glass
+hidden 4 14 24 minecraft:repeater[delay=1,facing=south,powered=false] @r4x-2t4
+hidden 4 13 23 minecraft:glass
+hidden 4 14 23 minecraft:repeater[delay=1,facing=south,powered=false] @r4x-2t4
+hidden 4 13 22 minecraft:glass
+hidden 4 14 22 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r4x-2t4
+hidden 4 13 21 minecraft:glass
+hidden 4 14 21 minecraft:repeater[delay=1,facing=south,powered=false] @r4x-2t4
+hidden 4 13 20 minecraft:glass
+hidden 4 14 20 minecraft:repeater[delay=1,facing=south,powered=false] @r4x-2t4
+hidden 4 13 29 minecraft:glass
+hidden 4 14 29 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r4x-2t4
+hidden 5 5 30 minecraft:stone
+hidden 4 5 30 minecraft:redstone_wall_torch[facing=west,lit=false] @r4x-2t0<r4x-2b
+hidden 4 6 30 minecraft:stone
+hidden 4 7 30 minecraft:redstone_torch[lit=true] @r4x-2t1<r4x-2t0
+hidden 4 8 30 minecraft:stone
+hidden 4 9 30 minecraft:redstone_torch[lit=false] @r4x-2t2<r4x-2t1
+hidden 4 10 30 minecraft:stone
+hidden 4 11 30 minecraft:redstone_torch[lit=true] @r4x-2t3<r4x-2t2
+hidden 4 12 30 minecraft:stone
+hidden 4 13 30 minecraft:redstone_torch[lit=false] @r4x-2t4<r4x-2t3
+hidden 4 14 30 minecraft:stone
+hidden 6 4 30 minecraft:glass
+hidden 6 5 30 minecraft:repeater[delay=1,facing=east,powered=true] @r4x-2b
+hidden 7 4 30 minecraft:glass
+hidden 7 5 30 minecraft:repeater[delay=1,facing=east,powered=true] @r4x-2b
+hidden 8 4 30 minecraft:glass
+hidden 8 5 30 minecraft:repeater[delay=1,facing=east,powered=true] @r4x-2b
+hidden 9 4 30 minecraft:glass
+hidden 9 5 30 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r4x-2b
+hidden 10 4 30 minecraft:glass
+hidden 10 5 30 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r4x-2b
+hidden 11 4 30 minecraft:glass
+hidden 11 5 30 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r4x-2b
+hidden 12 4 30 minecraft:glass
+hidden 12 5 30 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r4x-2b
+hidden 13 4 30 minecraft:glass
+hidden 13 5 30 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r4x-2b
+hidden 14 4 30 minecraft:glass
+hidden 14 5 30 minecraft:repeater[delay=1,facing=east,powered=true] @r4x-2b<B2
+hidden 15 4 30 minecraft:glass
+hidden 15 5 30 minecraft:redstone_wire[east=none,north=side,south=side,west=side] @B2
+hidden 8 14 19 minecraft:stone
+hidden 8 13 30 minecraft:glass
+hidden 8 14 30 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r4x2t4
+hidden 8 13 29 minecraft:glass
+hidden 8 14 29 minecraft:repeater[delay=1,facing=south,powered=false] @r4x2t4
+hidden 8 13 28 minecraft:glass
+hidden 8 14 28 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r4x2t4
+hidden 8 13 27 minecraft:glass
+hidden 8 14 27 minecraft:repeater[delay=1,facing=south,powered=false] @r4x2t4
+hidden 8 13 26 minecraft:glass
+hidden 8 14 26 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r4x2t4
+hidden 8 13 25 minecraft:glass
+hidden 8 14 25 minecraft:repeater[delay=1,facing=south,powered=false] @r4x2t4
+hidden 8 13 24 minecraft:glass
+hidden 8 14 24 minecraft:repeater[delay=1,facing=south,powered=false] @r4x2t4
+hidden 8 13 23 minecraft:glass
+hidden 8 14 23 minecraft:repeater[delay=1,facing=south,powered=false] @r4x2t4
+hidden 8 13 22 minecraft:glass
+hidden 8 14 22 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r4x2t4
+hidden 8 13 21 minecraft:glass
+hidden 8 14 21 minecraft:repeater[delay=1,facing=south,powered=false] @r4x2t4
+hidden 8 13 20 minecraft:glass
+hidden 8 14 20 minecraft:repeater[delay=1,facing=south,powered=false] @r4x2t4
+hidden 8 13 31 minecraft:glass
+hidden 8 14 31 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r4x2t4
+hidden 9 5 32 minecraft:stone
+hidden 8 5 32 minecraft:redstone_wall_torch[facing=west,lit=false] @r4x2t0<r4x2b
+hidden 8 6 32 minecraft:stone
+hidden 8 7 32 minecraft:redstone_torch[lit=true] @r4x2t1<r4x2t0
+hidden 8 8 32 minecraft:stone
+hidden 8 9 32 minecraft:redstone_torch[lit=false] @r4x2t2<r4x2t1
+hidden 8 10 32 minecraft:stone
+hidden 8 11 32 minecraft:redstone_torch[lit=true] @r4x2t3<r4x2t2
+hidden 8 12 32 minecraft:stone
+hidden 8 13 32 minecraft:redstone_torch[lit=false] @r4x2t4<r4x2t3
+hidden 8 14 32 minecraft:stone
+hidden 10 4 32 minecraft:glass
+hidden 10 5 32 minecraft:repeater[delay=1,facing=east,powered=true] @r4x2b
+hidden 11 4 32 minecraft:glass
+hidden 11 5 32 minecraft:repeater[delay=1,facing=east,powered=true] @r4x2b
+hidden 12 4 32 minecraft:glass
+hidden 12 5 32 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r4x2b
+hidden 13 4 32 minecraft:glass
+hidden 13 5 32 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r4x2b
+hidden 14 4 32 minecraft:glass
+hidden 14 5 32 minecraft:repeater[delay=1,facing=east,powered=true] @r4x2b<B2
+hidden 15 4 32 minecraft:glass
+hidden 15 5 32 minecraft:redstone_wire[east=none,north=side,south=none,west=side] @B2
+hidden 3 14 19 minecraft:stone
+hidden 3 13 31 minecraft:glass
+hidden 3 14 31 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r4x-3U
+hidden 3 13 30 minecraft:glass
+hidden 3 14 30 minecraft:repeater[delay=1,facing=south,powered=false] @r4x-3U
+hidden 3 13 29 minecraft:glass
+hidden 3 14 29 minecraft:repeater[delay=1,facing=south,powered=false] @r4x-3U
+hidden 3 13 28 minecraft:glass
+hidden 3 14 28 minecraft:repeater[delay=1,facing=south,powered=false] @r4x-3U
+hidden 3 13 27 minecraft:glass
+hidden 3 14 27 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r4x-3U
+hidden 3 13 26 minecraft:glass
+hidden 3 14 26 minecraft:repeater[delay=1,facing=south,powered=false] @r4x-3U
+hidden 3 13 25 minecraft:glass
+hidden 3 14 25 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r4x-3U
+hidden 3 13 24 minecraft:glass
+hidden 3 14 24 minecraft:repeater[delay=1,facing=south,powered=false] @r4x-3U
+hidden 3 13 23 minecraft:glass
+hidden 3 14 23 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r4x-3U
+hidden 3 13 22 minecraft:glass
+hidden 3 14 22 minecraft:repeater[delay=1,facing=south,powered=false] @r4x-3U
+hidden 3 13 21 minecraft:glass
+hidden 3 14 21 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r4x-3U
+hidden 3 13 20 minecraft:glass
+hidden 3 14 20 minecraft:repeater[delay=1,facing=south,powered=false] @r4x-3U
+hidden 3 13 32 minecraft:glass
+hidden 3 14 32 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r4x-3U
+hidden 3 14 33 minecraft:redstone_wall_torch[facing=north,lit=false] @r4x-3U<r4x-3t3
+hidden 4 7 34 minecraft:stone
+hidden 3 7 34 minecraft:redstone_wall_torch[facing=west,lit=false] @r4x-3t0<r4x-3b
+hidden 3 8 34 minecraft:stone
+hidden 3 9 34 minecraft:redstone_torch[lit=true] @r4x-3t1<r4x-3t0
+hidden 3 10 34 minecraft:stone
+hidden 3 11 34 minecraft:redstone_torch[lit=false] @r4x-3t2<r4x-3t1
+hidden 3 12 34 minecraft:stone
+hidden 3 13 34 minecraft:redstone_torch[lit=true] @r4x-3t3<r4x-3t2
+hidden 3 14 34 minecraft:stone
+hidden 5 6 34 minecraft:glass
+hidden 5 7 34 minecraft:repeater[delay=1,facing=east,powered=true] @r4x-3b
+hidden 6 6 34 minecraft:glass
+hidden 6 7 34 minecraft:repeater[delay=1,facing=east,powered=true] @r4x-3b
+hidden 7 6 34 minecraft:glass
+hidden 7 7 34 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r4x-3b
+hidden 8 6 34 minecraft:glass
+hidden 8 7 34 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r4x-3b
+hidden 9 6 34 minecraft:glass
+hidden 9 7 34 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r4x-3b
+hidden 10 6 34 minecraft:glass
+hidden 10 7 34 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r4x-3b
+hidden 11 6 34 minecraft:glass
+hidden 11 7 34 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r4x-3b
+hidden 12 6 34 minecraft:glass
+hidden 12 7 34 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r4x-3b
+hidden 13 6 34 minecraft:glass
+hidden 13 7 34 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r4x-3b
+hidden 14 6 34 minecraft:glass
+hidden 14 7 34 minecraft:repeater[delay=1,facing=east,powered=true] @r4x-3b<B3
+hidden 15 6 34 minecraft:glass
+hidden 15 7 34 minecraft:redstone_wire[east=none,north=side,south=side,west=side] @B3
+hidden 9 14 19 minecraft:stone
+hidden 9 13 33 minecraft:glass
+hidden 9 14 33 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r4x3U
+hidden 9 13 32 minecraft:glass
+hidden 9 14 32 minecraft:repeater[delay=1,facing=south,powered=false] @r4x3U
+hidden 9 13 31 minecraft:glass
+hidden 9 14 31 minecraft:repeater[delay=1,facing=south,powered=false] @r4x3U
+hidden 9 13 30 minecraft:glass
+hidden 9 14 30 minecraft:repeater[delay=1,facing=south,powered=false] @r4x3U
+hidden 9 13 29 minecraft:glass
+hidden 9 14 29 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r4x3U
+hidden 9 13 28 minecraft:glass
+hidden 9 14 28 minecraft:repeater[delay=1,facing=south,powered=false] @r4x3U
+hidden 9 13 27 minecraft:glass
+hidden 9 14 27 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r4x3U
+hidden 9 13 26 minecraft:glass
+hidden 9 14 26 minecraft:repeater[delay=1,facing=south,powered=false] @r4x3U
+hidden 9 13 25 minecraft:glass
+hidden 9 14 25 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r4x3U
+hidden 9 13 24 minecraft:glass
+hidden 9 14 24 minecraft:repeater[delay=1,facing=south,powered=false] @r4x3U
+hidden 9 13 23 minecraft:glass
+hidden 9 14 23 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r4x3U
+hidden 9 13 22 minecraft:glass
+hidden 9 14 22 minecraft:repeater[delay=1,facing=south,powered=false] @r4x3U
+hidden 9 13 21 minecraft:glass
+hidden 9 14 21 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r4x3U
+hidden 9 13 20 minecraft:glass
+hidden 9 14 20 minecraft:repeater[delay=1,facing=south,powered=false] @r4x3U
+hidden 9 13 34 minecraft:glass
+hidden 9 14 34 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r4x3U
+hidden 9 14 35 minecraft:redstone_wall_torch[facing=north,lit=false] @r4x3U<r4x3t3
+hidden 10 7 36 minecraft:stone
+hidden 9 7 36 minecraft:redstone_wall_torch[facing=west,lit=false] @r4x3t0<r4x3b
+hidden 9 8 36 minecraft:stone
+hidden 9 9 36 minecraft:redstone_torch[lit=true] @r4x3t1<r4x3t0
+hidden 9 10 36 minecraft:stone
+hidden 9 11 36 minecraft:redstone_torch[lit=false] @r4x3t2<r4x3t1
+hidden 9 12 36 minecraft:stone
+hidden 9 13 36 minecraft:redstone_torch[lit=true] @r4x3t3<r4x3t2
+hidden 9 14 36 minecraft:stone
+hidden 11 6 36 minecraft:glass
+hidden 11 7 36 minecraft:repeater[delay=1,facing=east,powered=true] @r4x3b
+hidden 12 6 36 minecraft:glass
+hidden 12 7 36 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r4x3b
+hidden 13 6 36 minecraft:glass
+hidden 13 7 36 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r4x3b
+hidden 14 6 36 minecraft:glass
+hidden 14 7 36 minecraft:repeater[delay=1,facing=east,powered=true] @r4x3b<B3
+hidden 15 6 36 minecraft:glass
+hidden 15 7 36 minecraft:redstone_wire[east=none,north=side,south=none,west=side] @B3
+hidden 5 16 19 minecraft:stone
+hidden 5 15 24 minecraft:glass
+hidden 5 16 24 minecraft:repeater[delay=1,facing=south,powered=false] @r6x-1t4
+hidden 5 15 23 minecraft:glass
+hidden 5 16 23 minecraft:redstone_wire[east=side,north=side,south=side,west=none] @r6x-1t4
+hidden 5 15 22 minecraft:glass
+hidden 5 16 22 minecraft:repeater[delay=1,facing=south,powered=false] @r6x-1t4
+hidden 5 15 21 minecraft:glass
+hidden 5 16 21 minecraft:redstone_wire[east=side,north=side,south=side,west=none] @r6x-1t4
+hidden 5 15 20 minecraft:glass
+hidden 5 16 20 minecraft:repeater[delay=1,facing=south,powered=false] @r6x-1t4
+hidden 6 16 19 minecraft:stone
+hidden 6 15 24 minecraft:glass
+hidden 6 16 24 minecraft:repeater[delay=1,facing=south,powered=false] @r6x-1t4
+hidden 6 15 23 minecraft:glass
+hidden 6 16 23 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @r6x-1t4
+hidden 6 15 22 minecraft:glass
+hidden 6 16 22 minecraft:repeater[delay=1,facing=south,powered=false] @r6x-1t4
+hidden 6 15 21 minecraft:glass
+hidden 6 16 21 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @r6x-1t4
+hidden 6 15 20 minecraft:glass
+hidden 6 16 20 minecraft:repeater[delay=1,facing=south,powered=false] @r6x-1t4
+hidden 7 16 19 minecraft:stone
+hidden 7 15 24 minecraft:glass
+hidden 7 16 24 minecraft:repeater[delay=1,facing=south,powered=false] @r6x-1t4
+hidden 7 15 23 minecraft:glass
+hidden 7 16 23 minecraft:redstone_wire[east=none,north=side,south=side,west=side] @r6x-1t4
+hidden 7 15 22 minecraft:glass
+hidden 7 16 22 minecraft:repeater[delay=1,facing=south,powered=false] @r6x-1t4
+hidden 7 15 21 minecraft:glass
+hidden 7 16 21 minecraft:redstone_wire[east=none,north=side,south=side,west=side] @r6x-1t4
+hidden 7 15 20 minecraft:glass
+hidden 7 16 20 minecraft:repeater[delay=1,facing=south,powered=false] @r6x-1t4
+hidden 5 15 25 minecraft:glass
+hidden 5 16 25 minecraft:redstone_wire[east=side,north=side,south=none,west=none] @r6x-1t4
+hidden 6 15 25 minecraft:glass
+hidden 6 16 25 minecraft:redstone_wire[east=side,north=side,south=none,west=side] @r6x-1t4
+hidden 7 15 25 minecraft:glass
+hidden 7 16 25 minecraft:redstone_wire[east=none,north=side,south=none,west=side] @r6x-1t4
+hidden 7 7 26 minecraft:stone
+hidden 6 7 26 minecraft:redstone_wall_torch[facing=west,lit=false] @r6x-1t0<r6x-1b
+hidden 6 8 26 minecraft:stone
+hidden 6 9 26 minecraft:redstone_torch[lit=true] @r6x-1t1<r6x-1t0
+hidden 6 10 26 minecraft:stone
+hidden 6 11 26 minecraft:redstone_torch[lit=false] @r6x-1t2<r6x-1t1
+hidden 6 12 26 minecraft:stone
+hidden 6 13 26 minecraft:redstone_torch[lit=true] @r6x-1t3<r6x-1t2
+hidden 6 14 26 minecraft:stone
+hidden 6 15 26 minecraft:redstone_torch[lit=false] @r6x-1t4<r6x-1t3
+hidden 6 16 26 minecraft:stone
+hidden 8 6 26 minecraft:glass
+hidden 8 7 26 minecraft:repeater[delay=1,facing=east,powered=true] @r6x-1b
+hidden 9 6 26 minecraft:glass
+hidden 9 7 26 minecraft:repeater[delay=1,facing=east,powered=true] @r6x-1b
+hidden 10 6 26 minecraft:glass
+hidden 10 7 26 minecraft:repeater[delay=1,facing=east,powered=true] @r6x-1b
+hidden 11 6 26 minecraft:glass
+hidden 11 7 26 minecraft:repeater[delay=1,facing=east,powered=true] @r6x-1b
+hidden 12 6 26 minecraft:glass
+hidden 12 7 26 minecraft:repeater[delay=1,facing=east,powered=true] @r6x-1b
+hidden 13 6 26 minecraft:glass
+hidden 13 7 26 minecraft:repeater[delay=1,facing=east,powered=true] @r6x-1b
+hidden 14 6 26 minecraft:glass
+hidden 14 7 26 minecraft:repeater[delay=1,facing=east,powered=true] @r6x-1b<B3
+hidden 15 6 26 minecraft:glass
+hidden 15 7 26 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B3
+hidden 5 11 17 minecraft:stone
+hidden 5 10 16 minecraft:glass
+hidden 5 11 16 minecraft:repeater[delay=1,facing=north,powered=false] @r1x-1t2
+hidden 6 11 17 minecraft:stone
+hidden 6 10 16 minecraft:glass
+hidden 6 11 16 minecraft:repeater[delay=1,facing=north,powered=false] @r1x-1t2
+hidden 7 11 17 minecraft:stone
+hidden 7 10 16 minecraft:glass
+hidden 7 11 16 minecraft:repeater[delay=1,facing=north,powered=false] @r1x-1t2
+hidden 5 10 15 minecraft:glass
+hidden 5 11 15 minecraft:redstone_wire[east=side,north=none,south=side,west=none] @r1x-1t2
+hidden 6 10 15 minecraft:glass
+hidden 6 11 15 minecraft:redstone_wire[east=side,north=none,south=side,west=side] @r1x-1t2
+hidden 7 10 15 minecraft:glass
+hidden 7 11 15 minecraft:redstone_wire[east=none,north=none,south=side,west=side] @r1x-1t2
+hidden 6 5 14 minecraft:stone
+hidden 6 6 14 minecraft:redstone_torch[lit=false] @r1x-1t0<r1x-1b
+hidden 6 7 14 minecraft:stone
+hidden 6 8 14 minecraft:redstone_torch[lit=true] @r1x-1t1<r1x-1t0
+hidden 6 9 14 minecraft:stone
+hidden 6 10 14 minecraft:redstone_torch[lit=false] @r1x-1t2<r1x-1t1
+hidden 6 11 14 minecraft:stone
+hidden 7 4 14 minecraft:glass
+hidden 7 5 14 minecraft:repeater[delay=4,facing=east,powered=true] @r1x-1b
+hidden 8 4 14 minecraft:glass
+hidden 8 5 14 minecraft:repeater[delay=1,facing=east,powered=true] @r1x-1b
+hidden 9 4 14 minecraft:glass
+hidden 9 5 14 minecraft:repeater[delay=1,facing=east,powered=true] @r1x-1b
+hidden 10 4 14 minecraft:glass
+hidden 10 5 14 minecraft:repeater[delay=1,facing=east,powered=true] @r1x-1b
+hidden 11 4 14 minecraft:glass
+hidden 11 5 14 minecraft:repeater[delay=1,facing=east,powered=true] @r1x-1b
+hidden 12 4 14 minecraft:glass
+hidden 12 5 14 minecraft:repeater[delay=1,facing=east,powered=true] @r1x-1b
+hidden 13 4 14 minecraft:glass
+hidden 13 5 14 minecraft:repeater[delay=1,facing=east,powered=true] @r1x-1b
+hidden 14 4 14 minecraft:glass
+hidden 14 5 14 minecraft:repeater[delay=1,facing=east,powered=true] @r1x-1b<B2
+hidden 15 4 14 minecraft:glass
+hidden 15 5 14 minecraft:redstone_wire[east=none,north=side,south=side,west=side] @B2
+hidden 4 11 17 minecraft:stone
+hidden 4 10 15 minecraft:glass
+hidden 4 11 15 minecraft:repeater[delay=1,facing=north,powered=false] @r1x-2U
+hidden 4 10 16 minecraft:glass
+hidden 4 11 16 minecraft:repeater[delay=1,facing=north,powered=false] @r1x-2U
+hidden 4 10 14 minecraft:glass
+hidden 4 11 14 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r1x-2U
+hidden 4 11 13 minecraft:redstone_wall_torch[facing=south,lit=false] @r1x-2U<r1x-2t1
+hidden 4 7 12 minecraft:stone
+hidden 4 8 12 minecraft:redstone_torch[lit=false] @r1x-2t0<r1x-2b
+hidden 4 9 12 minecraft:stone
+hidden 4 10 12 minecraft:redstone_torch[lit=true] @r1x-2t1<r1x-2t0
+hidden 4 11 12 minecraft:stone
+hidden 5 6 12 minecraft:glass
+hidden 5 7 12 minecraft:repeater[delay=1,facing=east,powered=true] @r1x-2b
+hidden 6 6 12 minecraft:glass
+hidden 6 7 12 minecraft:repeater[delay=1,facing=east,powered=true] @r1x-2b
+hidden 7 6 12 minecraft:glass
+hidden 7 7 12 minecraft:repeater[delay=1,facing=east,powered=true] @r1x-2b
+hidden 8 6 12 minecraft:glass
+hidden 8 7 12 minecraft:repeater[delay=1,facing=east,powered=true] @r1x-2b
+hidden 9 6 12 minecraft:glass
+hidden 9 7 12 minecraft:repeater[delay=1,facing=east,powered=true] @r1x-2b
+hidden 10 6 12 minecraft:glass
+hidden 10 7 12 minecraft:repeater[delay=1,facing=east,powered=true] @r1x-2b
+hidden 11 6 12 minecraft:glass
+hidden 11 7 12 minecraft:repeater[delay=1,facing=east,powered=true] @r1x-2b
+hidden 12 6 12 minecraft:glass
+hidden 12 7 12 minecraft:repeater[delay=1,facing=east,powered=true] @r1x-2b
+hidden 13 6 12 minecraft:glass
+hidden 13 7 12 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r1x-2b
+hidden 14 6 12 minecraft:glass
+hidden 14 7 12 minecraft:repeater[delay=1,facing=east,powered=true] @r1x-2b<B3
+hidden 15 6 12 minecraft:glass
+hidden 15 7 12 minecraft:redstone_wire[east=none,north=side,south=side,west=side] @B3
+hidden 8 11 17 minecraft:stone
+hidden 8 10 13 minecraft:glass
+hidden 8 11 13 minecraft:repeater[delay=1,facing=north,powered=false] @r1x2U
+hidden 8 10 14 minecraft:glass
+hidden 8 11 14 minecraft:repeater[delay=1,facing=north,powered=false] @r1x2U
+hidden 8 10 15 minecraft:glass
+hidden 8 11 15 minecraft:repeater[delay=1,facing=north,powered=false] @r1x2U
+hidden 8 10 16 minecraft:glass
+hidden 8 11 16 minecraft:repeater[delay=1,facing=north,powered=false] @r1x2U
+hidden 8 10 12 minecraft:glass
+hidden 8 11 12 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r1x2U
+hidden 8 11 11 minecraft:redstone_wall_torch[facing=south,lit=false] @r1x2U<r1x2t1
+hidden 8 7 10 minecraft:stone
+hidden 8 8 10 minecraft:redstone_torch[lit=false] @r1x2t0<r1x2b
+hidden 8 9 10 minecraft:stone
+hidden 8 10 10 minecraft:redstone_torch[lit=true] @r1x2t1<r1x2t0
+hidden 8 11 10 minecraft:stone
+hidden 9 6 10 minecraft:glass
+hidden 9 7 10 minecraft:repeater[delay=2,facing=east,powered=true] @r1x2b
+hidden 10 6 10 minecraft:glass
+hidden 10 7 10 minecraft:repeater[delay=1,facing=east,powered=true] @r1x2b
+hidden 11 6 10 minecraft:glass
+hidden 11 7 10 minecraft:repeater[delay=1,facing=east,powered=true] @r1x2b
+hidden 12 6 10 minecraft:glass
+hidden 12 7 10 minecraft:repeater[delay=1,facing=east,powered=true] @r1x2b
+hidden 13 6 10 minecraft:glass
+hidden 13 7 10 minecraft:repeater[delay=1,facing=east,powered=true] @r1x2b
+hidden 14 6 10 minecraft:glass
+hidden 14 7 10 minecraft:repeater[delay=1,facing=east,powered=true] @r1x2b<B3
+hidden 15 6 10 minecraft:glass
+hidden 15 7 10 minecraft:redstone_wire[east=none,north=side,south=side,west=side] @B3
+hidden 6 13 17 minecraft:stone
+hidden 6 12 12 minecraft:glass
+hidden 6 13 12 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r3x0t5
+hidden 6 12 13 minecraft:glass
+hidden 6 13 13 minecraft:repeater[delay=1,facing=north,powered=false] @r3x0t5
+hidden 6 12 14 minecraft:glass
+hidden 6 13 14 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r3x0t5
+hidden 6 12 15 minecraft:glass
+hidden 6 13 15 minecraft:repeater[delay=1,facing=north,powered=false] @r3x0t5
+hidden 6 12 16 minecraft:glass
+hidden 6 13 16 minecraft:repeater[delay=1,facing=north,powered=false] @r3x0t5
+hidden 6 12 11 minecraft:glass
+hidden 6 13 11 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r3x0t5
+hidden 6 1 10 minecraft:stone
+hidden 6 2 10 minecraft:redstone_torch[lit=true] @r3x0t0<r3x0b
+hidden 6 3 10 minecraft:stone
+hidden 6 4 10 minecraft:redstone_torch[lit=false] @r3x0t1<r3x0t0
+hidden 6 5 10 minecraft:stone
+hidden 6 6 10 minecraft:redstone_torch[lit=true] @r3x0t2<r3x0t1
+hidden 6 7 10 minecraft:stone
+hidden 6 8 10 minecraft:redstone_torch[lit=false] @r3x0t3<r3x0t2
+hidden 6 9 10 minecraft:stone
+hidden 6 10 10 minecraft:redstone_torch[lit=true] @r3x0t4<r3x0t3
+hidden 6 11 10 minecraft:stone
+hidden 6 12 10 minecraft:redstone_torch[lit=false] @r3x0t5<r3x0t4
+hidden 6 13 10 minecraft:stone
+hidden 7 0 10 minecraft:glass
+hidden 7 1 10 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x0b
+hidden 8 0 10 minecraft:glass
+hidden 8 1 10 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x0b
+hidden 9 0 10 minecraft:glass
+hidden 9 1 10 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x0b
+hidden 10 0 10 minecraft:glass
+hidden 10 1 10 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x0b
+hidden 11 0 10 minecraft:glass
+hidden 11 1 10 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x0b
+hidden 12 0 10 minecraft:glass
+hidden 12 1 10 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x0b
+hidden 13 0 10 minecraft:glass
+hidden 13 1 10 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x0b
+hidden 14 0 10 minecraft:glass
+hidden 14 1 10 minecraft:repeater[delay=1,facing=east,powered=false] @r3x0b<B0
+hidden 15 0 10 minecraft:glass
+hidden 15 1 10 minecraft:redstone_wire[east=none,north=none,south=side,west=side] @B0
+hidden 5 13 17 minecraft:stone
+hidden 5 12 10 minecraft:glass
+hidden 5 13 10 minecraft:repeater[delay=1,facing=north,powered=false] @r3x-1U
+hidden 5 12 11 minecraft:glass
+hidden 5 13 11 minecraft:repeater[delay=1,facing=north,powered=false] @r3x-1U
+hidden 5 12 12 minecraft:glass
+hidden 5 13 12 minecraft:repeater[delay=1,facing=north,powered=false] @r3x-1U
+hidden 5 12 13 minecraft:glass
+hidden 5 13 13 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r3x-1U
+hidden 5 12 14 minecraft:glass
+hidden 5 13 14 minecraft:repeater[delay=1,facing=north,powered=false] @r3x-1U
+hidden 5 12 15 minecraft:glass
+hidden 5 13 15 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r3x-1U
+hidden 5 12 16 minecraft:glass
+hidden 5 13 16 minecraft:repeater[delay=1,facing=north,powered=false] @r3x-1U
+hidden 5 12 9 minecraft:glass
+hidden 5 13 9 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r3x-1U
+hidden 5 13 8 minecraft:redstone_wall_torch[facing=south,lit=false] @r3x-1U<r3x-1t4
+hidden 5 3 7 minecraft:stone
+hidden 5 4 7 minecraft:redstone_torch[lit=true] @r3x-1t0<r3x-1b
+hidden 5 5 7 minecraft:stone
+hidden 5 6 7 minecraft:redstone_torch[lit=false] @r3x-1t1<r3x-1t0
+hidden 5 7 7 minecraft:stone
+hidden 5 8 7 minecraft:redstone_torch[lit=true] @r3x-1t2<r3x-1t1
+hidden 5 9 7 minecraft:stone
+hidden 5 10 7 minecraft:redstone_torch[lit=false] @r3x-1t3<r3x-1t2
+hidden 5 11 7 minecraft:stone
+hidden 5 12 7 minecraft:redstone_torch[lit=true] @r3x-1t4<r3x-1t3
+hidden 5 13 7 minecraft:stone
+hidden 6 2 7 minecraft:glass
+hidden 6 3 7 minecraft:repeater[delay=1,facing=east,powered=false] @r3x-1b
+hidden 7 2 7 minecraft:glass
+hidden 7 3 7 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x-1b
+hidden 8 2 7 minecraft:glass
+hidden 8 3 7 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x-1b
+hidden 9 2 7 minecraft:glass
+hidden 9 3 7 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x-1b
+hidden 10 2 7 minecraft:glass
+hidden 10 3 7 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x-1b
+hidden 11 2 7 minecraft:glass
+hidden 11 3 7 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x-1b
+hidden 12 2 7 minecraft:glass
+hidden 12 3 7 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x-1b
+hidden 13 2 7 minecraft:glass
+hidden 13 3 7 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x-1b
+hidden 14 2 7 minecraft:glass
+hidden 14 3 7 minecraft:repeater[delay=1,facing=east,powered=false] @r3x-1b<B1
+hidden 15 2 7 minecraft:glass
+hidden 15 3 7 minecraft:redstone_wire[east=none,north=side,south=side,west=side] @B1
+hidden 7 13 17 minecraft:stone
+hidden 7 12 8 minecraft:glass
+hidden 7 13 8 minecraft:repeater[delay=1,facing=north,powered=false] @r3x1U
+hidden 7 12 9 minecraft:glass
+hidden 7 13 9 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r3x1U
+hidden 7 12 10 minecraft:glass
+hidden 7 13 10 minecraft:repeater[delay=1,facing=north,powered=false] @r3x1U
+hidden 7 12 11 minecraft:glass
+hidden 7 13 11 minecraft:repeater[delay=1,facing=north,powered=false] @r3x1U
+hidden 7 12 12 minecraft:glass
+hidden 7 13 12 minecraft:repeater[delay=1,facing=north,powered=false] @r3x1U
+hidden 7 12 13 minecraft:glass
+hidden 7 13 13 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r3x1U
+hidden 7 12 14 minecraft:glass
+hidden 7 13 14 minecraft:repeater[delay=1,facing=north,powered=false] @r3x1U
+hidden 7 12 15 minecraft:glass
+hidden 7 13 15 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r3x1U
+hidden 7 12 16 minecraft:glass
+hidden 7 13 16 minecraft:repeater[delay=1,facing=north,powered=false] @r3x1U
+hidden 7 12 7 minecraft:glass
+hidden 7 13 7 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r3x1U
+hidden 7 13 6 minecraft:redstone_wall_torch[facing=south,lit=false] @r3x1U<r3x1t4
+hidden 7 3 5 minecraft:stone
+hidden 7 4 5 minecraft:redstone_torch[lit=true] @r3x1t0<r3x1b
+hidden 7 5 5 minecraft:stone
+hidden 7 6 5 minecraft:redstone_torch[lit=false] @r3x1t1<r3x1t0
+hidden 7 7 5 minecraft:stone
+hidden 7 8 5 minecraft:redstone_torch[lit=true] @r3x1t2<r3x1t1
+hidden 7 9 5 minecraft:stone
+hidden 7 10 5 minecraft:redstone_torch[lit=false] @r3x1t3<r3x1t2
+hidden 7 11 5 minecraft:stone
+hidden 7 12 5 minecraft:redstone_torch[lit=true] @r3x1t4<r3x1t3
+hidden 7 13 5 minecraft:stone
+hidden 8 2 5 minecraft:glass
+hidden 8 3 5 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x1b
+hidden 9 2 5 minecraft:glass
+hidden 9 3 5 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x1b
+hidden 10 2 5 minecraft:glass
+hidden 10 3 5 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x1b
+hidden 11 2 5 minecraft:glass
+hidden 11 3 5 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x1b
+hidden 12 2 5 minecraft:glass
+hidden 12 3 5 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x1b
+hidden 13 2 5 minecraft:glass
+hidden 13 3 5 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x1b
+hidden 14 2 5 minecraft:glass
+hidden 14 3 5 minecraft:repeater[delay=1,facing=east,powered=false] @r3x1b<B1
+hidden 15 2 5 minecraft:glass
+hidden 15 3 5 minecraft:redstone_wire[east=none,north=none,south=side,west=side] @B1
+hidden 4 13 17 minecraft:stone
+hidden 4 12 6 minecraft:glass
+hidden 4 13 6 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r3x-2U
+hidden 4 12 7 minecraft:glass
+hidden 4 13 7 minecraft:repeater[delay=1,facing=north,powered=false] @r3x-2U
+hidden 4 12 8 minecraft:glass
+hidden 4 13 8 minecraft:repeater[delay=1,facing=north,powered=false] @r3x-2U
+hidden 4 12 9 minecraft:glass
+hidden 4 13 9 minecraft:repeater[delay=1,facing=north,powered=false] @r3x-2U
+hidden 4 12 10 minecraft:glass
+hidden 4 13 10 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r3x-2U
+hidden 4 12 11 minecraft:glass
+hidden 4 13 11 minecraft:repeater[delay=1,facing=north,powered=false] @r3x-2U
+hidden 4 12 12 minecraft:glass
+hidden 4 13 12 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r3x-2U
+hidden 4 12 13 minecraft:glass
+hidden 4 13 13 minecraft:repeater[delay=1,facing=north,powered=false] @r3x-2U
+hidden 4 12 14 minecraft:glass
+hidden 4 13 14 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r3x-2U
+hidden 4 12 15 minecraft:glass
+hidden 4 13 15 minecraft:repeater[delay=1,facing=north,powered=false] @r3x-2U
+hidden 4 12 16 minecraft:glass
+hidden 4 13 16 minecraft:repeater[delay=1,facing=north,powered=false] @r3x-2U
+hidden 4 12 5 minecraft:glass
+hidden 4 13 5 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r3x-2U
+hidden 4 13 4 minecraft:redstone_wall_torch[facing=south,lit=false] @r3x-2U<r3x-2t3
+hidden 4 5 3 minecraft:stone
+hidden 4 6 3 minecraft:redstone_torch[lit=false] @r3x-2t0<r3x-2b
+hidden 4 7 3 minecraft:stone
+hidden 4 8 3 minecraft:redstone_torch[lit=true] @r3x-2t1<r3x-2t0
+hidden 4 9 3 minecraft:stone
+hidden 4 10 3 minecraft:redstone_torch[lit=false] @r3x-2t2<r3x-2t1
+hidden 4 11 3 minecraft:stone
+hidden 4 12 3 minecraft:redstone_torch[lit=true] @r3x-2t3<r3x-2t2
+hidden 4 13 3 minecraft:stone
+hidden 5 4 3 minecraft:glass
+hidden 5 5 3 minecraft:repeater[delay=1,facing=east,powered=true] @r3x-2b
+hidden 6 4 3 minecraft:glass
+hidden 6 5 3 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x-2b
+hidden 7 4 3 minecraft:glass
+hidden 7 5 3 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x-2b
+hidden 8 4 3 minecraft:glass
+hidden 8 5 3 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x-2b
+hidden 9 4 3 minecraft:glass
+hidden 9 5 3 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x-2b
+hidden 10 4 3 minecraft:glass
+hidden 10 5 3 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x-2b
+hidden 11 4 3 minecraft:glass
+hidden 11 5 3 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x-2b
+hidden 12 4 3 minecraft:glass
+hidden 12 5 3 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x-2b
+hidden 13 4 3 minecraft:glass
+hidden 13 5 3 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x-2b
+hidden 14 4 3 minecraft:glass
+hidden 14 5 3 minecraft:repeater[delay=1,facing=east,powered=true] @r3x-2b<B2
+hidden 15 4 3 minecraft:glass
+hidden 15 5 3 minecraft:redstone_wire[east=none,north=side,south=side,west=side] @B2
+hidden 8 13 17 minecraft:stone
+hidden 8 12 4 minecraft:glass
+hidden 8 13 4 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r3x2U
+hidden 8 12 5 minecraft:glass
+hidden 8 13 5 minecraft:repeater[delay=1,facing=north,powered=false] @r3x2U
+hidden 8 12 6 minecraft:glass
+hidden 8 13 6 minecraft:repeater[delay=1,facing=north,powered=false] @r3x2U
+hidden 8 12 7 minecraft:glass
+hidden 8 13 7 minecraft:repeater[delay=1,facing=north,powered=false] @r3x2U
+hidden 8 12 8 minecraft:glass
+hidden 8 13 8 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r3x2U
+hidden 8 12 9 minecraft:glass
+hidden 8 13 9 minecraft:repeater[delay=1,facing=north,powered=false] @r3x2U
+hidden 8 12 10 minecraft:glass
+hidden 8 13 10 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r3x2U
+hidden 8 12 11 minecraft:glass
+hidden 8 13 11 minecraft:repeater[delay=1,facing=north,powered=false] @r3x2U
+hidden 8 12 12 minecraft:glass
+hidden 8 13 12 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r3x2U
+hidden 8 12 13 minecraft:glass
+hidden 8 13 13 minecraft:repeater[delay=1,facing=north,powered=false] @r3x2U
+hidden 8 12 14 minecraft:glass
+hidden 8 13 14 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r3x2U
+hidden 8 12 15 minecraft:glass
+hidden 8 13 15 minecraft:repeater[delay=1,facing=north,powered=false] @r3x2U
+hidden 8 12 16 minecraft:glass
+hidden 8 13 16 minecraft:repeater[delay=1,facing=north,powered=false] @r3x2U
+hidden 8 12 3 minecraft:glass
+hidden 8 13 3 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r3x2U
+hidden 8 13 2 minecraft:redstone_wall_torch[facing=south,lit=false] @r3x2U<r3x2t3
+hidden 8 5 1 minecraft:stone
+hidden 8 6 1 minecraft:redstone_torch[lit=false] @r3x2t0<r3x2b
+hidden 8 7 1 minecraft:stone
+hidden 8 8 1 minecraft:redstone_torch[lit=true] @r3x2t1<r3x2t0
+hidden 8 9 1 minecraft:stone
+hidden 8 10 1 minecraft:redstone_torch[lit=false] @r3x2t2<r3x2t1
+hidden 8 11 1 minecraft:stone
+hidden 8 12 1 minecraft:redstone_torch[lit=true] @r3x2t3<r3x2t2
+hidden 8 13 1 minecraft:stone
+hidden 9 4 1 minecraft:glass
+hidden 9 5 1 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x2b
+hidden 10 4 1 minecraft:glass
+hidden 10 5 1 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x2b
+hidden 11 4 1 minecraft:glass
+hidden 11 5 1 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x2b
+hidden 12 4 1 minecraft:glass
+hidden 12 5 1 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x2b
+hidden 13 4 1 minecraft:glass
+hidden 13 5 1 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x2b
+hidden 14 4 1 minecraft:glass
+hidden 14 5 1 minecraft:repeater[delay=1,facing=east,powered=true] @r3x2b<B2
+hidden 15 4 1 minecraft:glass
+hidden 15 5 1 minecraft:redstone_wire[east=none,north=none,south=side,west=side] @B2
+hidden 3 13 17 minecraft:stone
+hidden 3 12 10 minecraft:glass
+hidden 3 13 10 minecraft:repeater[delay=1,facing=north,powered=false] @r3x-3t2
+hidden 3 12 11 minecraft:glass
+hidden 3 13 11 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r3x-3t2
+hidden 3 12 12 minecraft:glass
+hidden 3 13 12 minecraft:repeater[delay=1,facing=north,powered=false] @r3x-3t2
+hidden 3 12 13 minecraft:glass
+hidden 3 13 13 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r3x-3t2
+hidden 3 12 14 minecraft:glass
+hidden 3 13 14 minecraft:repeater[delay=1,facing=north,powered=false] @r3x-3t2
+hidden 3 12 15 minecraft:glass
+hidden 3 13 15 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r3x-3t2
+hidden 3 12 16 minecraft:glass
+hidden 3 13 16 minecraft:repeater[delay=1,facing=north,powered=false] @r3x-3t2
+hidden 3 12 9 minecraft:glass
+hidden 3 13 9 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r3x-3t2
+hidden 3 7 8 minecraft:stone
+hidden 3 8 8 minecraft:redstone_torch[lit=false] @r3x-3t0<r3x-3b
+hidden 3 9 8 minecraft:stone
+hidden 3 10 8 minecraft:redstone_torch[lit=true] @r3x-3t1<r3x-3t0
+hidden 3 11 8 minecraft:stone
+hidden 3 12 8 minecraft:redstone_torch[lit=false] @r3x-3t2<r3x-3t1
+hidden 3 13 8 minecraft:stone
+hidden 4 6 8 minecraft:glass
+hidden 4 7 8 minecraft:repeater[delay=1,facing=east,powered=true] @r3x-3b
+hidden 5 6 8 minecraft:glass
+hidden 5 7 8 minecraft:repeater[delay=1,facing=east,powered=true] @r3x-3b
+hidden 6 6 8 minecraft:glass
+hidden 6 7 8 minecraft:repeater[delay=1,facing=east,powered=true] @r3x-3b
+hidden 7 6 8 minecraft:glass
+hidden 7 7 8 minecraft:repeater[delay=1,facing=east,powered=true] @r3x-3b
+hidden 8 6 8 minecraft:glass
+hidden 8 7 8 minecraft:repeater[delay=1,facing=east,powered=true] @r3x-3b
+hidden 9 6 8 minecraft:glass
+hidden 9 7 8 minecraft:repeater[delay=1,facing=east,powered=true] @r3x-3b
+hidden 10 6 8 minecraft:glass
+hidden 10 7 8 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x-3b
+hidden 11 6 8 minecraft:glass
+hidden 11 7 8 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x-3b
+hidden 12 6 8 minecraft:glass
+hidden 12 7 8 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x-3b
+hidden 13 6 8 minecraft:glass
+hidden 13 7 8 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r3x-3b
+hidden 14 6 8 minecraft:glass
+hidden 14 7 8 minecraft:repeater[delay=1,facing=east,powered=true] @r3x-3b<B3
+hidden 15 6 8 minecraft:glass
+hidden 15 7 8 minecraft:redstone_wire[east=none,north=side,south=side,west=side] @B3
+hidden 9 13 17 minecraft:stone
+hidden 9 12 8 minecraft:glass
+hidden 9 13 8 minecraft:repeater[delay=1,facing=north,powered=false] @r3x3t2
+hidden 9 12 9 minecraft:glass
+hidden 9 13 9 minecraft:repeater[delay=1,facing=north,powered=false] @r3x3t2
+hidden 9 12 10 minecraft:glass
+hidden 9 13 10 minecraft:repeater[delay=1,facing=north,powered=false] @r3x3t2
+hidden 9 12 11 minecraft:glass
+hidden 9 13 11 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r3x3t2
+hidden 9 12 12 minecraft:glass
+hidden 9 13 12 minecraft:repeater[delay=1,facing=north,powered=false] @r3x3t2
+hidden 9 12 13 minecraft:glass
+hidden 9 13 13 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r3x3t2
+hidden 9 12 14 minecraft:glass
+hidden 9 13 14 minecraft:repeater[delay=1,facing=north,powered=false] @r3x3t2
+hidden 9 12 15 minecraft:glass
+hidden 9 13 15 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r3x3t2
+hidden 9 12 16 minecraft:glass
+hidden 9 13 16 minecraft:repeater[delay=1,facing=north,powered=false] @r3x3t2
+hidden 9 12 7 minecraft:glass
+hidden 9 13 7 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r3x3t2
+hidden 9 7 6 minecraft:stone
+hidden 9 8 6 minecraft:redstone_torch[lit=false] @r3x3t0<r3x3b
+hidden 9 9 6 minecraft:stone
+hidden 9 10 6 minecraft:redstone_torch[lit=true] @r3x3t1<r3x3t0
+hidden 9 11 6 minecraft:stone
+hidden 9 12 6 minecraft:redstone_torch[lit=false] @r3x3t2<r3x3t1
+hidden 9 13 6 minecraft:stone
+hidden 10 6 6 minecraft:glass
+hidden 10 7 6 minecraft:repeater[delay=1,facing=east,powered=true] @r3x3b
+hidden 11 6 6 minecraft:glass
+hidden 11 7 6 minecraft:repeater[delay=1,facing=east,powered=true] @r3x3b
+hidden 12 6 6 minecraft:glass
+hidden 12 7 6 minecraft:repeater[delay=1,facing=east,powered=true] @r3x3b
+hidden 13 6 6 minecraft:glass
+hidden 13 7 6 minecraft:repeater[delay=1,facing=east,powered=true] @r3x3b
+hidden 14 6 6 minecraft:glass
+hidden 14 7 6 minecraft:repeater[delay=1,facing=east,powered=true] @r3x3b<B3
+hidden 15 6 6 minecraft:glass
+hidden 15 7 6 minecraft:redstone_wire[east=none,north=side,south=side,west=side] @B3
+hidden 5 15 17 minecraft:stone
+hidden 5 14 8 minecraft:glass
+hidden 5 15 8 minecraft:redstone_wire[east=side,north=side,south=side,west=none] @r5x-1t4
+hidden 5 14 9 minecraft:glass
+hidden 5 15 9 minecraft:repeater[delay=1,facing=north,powered=false] @r5x-1t4
+hidden 5 14 10 minecraft:glass
+hidden 5 15 10 minecraft:redstone_wire[east=side,north=side,south=side,west=none] @r5x-1t4
+hidden 5 14 11 minecraft:glass
+hidden 5 15 11 minecraft:repeater[delay=1,facing=north,powered=false] @r5x-1t4
+hidden 5 14 12 minecraft:glass
+hidden 5 15 12 minecraft:redstone_wire[east=side,north=side,south=side,west=none] @r5x-1t4
+hidden 5 14 13 minecraft:glass
+hidden 5 15 13 minecraft:repeater[delay=1,facing=north,powered=false] @r5x-1t4
+hidden 5 14 14 minecraft:glass
+hidden 5 15 14 minecraft:redstone_wire[east=side,north=side,south=side,west=none] @r5x-1t4
+hidden 5 14 15 minecraft:glass
+hidden 5 15 15 minecraft:repeater[delay=1,facing=north,powered=false] @r5x-1t4
+hidden 5 14 16 minecraft:glass
+hidden 5 15 16 minecraft:repeater[delay=1,facing=north,powered=false] @r5x-1t4
+hidden 6 15 17 minecraft:stone
+hidden 6 14 8 minecraft:glass
+hidden 6 15 8 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @r5x-1t4
+hidden 6 14 9 minecraft:glass
+hidden 6 15 9 minecraft:repeater[delay=1,facing=north,powered=false] @r5x-1t4
+hidden 6 14 10 minecraft:glass
+hidden 6 15 10 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @r5x-1t4
+hidden 6 14 11 minecraft:glass
+hidden 6 15 11 minecraft:repeater[delay=1,facing=north,powered=false] @r5x-1t4
+hidden 6 14 12 minecraft:glass
+hidden 6 15 12 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @r5x-1t4
+hidden 6 14 13 minecraft:glass
+hidden 6 15 13 minecraft:repeater[delay=1,facing=north,powered=false] @r5x-1t4
+hidden 6 14 14 minecraft:glass
+hidden 6 15 14 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @r5x-1t4
+hidden 6 14 15 minecraft:glass
+hidden 6 15 15 minecraft:repeater[delay=1,facing=north,powered=false] @r5x-1t4
+hidden 6 14 16 minecraft:glass
+hidden 6 15 16 minecraft:repeater[delay=1,facing=north,powered=false] @r5x-1t4
+hidden 7 15 17 minecraft:stone
+hidden 7 14 8 minecraft:glass
+hidden 7 15 8 minecraft:redstone_wire[east=none,north=side,south=side,west=side] @r5x-1t4
+hidden 7 14 9 minecraft:glass
+hidden 7 15 9 minecraft:repeater[delay=1,facing=north,powered=false] @r5x-1t4
+hidden 7 14 10 minecraft:glass
+hidden 7 15 10 minecraft:redstone_wire[east=none,north=side,south=side,west=side] @r5x-1t4
+hidden 7 14 11 minecraft:glass
+hidden 7 15 11 minecraft:repeater[delay=1,facing=north,powered=false] @r5x-1t4
+hidden 7 14 12 minecraft:glass
+hidden 7 15 12 minecraft:redstone_wire[east=none,north=side,south=side,west=side] @r5x-1t4
+hidden 7 14 13 minecraft:glass
+hidden 7 15 13 minecraft:repeater[delay=1,facing=north,powered=false] @r5x-1t4
+hidden 7 14 14 minecraft:glass
+hidden 7 15 14 minecraft:redstone_wire[east=none,north=side,south=side,west=side] @r5x-1t4
+hidden 7 14 15 minecraft:glass
+hidden 7 15 15 minecraft:repeater[delay=1,facing=north,powered=false] @r5x-1t4
+hidden 7 14 16 minecraft:glass
+hidden 7 15 16 minecraft:repeater[delay=1,facing=north,powered=false] @r5x-1t4
+hidden 5 14 7 minecraft:glass
+hidden 5 15 7 minecraft:redstone_wire[east=side,north=none,south=side,west=none] @r5x-1t4
+hidden 6 14 7 minecraft:glass
+hidden 6 15 7 minecraft:redstone_wire[east=side,north=none,south=side,west=side] @r5x-1t4
+hidden 7 14 7 minecraft:glass
+hidden 7 15 7 minecraft:redstone_wire[east=none,north=none,south=side,west=side] @r5x-1t4
+hidden 6 5 6 minecraft:stone
+hidden 6 6 6 minecraft:redstone_torch[lit=false] @r5x-1t0<r5x-1b
+hidden 6 7 6 minecraft:stone
+hidden 6 8 6 minecraft:redstone_torch[lit=true] @r5x-1t1<r5x-1t0
+hidden 6 9 6 minecraft:stone
+hidden 6 10 6 minecraft:redstone_torch[lit=false] @r5x-1t2<r5x-1t1
+hidden 6 11 6 minecraft:stone
+hidden 6 12 6 minecraft:redstone_torch[lit=true] @r5x-1t3<r5x-1t2
+hidden 6 13 6 minecraft:stone
+hidden 6 14 6 minecraft:redstone_torch[lit=false] @r5x-1t4<r5x-1t3
+hidden 6 15 6 minecraft:stone
+hidden 7 4 6 minecraft:glass
+hidden 7 5 6 minecraft:repeater[delay=1,facing=east,powered=true] @r5x-1b
+hidden 8 4 6 minecraft:glass
+hidden 8 5 6 minecraft:repeater[delay=1,facing=east,powered=true] @r5x-1b
+hidden 9 4 6 minecraft:glass
+hidden 9 5 6 minecraft:repeater[delay=1,facing=east,powered=true] @r5x-1b
+hidden 10 4 6 minecraft:glass
+hidden 10 5 6 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r5x-1b
+hidden 11 4 6 minecraft:glass
+hidden 11 5 6 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r5x-1b
+hidden 12 4 6 minecraft:glass
+hidden 12 5 6 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r5x-1b
+hidden 13 4 6 minecraft:glass
+hidden 13 5 6 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r5x-1b
+hidden 14 4 6 minecraft:glass
+hidden 14 5 6 minecraft:repeater[delay=1,facing=east,powered=true] @r5x-1b<B2
+hidden 15 4 6 minecraft:glass
+hidden 15 5 6 minecraft:redstone_wire[east=none,north=side,south=side,west=side] @B2
+hidden 4 15 17 minecraft:stone
+hidden 4 14 5 minecraft:glass
+hidden 4 15 5 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r5x-2U
+hidden 4 14 6 minecraft:glass
+hidden 4 15 6 minecraft:repeater[delay=1,facing=north,powered=false] @r5x-2U
+hidden 4 14 7 minecraft:glass
+hidden 4 15 7 minecraft:repeater[delay=1,facing=north,powered=false] @r5x-2U
+hidden 4 14 8 minecraft:glass
+hidden 4 15 8 minecraft:repeater[delay=1,facing=north,powered=false] @r5x-2U
+hidden 4 14 9 minecraft:glass
+hidden 4 15 9 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r5x-2U
+hidden 4 14 10 minecraft:glass
+hidden 4 15 10 minecraft:repeater[delay=1,facing=north,powered=false] @r5x-2U
+hidden 4 14 11 minecraft:glass
+hidden 4 15 11 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r5x-2U
+hidden 4 14 12 minecraft:glass
+hidden 4 15 12 minecraft:repeater[delay=1,facing=north,powered=false] @r5x-2U
+hidden 4 14 13 minecraft:glass
+hidden 4 15 13 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r5x-2U
+hidden 4 14 14 minecraft:glass
+hidden 4 15 14 minecraft:repeater[delay=1,facing=north,powered=false] @r5x-2U
+hidden 4 14 15 minecraft:glass
+hidden 4 15 15 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r5x-2U
+hidden 4 14 16 minecraft:glass
+hidden 4 15 16 minecraft:repeater[delay=1,facing=north,powered=false] @r5x-2U
+hidden 4 14 4 minecraft:glass
+hidden 4 15 4 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r5x-2U
+hidden 4 15 3 minecraft:redstone_wall_torch[facing=south,lit=false] @r5x-2U<r5x-2t3
+hidden 4 7 2 minecraft:stone
+hidden 4 8 2 minecraft:redstone_torch[lit=false] @r5x-2t0<r5x-2b
+hidden 4 9 2 minecraft:stone
+hidden 4 10 2 minecraft:redstone_torch[lit=true] @r5x-2t1<r5x-2t0
+hidden 4 11 2 minecraft:stone
+hidden 4 12 2 minecraft:redstone_torch[lit=false] @r5x-2t2<r5x-2t1
+hidden 4 13 2 minecraft:stone
+hidden 4 14 2 minecraft:redstone_torch[lit=true] @r5x-2t3<r5x-2t2
+hidden 4 15 2 minecraft:stone
+hidden 5 6 2 minecraft:glass
+hidden 5 7 2 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r5x-2b
+hidden 6 6 2 minecraft:glass
+hidden 6 7 2 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r5x-2b
+hidden 7 6 2 minecraft:glass
+hidden 7 7 2 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r5x-2b
+hidden 8 6 2 minecraft:glass
+hidden 8 7 2 minecraft:repeater[delay=1,facing=east,powered=true] @r5x-2b
+hidden 9 6 2 minecraft:glass
+hidden 9 7 2 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r5x-2b
+hidden 10 6 2 minecraft:glass
+hidden 10 7 2 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r5x-2b
+hidden 11 6 2 minecraft:glass
+hidden 11 7 2 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r5x-2b
+hidden 12 6 2 minecraft:glass
+hidden 12 7 2 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r5x-2b
+hidden 13 6 2 minecraft:glass
+hidden 13 7 2 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r5x-2b
+hidden 14 6 2 minecraft:glass
+hidden 14 7 2 minecraft:repeater[delay=1,facing=east,powered=true] @r5x-2b<B3
+hidden 15 6 2 minecraft:glass
+hidden 15 7 2 minecraft:redstone_wire[east=none,north=side,south=side,west=side] @B3
+hidden 8 15 17 minecraft:stone
+hidden 8 14 3 minecraft:glass
+hidden 8 15 3 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r5x2U
+hidden 8 14 4 minecraft:glass
+hidden 8 15 4 minecraft:repeater[delay=1,facing=north,powered=false] @r5x2U
+hidden 8 14 5 minecraft:glass
+hidden 8 15 5 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r5x2U
+hidden 8 14 6 minecraft:glass
+hidden 8 15 6 minecraft:repeater[delay=1,facing=north,powered=false] @r5x2U
+hidden 8 14 7 minecraft:glass
+hidden 8 15 7 minecraft:repeater[delay=1,facing=north,powered=false] @r5x2U
+hidden 8 14 8 minecraft:glass
+hidden 8 15 8 minecraft:repeater[delay=1,facing=north,powered=false] @r5x2U
+hidden 8 14 9 minecraft:glass
+hidden 8 15 9 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r5x2U
+hidden 8 14 10 minecraft:glass
+hidden 8 15 10 minecraft:repeater[delay=1,facing=north,powered=false] @r5x2U
+hidden 8 14 11 minecraft:glass
+hidden 8 15 11 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r5x2U
+hidden 8 14 12 minecraft:glass
+hidden 8 15 12 minecraft:repeater[delay=1,facing=north,powered=false] @r5x2U
+hidden 8 14 13 minecraft:glass
+hidden 8 15 13 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r5x2U
+hidden 8 14 14 minecraft:glass
+hidden 8 15 14 minecraft:repeater[delay=1,facing=north,powered=false] @r5x2U
+hidden 8 14 15 minecraft:glass
+hidden 8 15 15 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r5x2U
+hidden 8 14 16 minecraft:glass
+hidden 8 15 16 minecraft:repeater[delay=1,facing=north,powered=false] @r5x2U
+hidden 8 14 2 minecraft:glass
+hidden 8 15 2 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @r5x2U
+hidden 8 15 1 minecraft:redstone_wall_torch[facing=south,lit=false] @r5x2U<r5x2t3
+hidden 8 7 0 minecraft:stone
+hidden 8 8 0 minecraft:redstone_torch[lit=false] @r5x2t0<r5x2b
+hidden 8 9 0 minecraft:stone
+hidden 8 10 0 minecraft:redstone_torch[lit=true] @r5x2t1<r5x2t0
+hidden 8 11 0 minecraft:stone
+hidden 8 12 0 minecraft:redstone_torch[lit=false] @r5x2t2<r5x2t1
+hidden 8 13 0 minecraft:stone
+hidden 8 14 0 minecraft:redstone_torch[lit=true] @r5x2t3<r5x2t2
+hidden 8 15 0 minecraft:stone
+hidden 9 6 0 minecraft:glass
+hidden 9 7 0 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r5x2b
+hidden 10 6 0 minecraft:glass
+hidden 10 7 0 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r5x2b
+hidden 11 6 0 minecraft:glass
+hidden 11 7 0 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r5x2b
+hidden 12 6 0 minecraft:glass
+hidden 12 7 0 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r5x2b
+hidden 13 6 0 minecraft:glass
+hidden 13 7 0 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @r5x2b
+hidden 14 6 0 minecraft:glass
+hidden 14 7 0 minecraft:repeater[delay=1,facing=east,powered=true] @r5x2b<B3
+hidden 15 6 0 minecraft:glass
+hidden 15 7 0 minecraft:redstone_wire[east=none,north=none,south=side,west=side] @B3
+hidden 12 9 16 phasecraft:phase_port @L
+hidden 13 8 16 minecraft:glass
+hidden 13 9 16 minecraft:repeater[delay=1,facing=west,powered=false] @L
+hidden 14 8 16 minecraft:glass
+hidden 14 9 16 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @L
+hidden 15 8 16 minecraft:glass
+hidden 15 9 16 minecraft:repeater[delay=1,facing=west,powered=false] @L
+hidden 16 8 16 minecraft:glass
+hidden 16 9 16 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @L
+hidden 17 8 16 minecraft:glass
+hidden 17 9 16 minecraft:repeater[delay=1,facing=west,powered=false] @L
+hidden 18 8 16 minecraft:stone
+hidden 18 9 16 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @L
+hidden 19 7 16 minecraft:stone
+hidden 19 8 16 minecraft:redstone_wire[east=side,north=none,south=none,west=up] @L
+hidden 20 6 16 minecraft:stone
+hidden 20 7 16 minecraft:redstone_wire[east=side,north=none,south=side,west=up] @L
+hidden 21 5 16 minecraft:stone
+hidden 21 6 16 minecraft:redstone_wire[east=side,north=none,south=none,west=up] @L
+hidden 22 4 16 minecraft:stone
+hidden 22 5 16 minecraft:redstone_wire[east=side,north=none,south=side,west=up] @L
+hidden 23 3 16 minecraft:stone
+hidden 23 4 16 minecraft:redstone_wire[east=side,north=none,south=none,west=up] @L
+hidden 24 2 16 minecraft:stone
+hidden 24 3 16 minecraft:redstone_wire[east=side,north=none,south=side,west=up] @L
+hidden 25 1 16 minecraft:stone
+hidden 25 2 16 minecraft:redstone_wire[east=side,north=none,south=none,west=up] @L
+hidden 26 0 16 minecraft:stone
+hidden 26 1 16 minecraft:redstone_wire[east=none,north=none,south=side,west=up] @L
+hidden 20 6 17 minecraft:glass
+hidden 20 7 17 minecraft:repeater[delay=1,facing=north,powered=false] @P3in<L
+hidden 20 7 18 minecraft:stone
+hidden 20 7 19 minecraft:redstone_wall_torch[facing=south,lit=true] @P3x<P3in
+hidden 20 6 20 minecraft:glass
+hidden 20 7 20 minecraft:redstone_wire[east=side,north=side,south=none,west=side] @P3x
+hidden 19 6 20 minecraft:glass
+hidden 19 7 20 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @P3s<P3x
+hidden 18 6 20 minecraft:glass
+hidden 18 7 20 minecraft:redstone_wire[east=side,north=none,south=side,west=none] @P3s
+hidden 18 6 21 minecraft:glass
+hidden 18 7 21 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @P3s
+hidden 18 6 22 minecraft:glass
+hidden 18 7 22 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @P3s
+hidden 18 6 23 minecraft:glass
+hidden 18 7 23 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @P3s
+hidden 18 6 24 minecraft:glass
+hidden 18 7 24 minecraft:redstone_wire[east=side,north=side,south=none,west=none] @P3s
+hidden 19 6 24 minecraft:glass
+hidden 19 7 24 minecraft:repeater[delay=1,facing=west,powered=true] @P3s
+hidden 21 6 20 minecraft:glass
+hidden 21 7 20 minecraft:repeater[delay=4,facing=west,powered=true] @P3l<P3x
+hidden 22 6 20 minecraft:glass
+hidden 22 7 20 minecraft:redstone_wire[east=none,north=none,south=side,west=side] @P3l
+hidden 22 6 21 minecraft:glass
+hidden 22 7 21 minecraft:repeater[delay=4,facing=north,powered=true] @P3l
+hidden 22 6 22 minecraft:glass
+hidden 22 7 22 minecraft:repeater[delay=3,facing=north,powered=true] @P3l
+hidden 22 6 23 minecraft:glass
+hidden 22 7 23 minecraft:repeater[delay=1,facing=north,powered=true] @P3l
+hidden 22 6 24 minecraft:glass
+hidden 22 7 24 minecraft:redstone_wire[east=none,north=side,south=none,west=side] @P3l
+hidden 21 6 24 minecraft:glass
+hidden 21 7 24 minecraft:repeater[delay=1,facing=east,powered=true] @P3l
+hidden 20 6 24 minecraft:glass
+hidden 20 7 24 minecraft:redstone_wire[east=side,north=none,south=side,west=side] @P3n
+hidden 20 6 25 minecraft:glass
+hidden 20 7 25 minecraft:repeater[delay=1,facing=north,powered=true] @B3<P3n
+hidden 20 6 26 minecraft:glass
+hidden 20 7 26 minecraft:redstone_wire[east=none,north=side,south=none,west=side] @B3
+hidden 19 6 26 minecraft:glass
+hidden 19 7 26 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @B3
+hidden 18 6 26 minecraft:glass
+hidden 18 7 26 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @B3
+hidden 17 6 26 minecraft:glass
+hidden 17 7 26 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @B3
+hidden 16 6 26 minecraft:glass
+hidden 16 7 26 minecraft:repeater[delay=1,facing=east,powered=true] @B3
+hidden 22 4 17 minecraft:glass
+hidden 22 5 17 minecraft:repeater[delay=1,facing=north,powered=false] @P2in<L
+hidden 22 5 18 minecraft:stone
+hidden 22 5 19 minecraft:redstone_wall_torch[facing=south,lit=true] @P2x<P2in
+hidden 22 4 20 minecraft:glass
+hidden 22 5 20 minecraft:redstone_wire[east=side,north=side,south=none,west=side] @P2x
+hidden 21 4 20 minecraft:glass
+hidden 21 5 20 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @P2s<P2x
+hidden 20 4 20 minecraft:glass
+hidden 20 5 20 minecraft:redstone_wire[east=side,north=none,south=side,west=none] @P2s
+hidden 20 4 21 minecraft:glass
+hidden 20 5 21 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @P2s
+hidden 20 4 22 minecraft:glass
+hidden 20 5 22 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @P2s
+hidden 20 4 23 minecraft:glass
+hidden 20 5 23 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @P2s
+hidden 20 4 24 minecraft:glass
+hidden 20 5 24 minecraft:redstone_wire[east=side,north=side,south=none,west=none] @P2s
+hidden 21 4 24 minecraft:glass
+hidden 21 5 24 minecraft:repeater[delay=1,facing=west,powered=true] @P2s
+hidden 23 4 20 minecraft:glass
+hidden 23 5 20 minecraft:repeater[delay=1,facing=west,powered=true] @P2l<P2x
+hidden 24 4 20 minecraft:glass
+hidden 24 5 20 minecraft:redstone_wire[east=none,north=none,south=side,west=side] @P2l
+hidden 24 4 21 minecraft:glass
+hidden 24 5 21 minecraft:repeater[delay=1,facing=north,powered=true] @P2l
+hidden 24 4 22 minecraft:glass
+hidden 24 5 22 minecraft:repeater[delay=1,facing=north,powered=true] @P2l
+hidden 24 4 23 minecraft:glass
+hidden 24 5 23 minecraft:repeater[delay=1,facing=north,powered=true] @P2l
+hidden 24 4 24 minecraft:glass
+hidden 24 5 24 minecraft:redstone_wire[east=none,north=side,south=none,west=side] @P2l
+hidden 23 4 24 minecraft:glass
+hidden 23 5 24 minecraft:repeater[delay=1,facing=east,powered=true] @P2l
+hidden 22 4 24 minecraft:glass
+hidden 22 5 24 minecraft:redstone_wire[east=side,north=none,south=side,west=side] @P2n
+hidden 22 4 25 minecraft:glass
+hidden 22 5 25 minecraft:repeater[delay=1,facing=north,powered=true] @B2<P2n
+hidden 22 4 26 minecraft:glass
+hidden 22 5 26 minecraft:redstone_wire[east=none,north=side,south=none,west=side] @B2
+hidden 21 4 26 minecraft:glass
+hidden 21 5 26 minecraft:repeater[delay=1,facing=east,powered=true] @B2
+hidden 20 4 26 minecraft:glass
+hidden 20 5 26 minecraft:repeater[delay=1,facing=east,powered=true] @B2
+hidden 19 4 26 minecraft:glass
+hidden 19 5 26 minecraft:repeater[delay=1,facing=east,powered=true] @B2
+hidden 18 4 26 minecraft:glass
+hidden 18 5 26 minecraft:repeater[delay=1,facing=east,powered=true] @B2
+hidden 17 4 26 minecraft:glass
+hidden 17 5 26 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @B2
+hidden 16 4 26 minecraft:glass
+hidden 16 5 26 minecraft:repeater[delay=1,facing=east,powered=true] @B2
+hidden 24 2 17 minecraft:glass
+hidden 24 3 17 minecraft:repeater[delay=1,facing=north,powered=false] @P1in<L
+hidden 24 2 18 minecraft:glass
+hidden 24 3 18 minecraft:redstone_wire[east=side,north=side,south=none,west=side] @P1in
+hidden 23 2 18 minecraft:glass
+hidden 23 3 18 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @P1s<P1in
+hidden 22 2 18 minecraft:glass
+hidden 22 3 18 minecraft:redstone_wire[east=side,north=none,south=side,west=none] @P1s
+hidden 22 2 19 minecraft:glass
+hidden 22 3 19 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @P1s
+hidden 22 2 20 minecraft:glass
+hidden 22 3 20 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @P1s
+hidden 22 2 21 minecraft:glass
+hidden 22 3 21 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @P1s
+hidden 22 2 22 minecraft:glass
+hidden 22 3 22 minecraft:redstone_wire[east=side,north=side,south=none,west=none] @P1s
+hidden 23 2 22 minecraft:glass
+hidden 23 3 22 minecraft:repeater[delay=1,facing=west,powered=false] @P1s
+hidden 25 2 18 minecraft:glass
+hidden 25 3 18 minecraft:repeater[delay=1,facing=west,powered=false] @P1l<P1in
+hidden 26 2 18 minecraft:glass
+hidden 26 3 18 minecraft:redstone_wire[east=none,north=none,south=side,west=side] @P1l
+hidden 26 2 19 minecraft:glass
+hidden 26 3 19 minecraft:repeater[delay=1,facing=north,powered=false] @P1l
+hidden 26 2 20 minecraft:glass
+hidden 26 3 20 minecraft:repeater[delay=1,facing=north,powered=false] @P1l
+hidden 26 2 21 minecraft:glass
+hidden 26 3 21 minecraft:repeater[delay=1,facing=north,powered=false] @P1l
+hidden 26 2 22 minecraft:glass
+hidden 26 3 22 minecraft:redstone_wire[east=none,north=side,south=none,west=side] @P1l
+hidden 25 2 22 minecraft:glass
+hidden 25 3 22 minecraft:repeater[delay=1,facing=east,powered=false] @P1l
+hidden 24 2 22 minecraft:glass
+hidden 24 3 22 minecraft:redstone_wire[east=side,north=none,south=side,west=side] @P1n
+hidden 24 2 23 minecraft:glass
+hidden 24 3 23 minecraft:repeater[delay=1,facing=north,powered=false] @B1<P1n
+hidden 24 2 24 minecraft:glass
+hidden 24 3 24 minecraft:redstone_wire[east=none,north=side,south=none,west=side] @B1
+hidden 23 2 24 minecraft:glass
+hidden 23 3 24 minecraft:repeater[delay=1,facing=east,powered=false] @B1
+hidden 22 2 24 minecraft:glass
+hidden 22 3 24 minecraft:repeater[delay=1,facing=east,powered=false] @B1
+hidden 21 2 24 minecraft:glass
+hidden 21 3 24 minecraft:repeater[delay=1,facing=east,powered=false] @B1
+hidden 20 2 24 minecraft:glass
+hidden 20 3 24 minecraft:repeater[delay=1,facing=east,powered=false] @B1
+hidden 19 2 24 minecraft:glass
+hidden 19 3 24 minecraft:repeater[delay=1,facing=east,powered=false] @B1
+hidden 18 2 24 minecraft:glass
+hidden 18 3 24 minecraft:repeater[delay=1,facing=east,powered=false] @B1
+hidden 17 2 24 minecraft:glass
+hidden 17 3 24 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @B1
+hidden 16 2 24 minecraft:glass
+hidden 16 3 24 minecraft:repeater[delay=1,facing=east,powered=false] @B1
+hidden 26 0 17 minecraft:glass
+hidden 26 1 17 minecraft:repeater[delay=1,facing=north,powered=false] @P0in<L
+hidden 26 0 18 minecraft:glass
+hidden 26 1 18 minecraft:redstone_wire[east=side,north=side,south=none,west=side] @P0in
+hidden 25 0 18 minecraft:glass
+hidden 25 1 18 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @P0s<P0in
+hidden 24 0 18 minecraft:glass
+hidden 24 1 18 minecraft:redstone_wire[east=side,north=none,south=side,west=none] @P0s
+hidden 24 0 19 minecraft:glass
+hidden 24 1 19 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @P0s
+hidden 24 0 20 minecraft:glass
+hidden 24 1 20 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @P0s
+hidden 24 0 21 minecraft:glass
+hidden 24 1 21 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @P0s
+hidden 24 0 22 minecraft:glass
+hidden 24 1 22 minecraft:redstone_wire[east=side,north=side,south=none,west=none] @P0s
+hidden 25 0 22 minecraft:glass
+hidden 25 1 22 minecraft:repeater[delay=1,facing=west,powered=false] @P0s
+hidden 27 0 18 minecraft:glass
+hidden 27 1 18 minecraft:repeater[delay=4,facing=west,powered=false] @P0l<P0in
+hidden 28 0 18 minecraft:glass
+hidden 28 1 18 minecraft:redstone_wire[east=none,north=none,south=side,west=side] @P0l
+hidden 28 0 19 minecraft:glass
+hidden 28 1 19 minecraft:repeater[delay=4,facing=north,powered=false] @P0l
+hidden 28 0 20 minecraft:glass
+hidden 28 1 20 minecraft:repeater[delay=3,facing=north,powered=false] @P0l
+hidden 28 0 21 minecraft:glass
+hidden 28 1 21 minecraft:repeater[delay=1,facing=north,powered=false] @P0l
+hidden 28 0 22 minecraft:glass
+hidden 28 1 22 minecraft:redstone_wire[east=none,north=side,south=none,west=side] @P0l
+hidden 27 0 22 minecraft:glass
+hidden 27 1 22 minecraft:repeater[delay=1,facing=east,powered=false] @P0l
+hidden 26 0 22 minecraft:glass
+hidden 26 1 22 minecraft:redstone_wire[east=side,north=none,south=side,west=side] @P0n
+hidden 26 0 23 minecraft:glass
+hidden 26 1 23 minecraft:repeater[delay=1,facing=north,powered=false] @B0<P0n
+hidden 26 0 24 minecraft:glass
+hidden 26 1 24 minecraft:redstone_wire[east=none,north=side,south=none,west=side] @B0
+hidden 25 0 24 minecraft:glass
+hidden 25 1 24 minecraft:repeater[delay=1,facing=east,powered=false] @B0
+hidden 24 0 24 minecraft:glass
+hidden 24 1 24 minecraft:repeater[delay=1,facing=east,powered=false] @B0
+hidden 23 0 24 minecraft:glass
+hidden 23 1 24 minecraft:repeater[delay=1,facing=east,powered=false] @B0
+hidden 22 0 24 minecraft:glass
+hidden 22 1 24 minecraft:repeater[delay=1,facing=east,powered=false] @B0
+hidden 21 0 24 minecraft:glass
+hidden 21 1 24 minecraft:repeater[delay=1,facing=east,powered=false] @B0
+hidden 20 0 24 minecraft:glass
+hidden 20 1 24 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @B0
+hidden 19 0 24 minecraft:glass
+hidden 19 1 24 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @B0
+hidden 18 0 24 minecraft:glass
+hidden 18 1 24 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @B0
+hidden 17 0 24 minecraft:glass
+hidden 17 1 24 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @B0
+hidden 16 0 24 minecraft:glass
+hidden 16 1 24 minecraft:repeater[delay=1,facing=east,powered=false] @B0
+hidden 15 6 25 minecraft:glass
+hidden 15 7 25 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B3
+hidden 15 6 24 minecraft:glass
+hidden 15 7 24 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B3
+hidden 15 6 21 minecraft:glass
+hidden 15 7 21 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B3
+hidden 15 6 20 minecraft:glass
+hidden 15 7 20 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B3
+hidden 15 6 19 minecraft:glass
+hidden 15 7 19 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B3
+hidden 15 6 18 minecraft:glass
+hidden 15 7 18 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B3
+hidden 15 6 17 minecraft:glass
+hidden 15 7 17 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B3
+hidden 15 6 16 minecraft:glass
+hidden 15 7 16 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B3
+hidden 15 6 15 minecraft:glass
+hidden 15 7 15 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B3
+hidden 15 6 14 minecraft:glass
+hidden 15 7 14 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B3
+hidden 15 6 13 minecraft:glass
+hidden 15 7 13 minecraft:repeater[delay=1,facing=south,powered=true] @B3
+hidden 15 6 11 minecraft:glass
+hidden 15 7 11 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B3
+hidden 15 6 9 minecraft:glass
+hidden 15 7 9 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B3
+hidden 15 6 7 minecraft:glass
+hidden 15 7 7 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B3
+hidden 15 6 5 minecraft:glass
+hidden 15 7 5 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B3
+hidden 15 6 4 minecraft:glass
+hidden 15 7 4 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B3
+hidden 15 6 3 minecraft:glass
+hidden 15 7 3 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B3
+hidden 15 6 1 minecraft:glass
+hidden 15 7 1 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B3
+hidden 15 6 27 minecraft:glass
+hidden 15 7 27 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B3
+hidden 15 6 28 minecraft:glass
+hidden 15 7 28 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B3
+hidden 15 6 29 minecraft:glass
+hidden 15 7 29 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B3
+hidden 15 6 31 minecraft:glass
+hidden 15 7 31 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B3
+hidden 15 6 32 minecraft:glass
+hidden 15 7 32 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B3
+hidden 15 6 33 minecraft:glass
+hidden 15 7 33 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B3
+hidden 15 6 35 minecraft:glass
+hidden 15 7 35 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B3
+hidden 15 4 25 minecraft:glass
+hidden 15 5 25 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B2
+hidden 15 4 24 minecraft:glass
+hidden 15 5 24 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B2
+hidden 15 4 23 minecraft:glass
+hidden 15 5 23 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B2
+hidden 15 4 22 minecraft:glass
+hidden 15 5 22 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B2
+hidden 15 4 21 minecraft:glass
+hidden 15 5 21 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B2
+hidden 15 4 20 minecraft:glass
+hidden 15 5 20 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B2
+hidden 15 4 19 minecraft:glass
+hidden 15 5 19 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B2
+hidden 15 4 18 minecraft:glass
+hidden 15 5 18 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B2
+hidden 15 4 17 minecraft:glass
+hidden 15 5 17 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B2
+hidden 15 4 16 minecraft:glass
+hidden 15 5 16 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B2
+hidden 15 4 15 minecraft:glass
+hidden 15 5 15 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B2
+hidden 15 4 13 minecraft:glass
+hidden 15 5 13 minecraft:repeater[delay=1,facing=south,powered=true] @B2
+hidden 15 4 12 minecraft:glass
+hidden 15 5 12 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B2
+hidden 15 4 11 minecraft:glass
+hidden 15 5 11 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B2
+hidden 15 4 10 minecraft:glass
+hidden 15 5 10 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B2
+hidden 15 4 9 minecraft:glass
+hidden 15 5 9 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B2
+hidden 15 4 8 minecraft:glass
+hidden 15 5 8 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B2
+hidden 15 4 7 minecraft:glass
+hidden 15 5 7 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B2
+hidden 15 4 5 minecraft:glass
+hidden 15 5 5 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B2
+hidden 15 4 4 minecraft:glass
+hidden 15 5 4 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B2
+hidden 15 4 2 minecraft:glass
+hidden 15 5 2 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B2
+hidden 15 4 27 minecraft:glass
+hidden 15 5 27 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B2
+hidden 15 4 29 minecraft:glass
+hidden 15 5 29 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B2
+hidden 15 4 31 minecraft:glass
+hidden 15 5 31 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B2
+hidden 15 2 24 minecraft:glass
+hidden 15 3 24 minecraft:redstone_wire[east=side,north=side,south=side,west=none] @B1
+hidden 15 2 22 minecraft:glass
+hidden 15 3 22 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B1
+hidden 15 2 21 minecraft:glass
+hidden 15 3 21 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B1
+hidden 15 2 20 minecraft:glass
+hidden 15 3 20 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B1
+hidden 15 2 19 minecraft:glass
+hidden 15 3 19 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B1
+hidden 15 2 18 minecraft:glass
+hidden 15 3 18 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B1
+hidden 15 2 17 minecraft:glass
+hidden 15 3 17 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B1
+hidden 15 2 16 minecraft:glass
+hidden 15 3 16 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B1
+hidden 15 2 15 minecraft:glass
+hidden 15 3 15 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B1
+hidden 15 2 14 minecraft:glass
+hidden 15 3 14 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B1
+hidden 15 2 13 minecraft:glass
+hidden 15 3 13 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B1
+hidden 15 2 12 minecraft:glass
+hidden 15 3 12 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B1
+hidden 15 2 11 minecraft:glass
+hidden 15 3 11 minecraft:repeater[delay=1,facing=south,powered=false] @B1
+hidden 15 2 10 minecraft:glass
+hidden 15 3 10 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B1
+hidden 15 2 9 minecraft:glass
+hidden 15 3 9 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B1
+hidden 15 2 8 minecraft:glass
+hidden 15 3 8 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B1
+hidden 15 2 6 minecraft:glass
+hidden 15 3 6 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B1
+hidden 15 0 24 minecraft:glass
+hidden 15 1 24 minecraft:redstone_wire[east=side,north=side,south=none,west=none] @B0
+hidden 15 0 23 minecraft:glass
+hidden 15 1 23 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B0
+hidden 15 0 22 minecraft:glass
+hidden 15 1 22 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B0
+hidden 15 0 21 minecraft:glass
+hidden 15 1 21 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B0
+hidden 15 0 20 minecraft:glass
+hidden 15 1 20 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B0
+hidden 15 0 19 minecraft:glass
+hidden 15 1 19 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B0
+hidden 15 0 18 minecraft:glass
+hidden 15 1 18 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B0
+hidden 15 0 17 minecraft:glass
+hidden 15 1 17 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B0
+hidden 15 0 16 minecraft:glass
+hidden 15 1 16 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B0
+hidden 15 0 15 minecraft:glass
+hidden 15 1 15 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B0
+hidden 15 0 14 minecraft:glass
+hidden 15 1 14 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B0
+hidden 15 0 13 minecraft:glass
+hidden 15 1 13 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B0
+hidden 15 0 12 minecraft:glass
+hidden 15 1 12 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @B0
+hidden 15 0 11 minecraft:glass
+hidden 15 1 11 minecraft:repeater[delay=1,facing=south,powered=false] @B0
+hidden 5 10 18 phasecraft:phase_shifter @r0x-1U
+hidden 6 10 18 phasecraft:phase_shifter @r0x-1U
+hidden 7 10 18 phasecraft:phase_shifter @r0x-1U
+hidden 4 11 18 phasecraft:phase_shifter @r1x-2U
+hidden 5 11 18 phasecraft:phase_shifter @r1x-1t2
+hidden 6 11 18 phasecraft:phase_shifter @r1x-1t2
+hidden 7 11 18 phasecraft:phase_shifter @r1x-1t2
+hidden 8 11 18 phasecraft:phase_shifter @r1x2U
+hidden 3 12 18 phasecraft:phase_shifter @r2x-3t2
+hidden 4 12 18 phasecraft:phase_shifter @r2x-2U
+hidden 5 12 18 phasecraft:phase_shifter @r2x-1U
+hidden 6 12 18 phasecraft:phase_shifter @r2x-1U
+hidden 7 12 18 phasecraft:phase_shifter @r2x-1U
+hidden 8 12 18 phasecraft:phase_shifter @r2x2U
+hidden 9 12 18 phasecraft:phase_shifter @r2x3t2
+hidden 3 13 18 phasecraft:phase_shifter @r3x-3t2
+hidden 4 13 18 phasecraft:phase_shifter @r3x-2U
+hidden 5 13 18 phasecraft:phase_shifter @r3x-1U
+hidden 6 13 18 phasecraft:phase_shifter @r3x0t5
+hidden 7 13 18 phasecraft:phase_shifter @r3x1U
+hidden 8 13 18 phasecraft:phase_shifter @r3x2U
+hidden 9 13 18 phasecraft:phase_shifter @r3x3t2
+hidden 3 14 18 phasecraft:phase_shifter @r4x-3U
+hidden 4 14 18 phasecraft:phase_shifter @r4x-2t4
+hidden 5 14 18 phasecraft:phase_shifter @r4x-1t5
+hidden 6 14 18 phasecraft:phase_shifter @r4x-1t5
+hidden 7 14 18 phasecraft:phase_shifter @r4x-1t5
+hidden 8 14 18 phasecraft:phase_shifter @r4x2t4
+hidden 9 14 18 phasecraft:phase_shifter @r4x3U
+hidden 4 15 18 phasecraft:phase_shifter @r5x-2U
+hidden 5 15 18 phasecraft:phase_shifter @r5x-1t4
+hidden 6 15 18 phasecraft:phase_shifter @r5x-1t4
+hidden 7 15 18 phasecraft:phase_shifter @r5x-1t4
+hidden 8 15 18 phasecraft:phase_shifter @r5x2U
+hidden 5 16 18 phasecraft:phase_shifter @r6x-1t4
+hidden 6 16 18 phasecraft:phase_shifter @r6x-1t4
+hidden 7 16 18 phasecraft:phase_shifter @r6x-1t4

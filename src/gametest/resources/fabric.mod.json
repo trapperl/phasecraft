@@ -15,6 +15,7 @@
       "dev.phasecraft.test.HiddenDoorGameTests",
       "dev.phasecraft.test.HiddenStaircaseGameTests",
       "dev.phasecraft.test.ThreeByThreeDoorGameTests",
+      "dev.phasecraft.test.IrisDoorGameTests",
       "dev.phasecraft.test.PhaseBlockGameTests",
       "dev.phasecraft.test.PhasedLightGameTests",
       "dev.phasecraft.test.SurvivalPlayGameTests",
