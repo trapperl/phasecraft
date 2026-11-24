@@ -106,10 +106,15 @@ not placed in the hidden layer, so it never collides with hidden machinery.
   shape its neighbours give it now (`updateFromNeighbourShapes`, as a placed
   block): half of a double chest joins its other half again, or stands
   alone if that half is gone.
-- Putting back waits, retrying every tick, while the spot is taken by a
-  block or by a mob or player standing there.
-- Removed while holding a block, it puts it back if the spot is free, or
-  drops it there as an item, with its contents: never lost, never doubled.
+- Putting back breaks a visible block that has taken the spot meanwhile
+  (the person, 2026-11-24: "I think it should break the main world block"):
+  `destroyBlock` with drops, as if broken with no tool, contents spilled,
+  silenced like a phased dispenser (`PhasedItems.silently`). It waits,
+  retrying every tick, while a mob or player stands there or while the
+  block there is unbreakable (destroy speed -1: bedrock, a moving piston...).
+- Removed while holding a block, it puts it back the same way, or, if it
+  cannot, drops it there as an item, with its contents: never lost, never
+  doubled.
 - `PhaseShifterGameTests`, and `PhaseLayerRestartPhases` (a held block, and
   a held chest with its items, survive a restart). Examples station 18:
   four bricks of a wall vanish into a doorway; station 21: a chest in a

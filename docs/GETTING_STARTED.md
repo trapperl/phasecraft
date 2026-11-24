@@ -220,7 +220,9 @@ hidden phase shifter holds the brick while it is powered. The Phase Shifter
 is in the Redstone tab; crafting it (Phase Block + ender pearl + piston) makes
 two. It takes what a piston could push, and chests, furnaces, barrels and
 other blocks with contents too: they go with everything in them and come
-back exactly as they were.
+back exactly as they were. If you build something in the gap meanwhile,
+the returning block breaks it (it drops as an item); only an unbreakable
+block like bedrock, or someone standing in the gap, makes it wait.
 
 Station 21 is a vault: a chest built into a small wall. Click the brick
 above it and the chest is gone, contents and all; click again and it is

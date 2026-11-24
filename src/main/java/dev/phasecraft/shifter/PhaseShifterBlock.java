@@ -1,5 +1,6 @@
 package dev.phasecraft.shifter;
 
+import dev.phasecraft.phased.PhasedItems;
 import dev.phasecraft.layer.HiddenDimensions;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.storage.TagValueInput;
@@ -146,15 +147,27 @@ public class PhaseShifterBlock extends Block implements EntityBlock {
         visible.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL | Block.UPDATE_SKIP_BLOCK_ENTITY_SIDEEFFECTS);
     }
 
-    /** Puts the held block back if its spot is free (air or replaceable, nobody standing there). */
+    /**
+     * Puts the held block back, breaking a visible block in its spot first (the person, 2026-11-24:
+     * "I think it should break the main world block"): it drops as if broken with no tool, contents
+     * included, silently. It waits while a mob or player stands there, or while the block there is
+     * unbreakable (bedrock, a moving piston...).
+     */
     private static boolean putBack(ServerLevel hidden, BlockPos pos, PhaseShifterBlockEntity entity) {
         ServerLevel visible = visibleOf(hidden);
         BlockState held = entity.held();
         if (visible == null || held == null || !visible.isLoaded(pos)) {
             return false;
         }
-        if (!visible.getBlockState(pos).canBeReplaced() || !visible.isUnobstructed(held, pos, CollisionContext.empty())) {
+        if (!visible.isUnobstructed(held, pos, CollisionContext.empty())) {
             return false;
+        }
+        BlockState there = visible.getBlockState(pos);
+        if (!there.canBeReplaced()) {
+            if (there.getDestroySpeed(visible, pos) < 0.0F) {
+                return false;
+            }
+            PhasedItems.silently(visible, () -> visible.destroyBlock(pos, true));
         }
         CompoundTag data = entity.heldData();
         entity.setHeld(null, null);
@@ -167,7 +180,7 @@ public class PhaseShifterBlock extends Block implements EntityBlock {
         return true;
     }
 
-    /** The shifter is being removed: what it holds goes back to its spot, or drops there as an item. */
+    /** The shifter is being removed: what it holds goes back to its spot, or drops there as an item if it cannot. */
     static void release(PhaseShifterBlockEntity entity) {
         if (!(entity.getLevel() instanceof ServerLevel hidden) || entity.held() == null) {
             return;

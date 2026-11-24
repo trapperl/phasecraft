@@ -28,8 +28,9 @@ import net.minecraft.world.phys.AABB;
  * main world into the sub world and then putting them back"): a hidden block
  * that, when hidden power reaches it, takes the visible block at its own spot
  * out of the visible world, and puts it back when the power goes. It takes what
- * a piston could push without breaking, nothing else; it waits to put the block
- * back while the spot is taken; nothing is lost or duplicated, and nothing is
+ * a piston could push without breaking (block entities allowed), nothing else;
+ * putting the block back breaks a block in its spot (an unbreakable one, or a
+ * mob there, makes it wait); nothing is lost or duplicated, and nothing is
  * heard in the visible world.
  */
 public class PhaseShifterGameTests {
@@ -104,9 +105,13 @@ public class PhaseShifterGameTests {
                 .thenSucceed();
     }
 
-    /** While the block is away, a stone is placed in its spot: the block waits, and comes back once the spot is free. */
-    @GameTest(maxTicks = 100)
-    public void waitsWhileTheSpotIsTaken(GameTestHelper helper) {
+    /**
+     * While the block is away, a stone is placed in its spot: when the block comes back it breaks the stone
+     * (the person, 2026-11-24: "I think it should break the main world block"), which drops as if broken
+     * with no tool, silently.
+     */
+    @GameTest(maxTicks = 60)
+    public void breaksTheBlockInTheSpot(GameTestHelper helper) {
         floor(helper);
         helper.setBlock(SPOT, Blocks.GOLD_BLOCK);
         shifter(helper, SPOT);
@@ -114,9 +119,57 @@ public class PhaseShifterGameTests {
                 .thenExecute(() -> power(helper, SPOT, true))
                 .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.AIR, SPOT))
                 .thenExecute(() -> helper.setBlock(SPOT, Blocks.STONE))
+                .thenIdle(2)
+                .thenExecute(() -> power(helper, SPOT, false))
+                .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.GOLD_BLOCK, SPOT))
+                .thenWaitUntil(() -> helper.assertFalse(helper.getLevel().getEntitiesOfClass(ItemEntity.class,
+                        new AABB(helper.absolutePos(SPOT)).inflate(2), item -> item.getItem().is(Items.COBBLESTONE)).isEmpty(),
+                        "the broken stone dropped nothing"))
+                .thenExecute(() -> {
+                    var heard = SoundRecorder.in(helper.getLevel().dimension(), new AABB(helper.absolutePos(SPOT)).inflate(2));
+                    helper.assertTrue(heard.isEmpty(), "heard or seen in the visible world: " + heard);
+                })
+                .thenSucceed();
+    }
+
+    /** A chest full of diamonds in the spot is broken like any block: the chest and its diamonds drop. */
+    @GameTest(maxTicks = 60)
+    public void breaksAChestInTheSpotSpillingItsContents(GameTestHelper helper) {
+        floor(helper);
+        helper.setBlock(SPOT, Blocks.GOLD_BLOCK);
+        shifter(helper, SPOT);
+        helper.startSequence()
+                .thenExecute(() -> power(helper, SPOT, true))
+                .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.AIR, SPOT))
+                .thenExecute(() -> {
+                    helper.setBlock(SPOT, Blocks.CHEST);
+                    helper.getBlockEntity(SPOT, ChestBlockEntity.class).setItem(0, new ItemStack(Items.DIAMOND, 4));
+                })
+                .thenIdle(2)
+                .thenExecute(() -> power(helper, SPOT, false))
+                .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.GOLD_BLOCK, SPOT))
+                .thenWaitUntil(() -> {
+                    var items = helper.getLevel().getEntitiesOfClass(ItemEntity.class, new AABB(helper.absolutePos(SPOT)).inflate(2));
+                    helper.assertTrue(items.stream().anyMatch(item -> item.getItem().is(Items.CHEST)), "the chest did not drop");
+                    helper.assertValueEqual(items.stream().filter(item -> item.getItem().is(Items.DIAMOND))
+                            .mapToInt(item -> item.getItem().getCount()).sum(), 4, "diamonds dropped");
+                })
+                .thenSucceed();
+    }
+
+    /** Bedrock (nothing breaks it) in the spot: the block waits, and comes back once the spot is free. */
+    @GameTest(maxTicks = 100)
+    public void waitsForAnUnbreakableBlockInTheSpot(GameTestHelper helper) {
+        floor(helper);
+        helper.setBlock(SPOT, Blocks.GOLD_BLOCK);
+        shifter(helper, SPOT);
+        helper.startSequence()
+                .thenExecute(() -> power(helper, SPOT, true))
+                .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.AIR, SPOT))
+                .thenExecute(() -> helper.setBlock(SPOT, Blocks.BEDROCK))
                 .thenExecute(() -> power(helper, SPOT, false))
                 .thenIdle(20)
-                .thenExecute(() -> helper.assertBlockPresent(Blocks.STONE, SPOT))
+                .thenExecute(() -> helper.assertBlockPresent(Blocks.BEDROCK, SPOT))
                 .thenExecute(() -> helper.setBlock(SPOT, Blocks.AIR))
                 .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.GOLD_BLOCK, SPOT))
                 .thenSucceed();
@@ -143,7 +196,7 @@ public class PhaseShifterGameTests {
 
     /**
      * The shifter is removed while it holds a block: the block comes back if its spot is free;
-     * if not, it drops as an item in the visible world. Never lost, never doubled.
+     * if something unbreakable holds it, it drops as an item in the visible world. Never lost, never doubled.
      */
     @GameTest(maxTicks = 80)
     public void removedShifterGivesTheBlockBack(GameTestHelper helper) {
@@ -163,7 +216,7 @@ public class PhaseShifterGameTests {
                     helper.assertBlockPresent(Blocks.AIR, other);
                 })
                 .thenExecute(() -> {
-                    helper.setBlock(other, Blocks.STONE);
+                    helper.setBlock(other, Blocks.BEDROCK);
                     hidden(helper).removeBlock(helper.absolutePos(SPOT));
                     hidden(helper).removeBlock(helper.absolutePos(other));
                 })
@@ -171,7 +224,7 @@ public class PhaseShifterGameTests {
                 .thenWaitUntil(() -> helper.assertFalse(helper.getLevel().getEntitiesOfClass(ItemEntity.class,
                         new AABB(helper.absolutePos(other)).inflate(2), item -> item.getItem().is(Items.DIAMOND_BLOCK)).isEmpty(),
                         "the diamond block did not drop"))
-                .thenExecute(() -> helper.assertBlockPresent(Blocks.STONE, other))
+                .thenExecute(() -> helper.assertBlockPresent(Blocks.BEDROCK, other))
                 .thenSucceed();
     }
 
@@ -240,7 +293,7 @@ public class PhaseShifterGameTests {
                 .thenSucceed();
     }
 
-    /** Removed while holding a chest whose spot is taken: the chest and everything in it drop as items. */
+    /** Removed while holding a chest whose spot holds bedrock: the chest and everything in it drop as items. */
     @GameTest(maxTicks = 60)
     public void removedShifterDropsChestAndContents(GameTestHelper helper) {
         floor(helper);
@@ -252,7 +305,7 @@ public class PhaseShifterGameTests {
                 .thenExecute(() -> power(helper, SPOT, true))
                 .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.AIR, SPOT))
                 .thenExecute(() -> {
-                    helper.setBlock(SPOT, Blocks.STONE);
+                    helper.setBlock(SPOT, Blocks.BEDROCK);
                     hidden(helper).removeBlock(helper.absolutePos(SPOT));
                 })
                 .thenWaitUntil(() -> {
