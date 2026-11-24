@@ -48,7 +48,9 @@ blocks, with future vanilla-compatible cross-layer redstone and pistons.
 - New behaviour needs a GameTest, and a new test should be shown to fail when
   the behaviour is broken (break the code on purpose, run, restore).
 - `./gradlew installToMinecraft` installs a passing build into the local
-  Minecraft mods folder set in git-ignored `local.properties`.
+  Minecraft mods folder set in git-ignored `local.properties`. Run it from
+  main after every merge (the person, 2026-11-23: "Just install it every
+  time please"); it replaces only the PhaseCraft jar.
 
 ## Next work
 The hidden layer is a real dimension per visible dimension (see
@@ -161,7 +163,7 @@ places the hidden block at that same spot.
 - The dev server's world (run/, level `phasecraft-examples`) is throwaway dev
   data and only the person plays on it: tearing it down, rebuilding it
   (`tools/examples.py`) or restarting the server needs no permission (the
-  person said so, 2026-11-22). Still never touch their own Minecraft saves
-  or mods folder without asking.
+  person said so, 2026-11-22). Still never touch their own Minecraft saves,
+  or their mods folder beyond installing PhaseCraft after a merge.
 - `python3 tools/examples.py` rebuilds and verifies the examples area. When a
   milestone adds something a person can see or try, add a station for it.
