@@ -42,12 +42,28 @@ settled state: placing runs half-built redstone in an order it does not copy). C
 never settle (clocks) are skipped. So far 15 of 15 settling circuits agree on every tick for 90
 ticks.
 
+## Buildings and scenery (`mcb.shapes`)
+
+Shapes drawn into a scene layer: `box`, `walls`, `cylinder`, `sphere` (or a dome), `arch`;
+roofs of stairs and slabs (`gable_roof`, `hip_roof`); `house` (timber frame, windows, door,
+gable roof) and `tower` (round, arrow slits, a cone roof); scenery: `terrain` (noise hills,
+grass over dirt over stone, sand beaches, water below a line; `scene.ground` is the height map),
+`pad` (levels a building plot into the hills), `tree` (oak, birch, spruce), `forest`, `path`.
+A `Palette` mixes blocks by weight for texture, the same at the same spot every time.
+`shapes.problems(scene)` lists what the game would change on placing it (grass under a solid
+block turns to dirt; a door on a path block or air breaks off): placing the demo village and
+exporting it back found both, and it now matches block for block.
+
+`python3 -m mcb.examples.village OUT.png` draws the demo (64x64: hills, a lake, four houses, a
+watchtower, paths, a forest); `--place X Y Z` builds it on the dev server (it stands at
+300, -61, 200 there).
+
 ## Modules
 
 `nbt` (NBT files), `structure` (vanilla structure files), `scene` (a build as blocks
 per layer; from and to layout files and structures; `diff` to compare a build with what the
 server has), `server` (RCON and the `/mcb` commands), `render` (pictures), `redstone` (the simulator),
-`verify` (the simulator against the real game).
+`verify` (the simulator against the real game), `shapes` (buildings and scenery), `examples`.
 
 Why: building a layout over RCON takes one command per block, spread over many ticks, so
 half-built redstone runs while it is placed (the iris door flickered for half a second after
@@ -59,6 +75,5 @@ Tests: `python3 -B -m unittest discover -s tools/mcb/tests -t tools` (run by `./
 `-B`: a mutation restored within the same second, at the same size, otherwise runs from Python's
 stale bytecode cache.
 
-Next: a wire router, and shapes for buildings and scenery; pistons and comparators in the
-simulator. No MCP
+Next: a wire router; pistons and comparators in the simulator. No MCP
 server (the person, 2026-11-24: "Let's drop MCP").
