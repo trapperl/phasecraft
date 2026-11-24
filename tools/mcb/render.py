@@ -13,9 +13,12 @@ import json
 import pathlib
 import zipfile
 
-from PIL import Image, ImageDraw
-
 from .structure import parse_state
+
+try:
+    from PIL import Image, ImageDraw   # Pillow (apt: python3-pil): only pictures need it
+except ImportError:                    # pragma: no cover
+    Image = ImageDraw = None
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
 CACHE = ROOT / "build" / "mcb" / "colors.json"

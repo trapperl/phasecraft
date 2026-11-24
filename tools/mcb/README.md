@@ -4,6 +4,7 @@ Tools for building, seeing and checking builds on the dev server, made while bui
 contraption stations (the person, 2026-11-24: "build whatever harness and tools you want for
 building in Minecraft").
 
+Pictures need Pillow (`python3-pil` on Debian and Ubuntu, CI installs it).
 Run from `tools/`: `python3 -m mcb ...` (or import `mcb` in a script). Needs the dev server
 (`./gradlew runServer`, which loads the `phasecraft-devtools` mod) for `export` and `place`.
 

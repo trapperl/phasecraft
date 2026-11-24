@@ -20,10 +20,10 @@ jobs:
           java-version: '25'
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
-      - name: Install a virtual display and software graphics (client GameTests)
+      - name: Install a virtual display and software graphics (client GameTests), and Pillow (tools/mcb pictures)
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends xvfb libegl1 libgl1-mesa-dri mesa-vulkan-drivers libvulkan1
+          sudo apt-get install -y --no-install-recommends xvfb libegl1 libgl1-mesa-dri mesa-vulkan-drivers libvulkan1 python3-pil
       - name: Build and run all tests (JUnit, GameTests, restart test, client GameTests)
         run: ./gradlew --no-daemon clean build
       - name: Upload GameTest report
