@@ -2,7 +2,12 @@ package dev.phasecraft.shifter;
 
 import dev.phasecraft.layer.HiddenDimensions;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.Containers;
+import net.minecraft.world.Container;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
@@ -25,15 +30,23 @@ import org.jspecify.annotations.Nullable;
  * power goes, it puts that block back, exactly as it was.
  *
  * <ul>
- *   <li>It takes what a piston could push without breaking: not air, fluids,
- *       fragile blocks (torches, flowers...), immovable blocks (obsidian,
- *       bedrock...) or blocks with contents (chests...).</li>
+ *   <li>It takes what a piston could push without breaking, and also blocks
+ *       with contents (chests, furnaces, barrels...: what is in them, and their
+ *       name, go and come back with them; nothing spills). Not air, fluids,
+ *       fragile blocks (torches, flowers...) or immovable blocks (obsidian,
+ *       bedrock...). Pistons refuse blocks with contents only because they
+ *       would carry them somewhere else; the shifter always puts a block back
+ *       at its own spot.</li>
  *   <li>It takes only when the power arrives, so a block placed in the gap
  *       while it is powered stays.</li>
  *   <li>Putting back waits, retrying every tick, while the spot is taken by a
  *       block or by a mob or player standing there.</li>
  *   <li>Removed while holding a block, it puts the block back if the spot is
- *       free, or drops it there as an item: never lost, never doubled.</li>
+ *       free, or drops it there as an item, with its contents: never lost,
+ *       never doubled.</li>
+ *   <li>Put back, the block takes the shape its neighbours give it now, as a
+ *       placed block does: half of a double chest joins its other half again,
+ *       or stands alone if that half is gone.</li>
  *   <li>Silent in the visible world, and nothing shows: the block is held,
  *       not placed in the hidden layer. Placed in the visible layer it does
  *       nothing.</li>
@@ -98,9 +111,24 @@ public class PhaseShifterBlock extends Block implements EntityBlock {
         return HiddenDimensions.visibleOf(hidden.dimension()).map(key -> hidden.getServer().getLevel(key)).orElse(null);
     }
 
-    /** Whether a piston could push this block without breaking it (and it is not air). */
+    /**
+     * Whether a piston could push this block without breaking it, block entities allowed (and it is not air):
+     * vanilla's PistonBaseBlock.isPushable without its last rule, "no block entities".
+     */
     static boolean takeable(ServerLevel visible, BlockPos pos, BlockState state) {
-        return !state.isAir() && PistonBaseBlock.isPushable(state, visible, pos, Direction.NORTH, false, Direction.NORTH);
+        if (state.isAir()) {
+            return false;
+        }
+        if (state.is(Blocks.PISTON) || state.is(Blocks.STICKY_PISTON)) {
+            return !state.getValue(PistonBaseBlock.EXTENDED);
+        }
+        if (state.getDestroySpeed(visible, pos) == -1.0F) {
+            return false;
+        }
+        return switch (state.getPistonPushReaction()) {
+            case IMMOVEABLE, POPPED -> false;
+            default -> true;
+        };
     }
 
     private static void take(ServerLevel hidden, BlockPos pos, PhaseShifterBlockEntity entity) {
@@ -112,8 +140,10 @@ public class PhaseShifterBlock extends Block implements EntityBlock {
         if (!takeable(visible, pos, state)) {
             return;
         }
-        entity.setHeld(state);
-        visible.setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+        BlockEntity contents = visible.getBlockEntity(pos);
+        entity.setHeld(state, contents == null ? null : contents.saveWithoutMetadata(visible.registryAccess()));
+        // Skipping block entity side effects: a chest taken away does not spill its items.
+        visible.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL | Block.UPDATE_SKIP_BLOCK_ENTITY_SIDEEFFECTS);
     }
 
     /** Puts the held block back if its spot is free (air or replaceable, nobody standing there). */
@@ -126,8 +156,14 @@ public class PhaseShifterBlock extends Block implements EntityBlock {
         if (!visible.getBlockState(pos).canBeReplaced() || !visible.isUnobstructed(held, pos, CollisionContext.empty())) {
             return false;
         }
-        entity.setHeld(null);
-        visible.setBlock(pos, held, Block.UPDATE_ALL);
+        CompoundTag data = entity.heldData();
+        entity.setHeld(null, null);
+        visible.setBlock(pos, Block.updateFromNeighbourShapes(held, visible, pos), Block.UPDATE_ALL);
+        BlockEntity contents = visible.getBlockEntity(pos);
+        if (data != null && contents != null) {
+            contents.loadWithComponents(TagValueInput.create(ProblemReporter.DISCARDING, visible.registryAccess(), data));
+            contents.setChanged();
+        }
         return true;
     }
 
@@ -137,12 +173,23 @@ public class PhaseShifterBlock extends Block implements EntityBlock {
             return;
         }
         BlockState held = entity.held();
+        CompoundTag data = entity.heldData();
         BlockPos pos = entity.getBlockPos();
         if (!putBack(hidden, pos, entity)) {
             ServerLevel visible = visibleOf(hidden);
-            entity.setHeld(null);
+            entity.setHeld(null, null);
             if (visible != null) {
-                Block.dropResources(held, visible, pos);
+                BlockEntity contents = null;
+                if (data != null && held.getBlock() instanceof EntityBlock block) {
+                    contents = block.newBlockEntity(pos, held);
+                    if (contents != null) {
+                        contents.loadWithComponents(TagValueInput.create(ProblemReporter.DISCARDING, visible.registryAccess(), data));
+                    }
+                }
+                if (contents instanceof Container container) {
+                    Containers.dropContents(visible, pos, container);
+                }
+                Block.dropResources(held, visible, pos, contents);
             }
         }
     }

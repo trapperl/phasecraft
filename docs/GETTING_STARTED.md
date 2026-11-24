@@ -218,7 +218,13 @@ Station 18 shows the phase shifter: a plain stone-brick wall where one brick
 a doorway; click again and they come back. Behind each of those bricks a
 hidden phase shifter holds the brick while it is powered. The Phase Shifter
 is in the Redstone tab; crafting it (Phase Block + ender pearl + piston) makes
-two.
+two. It takes what a piston could push, and chests, furnaces, barrels and
+other blocks with contents too: they go with everything in them and come
+back exactly as they were.
+
+Station 21 is a vault: a chest built into a small wall. Click the brick
+above it and the chest is gone, contents and all; click again and it is
+back.
 
 ![A dark stone room lit by a glowstone hidden in its far wall](images/phased-light-room.png)
 

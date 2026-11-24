@@ -90,7 +90,9 @@ transparent layer, not a separate world.
       "let's build it"): a hidden block that, powered, takes the visible
       block at its own spot out of the visible world and holds it, and puts
       it back when unpowered. Done (station 18). Piston rules decide what it
-      can take (no chests yet); instant, no effect (the agent's default,
+      can take, except that blocks with contents (chests...) are taken
+      too, with their contents (done, station 21; on the person's list,
+      2026-11-24); instant, no effect (the agent's default,
       open to change). Recipe (the person, 2026-11-23: ender pearls, "since
       this would be pretty powerful", and "make two"): Phase Block + ender
       pearl + piston makes 2.
@@ -118,8 +120,8 @@ transparent layer, not a separate world.
       suggested them): phased hoppers pull from the visible world above
       them; phased droppers and dispensers put out into the visible world
       in front of them, silently (the agent's default, open to change).
-      Done (station 20). Next on the person's list: the shifter taking
-      chests with their contents, then the iris door.
+      Done (station 20). Next on the person's list: the iris door (the
+      shifter taking chests with their contents is done).
    c. Survival play (done): one game rule, on by default, that lets Survival
       players use the overlay and editing mode (with Survival rules:
       placing uses the item, breaking takes mining time and the right tool
