@@ -167,6 +167,16 @@ players neither; ghosts show through
 visible blocks (fainter); in editing mode (J) a click on a visible block
 places the hidden block at that same spot.
 
+## Building tools (tools/mcb)
+The person (2026-11-24): "build whatever harness and tools you want for
+building in Minecraft. Redstone, buildings, scenery etc." The agent's plan,
+one PR each: (1) done: tools/mcb (place a scene in one tick, export a region
+of both layers, render pictures; src/devtools is a dev-server-only mod with
+the /mcb commands, never shipped); (2) a redstone simulator checked against
+the real game; (3) a wire router and shapes for buildings and scenery.
+No MCP server (the person, 2026-11-24: "Let's drop MCP"): the toolkit stays
+a command line and a Python library. See tools/mcb/README.md.
+
 ## Local dev server (RCON)
 - `./gradlew runServer` runs a local server in run/ (git-ignored) with RCON
   bound to 127.0.0.1; `python3 tools/rcon.py "<command>"` sends commands.

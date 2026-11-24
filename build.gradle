@@ -47,6 +47,36 @@ loom {
     }
 }
 
+// Dev tools (src/devtools, mod phasecraft-devtools): commands for tools/mcb, loaded
+// only by the dev server (runServer), never shipped with the mod.
+sourceSets {
+    devtools {
+        compileClasspath += sourceSets.main.compileClasspath + sourceSets.main.output
+        runtimeClasspath += sourceSets.main.runtimeClasspath + sourceSets.main.output
+    }
+}
+loom {
+    mods {
+        phasecraftDevtools {
+            sourceSet sourceSets.devtools
+        }
+    }
+    runs {
+        server {
+            source sourceSets.devtools
+        }
+    }
+}
+tasks.named('check') { dependsOn tasks.named('compileDevtoolsJava') }
+
+// Unit tests of the Python tools (tools/mcb), with the build.
+tasks.register('mcbTest', Exec) {
+    description = 'Unit tests of tools/mcb (Python).'
+    workingDir projectDir
+    commandLine 'python3', '-B', '-m', 'unittest', 'discover', '-s', 'tools/mcb/tests', '-t', 'tools'
+}
+tasks.named('check') { dependsOn tasks.named('mcbTest') }
+
 // In-game GameTests live in src/gametest as a separate test mod
 // (phasecraft-test). Each run starts a headless server, runs the selected
 // @GameTests, writes a JUnit-style report and exits non-zero on failure.
