@@ -601,9 +601,18 @@ All of these run on every `./gradlew build`, locally and in CI:
     phase piston, moves a visible block out of a doorway and back.
 - **JUnit** also checks the update queue: work added while a batch runs waits
   for the next tick.
-- **Client GameTests** (`./gradlew clientTest`, a real game client, run once
-  with OpenGL and once with Vulkan, software-rendered on a virtual display;
-  a test-only mixin pins the backend so neither silently falls back):
+- **Client GameTests** (`./gradlew clientTest`, a real game client, run
+  with OpenGL, with Vulkan, and with OpenGL plus Sodium, software-rendered
+  on a virtual display; a test-only mixin pins the backend so neither
+  silently falls back). Sodium replaces Minecraft's chunk renderer and is in
+  most players' mod lists; the Sodium run loads it (from Modrinth's Maven,
+  pinned by `sodium_version`) with Fabric Loader's `fabric.addMods`, so it
+  never becomes part of the mod or the other runs, and
+  `OverlayClientGameTest` checks it is loaded there and only there. Nothing
+  needed changing for Sodium 0.9.3: the overlay draws through Fabric's
+  `LevelRenderEvents`, phased light goes through vanilla's light engine,
+  which Sodium reads, and the piston animation uses vanilla moving-piston
+  block entities.
   - screenshots with the overlay on, off, and at higher opacity, compared
     pixel by pixel where each test block appears: a ghost floating in the air,
     a ghost tinting the visible block at its own spot, a ghost inside the

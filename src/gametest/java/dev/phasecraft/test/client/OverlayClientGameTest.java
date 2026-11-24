@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.util.function.Predicate;
 import javax.imageio.ImageIO;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
+import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestServerContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
@@ -62,6 +63,10 @@ public class OverlayClientGameTest implements FabricClientGameTest {
     public void runTest(ClientGameTestContext context) {
         String mojang = NoMojangTrafficGameTests.problem();
         assertTrue(mojang == null, "test client would contact Mojang: " + mojang);
+        // The Sodium run (build.gradle) must really have Sodium, and the others must not.
+        boolean sodiumWanted = Boolean.getBoolean("phasecraft.test.sodium");
+        assertTrue(FabricLoader.getInstance().isModLoaded("sodium") == sodiumWanted,
+                sodiumWanted ? "Sodium was asked for but is not loaded" : "Sodium is loaded in a run without it");
         try (TestSingleplayerContext world = context.worldBuilder().create()) {
             TestServerContext server = world.getServer();
             server.runCommand("gamemode creative @a");

@@ -33,7 +33,9 @@ blocks, with future vanilla-compatible cross-layer redstone and pistons.
   - Client behaviour (rendering, keys, syncing) goes in client GameTests
     (src/gametest/java/dev/phasecraft/test/client, listed under the
     `fabric-client-gametest` entrypoint). `./gradlew clientTest` runs them
-    with OpenGL and with Vulkan on an Xvfb virtual display. Check what is
+    with OpenGL, with Vulkan, and with OpenGL plus the Sodium mod (pinned
+    by `sodium_version` in gradle.properties; most players use it) on an
+    Xvfb virtual display. Check what is
     drawn by comparing screenshot pixels, and look at the screenshots
     (build/run/clientGameTest*/screenshots) before calling a visual change done.
 - Client-only code lives in src/client (split source sets); src/main must not
