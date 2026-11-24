@@ -1,8 +1,8 @@
 """A redstone simulator for one layer of a Scene, following vanilla's rules (Minecraft 26.3 sources), tick by tick.
 
 What it knows: wire (strength, how it connects, up and down steps), repeaters (delay, locking, the order vanilla
-ticks them in), torches (standing and on walls), levers, redstone blocks, phase ports (inputs: set them on or off)
-and phase shifters (outputs: when each was powered). Blocks are redstone conductors unless they are see-through or
+ticks them in), torches (standing and on walls), levers, redstone blocks, phase ports and tripwire hooks (inputs: set
+them on or off; a hook powers like a lever on a wall) and phase shifters (outputs: when each was powered). Blocks are redstone conductors unless they are see-through or
 redstone parts (see `conductor`). Not yet: comparators, observers, pistons, buttons, pressure plates, copper bulbs,
 torch burnout.
 
@@ -93,6 +93,8 @@ class Sim:
             return add(p, "down")
         if k == "redstone_wall_torch":
             return add(p, OPPOSITE[self.prop(p, "facing")])
+        if k == "tripwire_hook":
+            return add(p, OPPOSITE[self.prop(p, "facing")])
         if k == "lever" or "button" in k:
             face = self.prop(p, "face", "wall")
             return add(p, {"floor": "down", "ceiling": "up"}.get(face) or OPPOSITE[self.prop(p, "facing")])
@@ -135,7 +137,8 @@ class Sim:
             return True
         if k in ("repeater", "comparator"):
             return self.prop(q, "facing") in (d, OPPOSITE[d])
-        if k in ("redstone_torch", "redstone_wall_torch", "lever", "redstone_block", "phase_port", "observer") \
+        if k in ("redstone_torch", "redstone_wall_torch", "lever", "tripwire_hook", "redstone_block", "phase_port",
+                 "observer") \
                 or "button" in k or "pressure_plate" in k:
             return k != "observer" or self.prop(q, "facing") == d
         if self.kind(add(q, "up")) == "redstone_wire" and not self.is_conductor(add(p, "up")):
@@ -173,7 +176,7 @@ class Sim:
             return 15 if self.is_on(src, "lit") and d != "up" else 0
         if k == "redstone_wall_torch":
             return 15 if self.is_on(src, "lit") and self.prop(src, "facing") != d else 0
-        if k == "lever":
+        if k in ("lever", "tripwire_hook"):
             return 15 if self.is_on(src, "powered") else 0
         if k == "redstone_block":
             return 15
@@ -194,6 +197,8 @@ class Sim:
             face = self.prop(src, "face", "wall")
             connected = {"floor": "up", "ceiling": "down"}.get(face, self.prop(src, "facing"))
             return 15 if self.is_on(src, "powered") and d == connected else 0
+        if k == "tripwire_hook":         # strong into the block it hangs on
+            return 15 if self.is_on(src, "powered") and d == self.prop(src, "facing") else 0
         return 0
 
     def direct_to(self, p):
@@ -327,7 +332,7 @@ class Sim:
 
     # --- driving it ---
     def set_input(self, p, on):
-        """A phase port (as its visible block powered or not) or a lever, switched now."""
+        """A phase port (as its visible block powered or not), a lever or a tripwire hook, switched now."""
         if self.kind(p) == "phase_port":
             self.parts[p][1]["_on"] = on
             self.react()

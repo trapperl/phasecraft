@@ -18,7 +18,8 @@ Run from `tools/`: `python3 -m mcb ...` (or import `mcb` in a script). Needs the
 
 Runs one layer of a scene tick by tick by vanilla's rules (read from the 26.3 sources): wire
 strength and connections, repeaters (delay, locking, vanilla's tick priorities), torches,
-levers, redstone blocks, phase ports (inputs) and phase shifters (outputs, with the tick each
+levers, redstone blocks, phase ports and tripwire hooks (inputs; a hook powers like a lever on a
+wall: the strings are not simulated, set the hooks) and phase shifters (outputs, with the tick each
 was powered). Parts with nothing to stand on break off, as when a layout is placed. Not yet:
 comparators, observers, pistons, buttons, plates, copper bulbs, torch burnout.
 

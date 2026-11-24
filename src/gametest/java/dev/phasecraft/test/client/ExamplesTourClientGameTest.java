@@ -54,7 +54,11 @@ public class ExamplesTourClientGameTest implements FabricClientGameTest {
             new View("mountain_door", "321.5 -45 2.5 0 -10"),
             // the door goes an eighth every 4 game ticks from 48 after the lever: about half of it at 62
             new View("mountain_sweep", "321.5 -45 2.5 0 -10", MOUNTAIN_LEVER, 62),
-            new View("mountain_open", "321.5 -45 2.5 0 -10", null, 60));
+            new View("mountain_open", "321.5 -45 2.5 0 -10", null, 60),
+            new View("bridge", "380.5 -50 14.5 180 15"),
+            // someone over step 5: the steps within 3 of them appear (a villager that cannot move or fall)
+            new View("bridge_walker", "380.5 -50 14.5 180 15", "summon minecraft:villager 379.5 -54 0.5 "
+                    + "{NoAI:1b,NoGravity:1b,Silent:1b,Invulnerable:1b}", 40));
 
     @Override
     public void runTest(ClientGameTestContext context) {
