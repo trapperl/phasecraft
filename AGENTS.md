@@ -174,8 +174,9 @@ one PR each: (1) done: tools/mcb (place a scene in one tick, export a region
 of both layers, render pictures; src/devtools is a dev-server-only mod with
 the /mcb commands, never shipped); (2) done: a redstone simulator
 (mcb.redstone), checked against the real game tick by tick (mcb.verify);
-check a new contraption in it before its GameTest; (3) a wire router and
-shapes for buildings and scenery.
+check a new contraption in it before its GameTest; (3) shapes for
+buildings and scenery (done: mcb.shapes, the demo village) and a wire
+router (next).
 No MCP server (the person, 2026-11-24: "Let's drop MCP"): the toolkit stays
 a command line and a Python library. See tools/mcb/README.md.
 

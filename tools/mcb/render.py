@@ -28,14 +28,19 @@ HIDDEN_TINT = (170, 90, 230)
 # shapes: (height of the top face, inset of the sides), in block units
 FLAT = ("redstone_wire", "rail", "carpet", "pressure_plate", "lily_pad", "tripwire", "snow")
 LOW = ("repeater", "comparator", "daylight_detector", "slab", "trapdoor")
-THIN = ("torch", "fence", "wall", "pane", "bars", "rod", "button", "lever", "sign", "flower", "sapling", "grass",
-        "fern", "bush", "chain", "lantern", "candle", "tripwire_hook", "dead_bush", "sugar_cane", "vine", "ladder",
-        "door", "glass_pane")
+THIN = ("torch", "fence", "wall", "pane", "bars", "rod", "button", "lever", "sign", "flower", "sapling",
+        "bush", "chain", "lantern", "candle", "tripwire_hook", "sugar_cane", "vine", "ladder", "door")
+PLANTS = ("short_grass", "tall_grass", "fern", "large_fern", "dandelion", "poppy", "dead_bush", "seagrass")
+FULL = ("grass_block", "dirt_path", "sandstone", "glass", "wall_hanging_sign")
 
 
 def shape(name):
     base = name.split(":")[-1]
-    if base in ("short_grass", "tall_grass") or any(base.endswith(s) or s == base for s in ("_torch", "torch")):
+    if base in PLANTS:
+        return 0.8, 0.3
+    if base in FULL or base.endswith("_glass"):
+        return 1.0, 0.0
+    if base.endswith("torch"):
         return 0.6, 0.4
     if any(f in base for f in FLAT):
         return 0.07, 0.0
