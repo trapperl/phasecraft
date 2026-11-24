@@ -217,6 +217,33 @@ STATIONS.append({
     ],
 })
 
+# Station 20: phased hoppers and droppers ("item mail"). A visible chest stands
+# on the ground; a phased hopper hidden in the ground under it takes what is
+# put in, and hidden hoppers carry it east to a phased dropper in the ground
+# facing up. A phased button under the marked tile (click it) fires the
+# dropper: one item pops up out of the ground. Nothing hidden shows.
+MAIL_CHEST = (200, Y, 0)
+MAIL_DROPPER = (204, Y - 1, 0)
+MAIL_BUTTON = (205, Y - 1, 0)
+STATIONS.append({
+    "x": 198,
+    "sign": ["20. Item mail", "Fill the chest,", "click the tile:", "items pop out"],
+    "visible": [
+        (MAIL_CHEST, "minecraft:chest[facing=north]"),
+        (MAIL_BUTTON, "minecraft:chiseled_stone_bricks"),
+    ],
+    "hidden": [
+        ("minecraft:overworld", (200, Y - 2, 0), "phasecraft:phase_block"),
+        ("minecraft:overworld", (200, Y - 1, 0), "minecraft:hopper[facing=east]", "minecraft:hopper[facing=east]"),
+    ] + [("minecraft:overworld", (x, Y - 1, 0), "minecraft:hopper[facing=east]", "minecraft:hopper[facing=east]") for x in (201, 202, 203)] + [
+        ("minecraft:overworld", (204, Y - 2, 0), "phasecraft:phase_block"),
+        ("minecraft:overworld", MAIL_DROPPER, "minecraft:dropper[facing=up]", "minecraft:dropper[facing=up]"),
+        ("minecraft:overworld", (205, Y - 2, 0), "phasecraft:phase_block"),
+        ("minecraft:overworld", MAIL_BUTTON, "minecraft:stone_button[face=floor,facing=north]",
+         "minecraft:stone_button[face=floor,facing=north,powered=false]"),
+    ],
+})
+
 WELCOME = ["PhaseCraft", "H: see hidden", "J: edit hidden", "[ ] = opacity"]
 
 # Hidden blocks that need something under them (vanilla rules: wire, repeaters
@@ -749,6 +776,30 @@ def watchers_check():
     return results
 
 
+def mail_check():
+    """Station 20, over RCON: items put in the chest leave it; a button press pops one out of the ground.
+    Returns (ok, steps)."""
+    cx, cy, cz = MAIL_CHEST
+    dx, dy, dz = MAIL_DROPPER
+    near = f"x={dx + 0.5},y={dy + 1},z={dz + 0.5},distance=..2"
+    rcon.send_commands([f"kill @e[type=minecraft:item,{near}]",
+                        f'data merge block {cx} {cy} {cz} {{Items:[{{Slot:0b,id:"minecraft:cobblestone",count:3}}]}}'])
+    time.sleep(6)
+    left = rcon.send_commands([f"data get block {cx} {cy} {cz} Items"])[0]
+    emptied = "cobblestone" not in left
+    press = f"setblock {coords(MAIL_BUTTON)} minecraft:stone_button[face=floor,facing=north,powered=true]"
+    rcon.send_commands([in_dimension(HIDDEN_OVERWORLD, press)])
+    time.sleep(1)
+    popped = rcon.send_commands([f"execute positioned {dx + 0.5} {dy + 1} {dz + 0.5} run "
+                                 f"data get entity @e[type=minecraft:item,distance=..2,limit=1] Item"])[0]
+    rcon.send_commands([in_dimension(HIDDEN_OVERWORLD, press.replace("powered=true", "powered=false")),
+                        f"kill @e[type=minecraft:item,{near}]"])
+    held = rcon.send_commands([in_dimension(HIDDEN_OVERWORLD, f"data get block {dx} {dy} {dz} Items")])[0]
+    steps = {"chest emptied": emptied, "popped": "cobblestone" in popped and "count: 1" in popped,
+             "dropper keeps 2": "count: 2" in held}
+    return all(steps.values()), steps
+
+
 def flying_observer_commands():
     """The engine's two observers, sent a second after flying_commands(): placed in the same
     batch, the engine starts on its own. They are placed "strict" because a plain setblock
@@ -773,8 +824,8 @@ def build_commands():
         "gamerule advance_time false",
         "time set noon",
         "weather clear 1000000",
-        "forceload add -8 -16 200 8",
-        in_dimension(HIDDEN_OVERWORLD, "forceload add -8 -16 200 8"),
+        "forceload add -8 -16 212 8",
+        in_dimension(HIDDEN_OVERWORLD, "forceload add -8 -16 212 8"),
         # Clear the area (visible) and lay a path of andesite under the stations.
         "fill -4 -60 -8 54 -55 4 minecraft:air",
         "fill -4 -61 -8 54 -61 4 minecraft:grass_block",
@@ -787,6 +838,10 @@ def build_commands():
         # Station 14's hut: solid, hollowed out, a doorway in front; dark inside.
         "fill 114 -60 -4 124 -54 7 minecraft:air",
         in_dimension(HIDDEN_OVERWORLD, "fill 114 -61 -4 124 -54 7 minecraft:air"),
+        # Station 20's area (its hidden ground cleared down to the phase blocks).
+        "fill 197 -60 -3 208 -55 5 minecraft:air",
+        "fill 197 -61 -3 208 -61 5 minecraft:grass_block",
+        in_dimension(HIDDEN_OVERWORLD, "fill 197 -62 -3 208 -55 5 minecraft:air"),
         # Station 19's area.
         "fill 177 -60 -3 196 -55 5 minecraft:air",
         "fill 177 -61 -3 196 -61 5 minecraft:grass_block",   # ground (the mark sits in it)
@@ -946,6 +1001,13 @@ def main():
     for name, good, steps in watch_results:
         ok &= good
         print(f"{'ok ' if good else 'BAD'} watchers, {name}: {steps}")
+    try:
+        mail_ok, mail_steps = mail_check()
+    except rcon.RconError as error:
+        print(error, file=sys.stderr)
+        return 1
+    ok &= mail_ok
+    print(f"{'ok ' if mail_ok else 'BAD'} item mail: {mail_steps}")
     print("Examples built and verified." if ok else "Some examples did not build as expected.")
     return 0 if ok else 1
 

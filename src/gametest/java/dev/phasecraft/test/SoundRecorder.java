@@ -2,6 +2,7 @@ package dev.phasecraft.test;
 
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
@@ -20,6 +21,10 @@ public final class SoundRecorder {
 
     public static synchronized void record(ServerLevel level, double x, double y, double z, Holder<SoundEvent> sound) {
         PLAYED.add(new Played(level.dimension(), new Vec3(x, y, z), sound.value().location().toString()));
+    }
+
+    public static synchronized void recordEvent(ServerLevel level, BlockPos pos, int type) {
+        PLAYED.add(new Played(level.dimension(), Vec3.atCenterOf(pos), "level_event:" + type));
     }
 
     /** The sounds played so far in this dimension inside the box. */

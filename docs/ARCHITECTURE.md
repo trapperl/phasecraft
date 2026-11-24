@@ -273,6 +273,24 @@ changes what is phased.
     every 10 ticks while tripped) count the visible entities.
   Hidden observers, comparators and tripwire not on a phase block see only
   the hidden layer, as before.
+- **Items** (`PhasedItems`; the agent's default, open to change, following
+  the same rule):
+  - A phased **hopper** pulls from the visible world above it: vanilla's
+    own pull (`suckInItems`) run against the visible level
+    (`HopperBlockEntityMixin`), so the visible container above, or visible
+    items lying on top of its spot, by vanilla's rules. It pushes into
+    hidden containers as usual.
+  - A phased **dropper** or **dispenser** works on the visible world in
+    front of it: its `BlockSource` carries the visible level, so vanilla's
+    dispense behaviours (items, arrows, buckets, fire charges...) act there,
+    and a dropper's container in front is looked up there
+    (`DispenserBlockMixin`, `DropperBlockMixin`). Items come out of, and go
+    back into, the hidden dispenser's own inventory.
+  - Silence: while a phased dropper or dispenser acts on the visible level,
+    that level's sounds and level events (the click, the smoke) are dropped
+    (`ServerLevelSilenceMixin`). The test `SoundRecorder` now records what
+    is sent to players (at the broadcast) and level events too, so a
+    cancelled sound does not count as heard.
 - **No sound:** hidden blocks make no sound in the visible world (the
   person, 2026-11-23: "Let's make them silent in the overworld"), phased or
   not: a phased button's click and a phase piston's push are heard only in

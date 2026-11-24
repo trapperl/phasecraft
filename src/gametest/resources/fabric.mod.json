@@ -27,6 +27,7 @@
       "dev.phasecraft.test.SilentHiddenGameTests",
       "dev.phasecraft.test.PhaseShifterGameTests",
       "dev.phasecraft.test.PhasedWatcherGameTests",
+      "dev.phasecraft.test.PhasedItemGameTests",
       "dev.phasecraft.test.HiddenEditingGameTests",
       "dev.phasecraft.test.KeepOutGameTests",
       "dev.phasecraft.test.NoMojangTrafficGameTests",
