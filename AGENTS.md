@@ -174,9 +174,8 @@ one PR each: (1) done: tools/mcb (place a scene in one tick, export a region
 of both layers, render pictures; src/devtools is a dev-server-only mod with
 the /mcb commands, never shipped); (2) a redstone simulator checked against
 the real game; (3) a wire router and shapes for buildings and scenery.
-An MCP server only if the person wants to build from the Claude desktop app
-(the agent recommended against it otherwise, 2026-11-24: Claude Code has a
-shell, and the command line is easier to test). See tools/mcb/README.md.
+No MCP server (the person, 2026-11-24: "Let's drop MCP"): the toolkit stays
+a command line and a Python library. See tools/mcb/README.md.
 
 ## Local dev server (RCON)
 - `./gradlew runServer` runs a local server in run/ (git-ignored) with RCON

@@ -28,5 +28,5 @@ Tests: `python3 -B -m unittest discover -s tools/mcb/tests -t tools` (run by `./
 stale bytecode cache.
 
 Next: a redstone simulator checked against the real game (export a region tick by tick with
-`/tick freeze` and `/tick step`), a wire router, and shapes for buildings and scenery. An MCP
-server only if wanted for building from a client without a shell.
+`/tick freeze` and `/tick step`), a wire router, and shapes for buildings and scenery. No MCP
+server (the person, 2026-11-24: "Let's drop MCP").
