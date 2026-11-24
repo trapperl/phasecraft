@@ -507,6 +507,39 @@ def main():
     settle(g, groups, planes)
     shapes(g)
     write(g, groups, opens)
+    simulate(opens)
+
+
+def simulate(opens):
+    """Runs the written layout in tools/mcb's redstone simulator: closed at rest, then each ring opens at its tick
+    (STEP apart, centre first) and closes in the reverse order."""
+    from mcb.redstone import Sim
+    from mcb.scene import Scene
+    scene = Scene.from_layout(OUT)
+    sim = Sim(scene)
+    if sim.popped:
+        sys.exit(f"parts with nothing to stand on: {sim.popped[:5]}")
+    sim.run(40)
+    if sim.powered_shifters():
+        sys.exit(f"open at rest: {sorted(sim.powered_shifters())}")
+    door = sorted(p for p, (st, _) in scene.layers["visible"].items() if st == DOOR)
+    cx = sum(p[0] for p in door) / len(door)
+    cy = sum(p[1] for p in door) / len(door)
+    port = next(p for p, (k, _) in sim.parts.items() if k == "phase_port")
+    for on in (True, False):
+        sim.events.clear()
+        t0 = sim.tick
+        sim.set_input(port, on)
+        sim.run(4 * STEP * 2 + opens * 2 + 40)
+        rings = {}
+        for t, p, _, v in sim.events:
+            d2 = (p[0] - cx) ** 2 + (p[1] - cy) ** 2
+            rings.setdefault(0 if d2 < 0.5 else 1 if d2 <= 2 else 2 if d2 <= 6 else 3, set()).add(t - t0)
+        want = {k: {2 * (opens + (k if on else 3 - k) * STEP)} for k in range(4)}
+        if rings != want:
+            sys.exit(f"simulated {'opening' if on else 'closing'}: {rings}, expected {want}")
+    print(f"simulated: rings open at {[2 * (opens + k * STEP) for k in range(4)]} game ticks after the lever, "
+          "close in reverse")
 
 
 if __name__ == "__main__":
