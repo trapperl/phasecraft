@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "redstone",
+  "ingredients": [
+    "phasecraft:phase_block",
+    "minecraft:ender_pearl",
+    "minecraft:piston"
+  ],
+  "result": {
+    "id": "phasecraft:phase_shifter",
+    "count": 2
+  }
+}

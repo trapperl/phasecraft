@@ -87,8 +87,9 @@ transparent layer, not a separate world.
       block at its own spot out of the visible world and holds it, and puts
       it back when unpowered. Done (station 18). Piston rules decide what it
       can take (no chests yet); instant, no effect (the agent's default,
-      open to change); no recipe yet (Creative only): the cost is the
-      person's call.
+      open to change). Recipe (the person, 2026-11-23: ender pearls, "since
+      this would be pretty powerful", and "make two"): Phase Block + ender
+      pearl + piston makes 2.
    b. The phase block (decided by the person, replacing dedicated
       plate/button blocks): a hidden block standing on a phase block, or
       hanging on its side, is phased: it reacts to the visible world at its
@@ -101,7 +102,13 @@ transparent layer, not a separate world.
       "lights would be cool"): phased light sources light the visible
       world at their spot. Done (station 14). Third step (the person,
       2026-11-23: "we can just move right into the other ones"):
-      observers, comparators, tripwire.
+      observers, comparators, tripwire; the person approved the agent's
+      proposal (2026-11-23: "this seems reasonable the way that you have
+      it laid out"): a phased observer watches the visible block in front
+      of it; a phased comparator reads the visible block behind it (a
+      chest's fill level...); hidden tripwire hooks on phase blocks with
+      hidden string are tripped by visible players and mobs at the
+      string's spots.
    c. Survival play (done): one game rule, on by default, that lets Survival
       players use the overlay and editing mode (with Survival rules:
       placing uses the item, breaking takes mining time and the right tool
