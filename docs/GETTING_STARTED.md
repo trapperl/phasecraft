@@ -167,6 +167,15 @@ its side, is *phased*: it reacts to the visible world at its own spot.
   string between them, are tripped by players, mobs and items walking
   through the string's spots in the visible world. One hook on a phase
   block is enough.
+- **Hoppers:** a phased hopper pulls from the visible world above it: a
+  visible chest standing on it, or items lying on top of its spot. Hide it
+  in the floor under a chest and whatever goes into the chest disappears
+  into your hidden machinery.
+- **Droppers and dispensers:** a phased dropper or dispenser puts out into
+  the visible world in front of it: into a visible chest there, or out into
+  the world (items, arrows, water, fire charges... whatever a dispenser does).
+  With phased hoppers in and phased droppers out, an item sorter can take
+  from visible chests and fill visible chests with none of it showing.
 - They make no sound in the visible world, and neither do phase pistons:
   hidden machinery is silent there.
 
@@ -180,6 +189,11 @@ Station 19 has three watchers, each lighting a visible lamp: put anything in
 the chest (a phased comparator reads it), walk through the narrow doorway (a
 phased tripwire), or place or break a block on the chiseled brick (a phased
 observer toggles a hidden copper bulb).
+
+Station 20 is item mail: put items in the chest, then click the marked tile
+in the ground a few blocks east; one item pops up out of the ground each
+time (a phased hopper under the chest, hidden hoppers, a phased dropper in
+the ground and a phased button under the tile).
 
 Station 15 is a flying machine with a hidden engine: click the top of the
 post and a gold block slides east by itself, pushed each cycle by a phase

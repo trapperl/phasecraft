@@ -113,7 +113,13 @@ transparent layer, not a separate world.
       chest's fill level...); hidden tripwire hooks on phase blocks with
       hidden string are tripped by visible players and mobs at the
       string's spots. Done (station 19); one phased hook is enough for a
-      line (the agent's default, open to change).
+      line (the agent's default, open to change). Fourth step (the person,
+      2026-11-24: "Start those whenever you feel like it", after the agent
+      suggested them): phased hoppers pull from the visible world above
+      them; phased droppers and dispensers put out into the visible world
+      in front of them, silently (the agent's default, open to change).
+      Done (station 20). Next on the person's list: the shifter taking
+      chests with their contents, then the iris door.
    c. Survival play (done): one game rule, on by default, that lets Survival
       players use the overlay and editing mode (with Survival rules:
       placing uses the item, breaking takes mining time and the right tool

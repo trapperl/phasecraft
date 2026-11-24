@@ -5,6 +5,7 @@
   "mixins": ["ServerLevelPhaseLinkMixin", "ServerPlayerRespawnMixin", "EntityPortalMixin", "BasePressurePlateAccessor",
              "BasePressurePlateMixin", "LightEngineAccessor",
              "BlockLightEnginePhasedMixin", "ServerLevelPhaseBridgeMixin",
-             "ComparatorBlockMixin", "LevelOutputSignalMixin", "TripWireBlockMixin", "TripWireBlockAccessor"],
+             "ComparatorBlockMixin", "LevelOutputSignalMixin", "TripWireBlockMixin", "TripWireBlockAccessor",
+             "HopperBlockEntityMixin", "DispenserBlockMixin", "DropperBlockMixin", "ServerLevelSilenceMixin"],
   "injectors": {"defaultRequire": 1}
 }

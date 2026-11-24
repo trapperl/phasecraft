@@ -37,7 +37,8 @@ public class ExamplesTourClientGameTest implements FabricClientGameTest {
             new View("trap_corridor", "162.5 -58 -4.5 0 30"),
             new View("trap_above", "162.5 -54 -2.5 0 60"),
             new View("shifter_wall", "172.0 -59 -5.5 0 10"),
-            new View("watchers", "186.0 -58 -8.5 0 15"));
+            new View("watchers", "186.0 -58 -8.5 0 15"),
+            new View("mail", "202.5 -58 -7.5 0 25"));
 
     @Override
     public void runTest(ClientGameTestContext context) {

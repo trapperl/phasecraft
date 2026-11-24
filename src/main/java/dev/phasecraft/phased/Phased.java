@@ -21,9 +21,10 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
  * Supported so far: buttons and levers (right-click the visible block at
  * their spot, {@link PhasedInput}), pressure plates (visible entities on
  * their spot press them), light sources (they light the visible world,
- * {@link PhasedLights}), and observers, comparators and tripwire, which watch
- * the visible world ({@link PhasedWatchers}). Other phased blocks do nothing
- * different yet.
+ * {@link PhasedLights}), observers, comparators and tripwire, which watch
+ * the visible world ({@link PhasedWatchers}), and hoppers, droppers and
+ * dispensers, which take items from and put them out into the visible world
+ * ({@link PhasedItems}). Other phased blocks do nothing different yet.
  */
 public final class Phased {
     private Phased() {}
