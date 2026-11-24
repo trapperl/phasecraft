@@ -33,6 +33,7 @@ import redstone_check  # noqa: E402
 SHORT = 1                                 # the controller's short line
 BUS_X = 9
 STAIR_X = 12                              # the staircase's first dust, at y = -1, z = the lever's z
+STAIR_RUN = 12                            # steps of the staircase between its repeaters (landings)
 D = None                                  # the Door being built
 
 
@@ -204,9 +205,11 @@ def place_unit(g, name, k, y, s, members, u, tx):
     assert n == torches and torch_next, (name, n, torches)   # the last one placed is the top block
     if first > BUS_X - 1:
         raise ValueError("no room for a branch")
+    run = 0
     for x in range(first, BUS_X):
         pos = (x, h, tz)
-        flex = x < BUS_X - 1 and g.alone(pos, name, wire=True)
+        flex = x < BUS_X - 1 and run < 12 and g.alone(pos, name, wire=True)
+        run = run + 1 if flex else 0
         if flex:
             g.flex.add(pos)
         g.stand(pos, REPEATER, sig if x < BUS_X - 1 else f"{sig}<B{k}", name, facing="east")
@@ -269,20 +272,33 @@ def controller(g):
     route = []
     y0 = ly - 1                              # the port's height: the lever's route runs there
     for x in range(lx + 1, STAIR_X):
-        flex = x > lx + 1 and x % 2 == 0
+        # wire, but for the repeaters at both ends (the staircase starts at full strength) and one every 12
+        flex = lx + 1 < x < STAIR_X - 1 and (x - lx - 1) % 12 != 0 and g.alone((x, y0, lz), "ctl", wire=True)
         if flex:
             g.flex.add((x, y0, lz))
         g.stand((x, y0, lz), REPEATER, "L", "ctl", facing="west")
         route.append(Rep((x, y0, lz), flex))
+    # down one block per step; a deep door's staircase is longer than wire carries, so every STAIR_RUN steps it
+    # lands: a repeater, a level wire on stone, and on down. stair[h]: its wire at h and the landings above it
     stair = {}
-    for i in range(0, y0 - min(D.planes.values()) + 1):
-        pos = (STAIR_X + i, y0 - i, lz)
-        g.put((pos[0], pos[1] - 1, lz), STONE, owner="ctl")
-        g.put(pos, WIRE, "L", "ctl")
-        stair[pos[1]] = pos
+    x, y, run, landings = STAIR_X, y0, 0, 0
+    bottom = min(D.planes.values())
+    while True:
+        g.put((x, y - 1, lz), STONE, owner="ctl")
+        g.put((x, y, lz), WIRE, "L", "ctl")
+        stair[y] = ((x, y, lz), landings)
+        if y == bottom:
+            break
+        run += 1
+        if run == STAIR_RUN and y - 1 > bottom:
+            g.stand((x + 1, y, lz), REPEATER, "L", "ctl", facing="west")
+            g.put((x + 2, y - 1, lz), STONE, owner="ctl")
+            g.put((x + 2, y, lz), WIRE, "L", "ctl")
+            x, run, landings = x + 2, 0, landings + 1
+        x, y = x + 1, y - 1
     planes = {}
     for k, h in D.planes.items():
-        tx, _, tz = stair[h]
+        (tx, _, tz), landings = stair[h]
         inv = D.inverted(k)
         o = f"P{k}"
         g.stand((tx, h, tz + 1), REPEATER, f"P{k}in<L", o, facing="north")
@@ -318,12 +334,14 @@ def controller(g):
         out = [r0, Rep((tx, h, z + 5))]
         g.stand((tx, h, z + 6), WIRE, f"B{k}", o)
         for x in range(tx - 1, BUS_X, -1):
-            flex = x > BUS_X + 1     # wire, but for the repeater into the bus (full strength there)
+            # wire, but for the repeater into the bus (full strength there) and one every 12 (wire fades)
+            flex = x > BUS_X + 1 and (tx - x) % 12 != 0
             if flex:
                 g.flex.add((x, h, z + 6))
             g.stand((x, h, z + 6), REPEATER, f"B{k}", o, facing="east")
             out.append(Rep((x, h, z + 6), flex))
-        planes[k] = {"short": lines["s"], "long": lines["l"], "out": out, "entry": z + 6, "inv": inv, "h": h}
+        planes[k] = {"short": lines["s"], "long": lines["l"], "out": out, "entry": z + 6, "inv": inv, "h": h,
+                     "landings": landings}
     return route, planes
 
 
@@ -387,7 +405,7 @@ def solve(groups, route, planes, bus):
         gap = abs(k - (D.top - k)) * D.step
         p["long_d"] = max(SHORT + gap, lowest(p["long"]))
         p["short_d"] = p["long_d"] - gap
-        fixed[k] = delta[k] + (1 + p["long_d"] if p["inv"] else p["short_d"])
+        fixed[k] = delta[k] + p["landings"] + (1 + p["long_d"] if p["inv"] else p["short_d"])
     base = max(lowest(p["out"]) + fixed[k] - k * D.step for k, p in planes.items())
     for k, p in planes.items():
         fill(p["out"], base + k * D.step - fixed[k])

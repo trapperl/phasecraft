@@ -17,7 +17,15 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContex
  * as tools/examples.py builds them).
  */
 public class ExamplesTourClientGameTest implements FabricClientGameTest {
-    private record View(String name, String tp) {}
+    /** A place to look from; first, optionally, a command, then a wait in game ticks (to catch something moving). */
+    private record View(String name, String tp, String command, int ticks) {
+        View(String name, String tp) {
+            this(name, tp, null, 40);
+        }
+    }
+
+    /** The mountain door's lever (station 24), flipped on. */
+    private static final String MOUNTAIN_LEVER = "setblock 326 -46 9 minecraft:lever[face=floor,facing=north,powered=true]";
 
     private static final List<View> VIEWS = List.of(
             new View("overview", "24.5 -52 -14 0 30"),
@@ -41,7 +49,12 @@ public class ExamplesTourClientGameTest implements FabricClientGameTest {
             new View("mail", "202.5 -58 -7.5 0 25"),
             new View("iris", "228.5 -54 -9.5 0 0"),
             new View("iris_side", "240.5 -50 -12.5 40 20"),
-            new View("waterfall", "262.5 -56 -13.5 0 -5"));
+            new View("waterfall", "262.5 -56 -13.5 0 -5"),
+            new View("mountain", "321.5 -38 -16.5 0 5"),
+            new View("mountain_door", "321.5 -45 2.5 0 -10"),
+            // the door goes an eighth every 4 game ticks from 48 after the lever: about half of it at 62
+            new View("mountain_sweep", "321.5 -45 2.5 0 -10", MOUNTAIN_LEVER, 62),
+            new View("mountain_open", "321.5 -45 2.5 0 -10", null, 60));
 
     @Override
     public void runTest(ClientGameTestContext context) {
@@ -69,7 +82,11 @@ public class ExamplesTourClientGameTest implements FabricClientGameTest {
             context.runOnClient(minecraft -> minecraft.gui.hud.getChat().clearMessages(false));
             for (View view : VIEWS) {
                 server.runCommand("tp @a " + view.tp());
-                context.waitTicks(40);
+                if (view.command() != null) {
+                    world.getConnection().waitForChunksRender();
+                    server.runCommand(view.command());
+                }
+                context.waitTicks(view.ticks());
                 world.getConnection().waitForChunksRender();
                 context.takeScreenshot("tour_" + view.name() + "_on");
                 context.runOnClient(minecraft -> PhaseCraftClient.settings().setEnabled(false));

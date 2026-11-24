@@ -242,6 +242,12 @@ the top down, and a lit cave appears behind; flip it back and they pour again
 from the outside in. A hidden phase shifter at the top of each ribbon puts a
 stone back to stop it.
 
+Station 24 is a mountain at the end of the line (x = 300 to 342): climb the
+steps into the gorge on its north side. Flip the lever left of the path: the
+dark arched door goes like a clock hand sweeping round, from twelve o'clock
+clockwise, and a tunnel to a vault full of gold appears; flip it back and
+the door winds shut the other way.
+
 ![A dark stone room lit by a glowstone hidden in its far wall](images/phased-light-room.png)
 
 Save and exit your test world, reopen it, and run `/phasecraft get` again to

@@ -932,6 +932,105 @@ def falls_lever(on):
                         f"minecraft:lever[face=floor,facing=north,powered={str(on).lower()}]"])
 
 
+# Station 24: the mountain door, built from its layout file (shared with MountainDoorGameTests; written by
+# tools/gen_mountain.py). Its wiring reaches 18 blocks under the gorge's floor, so the mountain stands on foothills
+# 14 high (the world's bottom is -64), with steps up into the gorge from the north.
+MOUNTAIN_LAYOUT = pathlib.Path(__file__).resolve().parent.parent / "src/gametest/resources/contraptions/mountain_door.txt"
+MOUNTAIN_ORIGIN = (300, -64, -5)   # layout (0, 0, 0)
+MOUNTAIN_HILLS = 14                # the foothills: from the ground up to the gorge's floor
+
+
+def mountain_offset():
+    """Generator space (gen_mountain.py, the door's middle column at x = 0, its bottom at y = 0, its face at
+    z = 0) to layout space: the layout's door blocks tell."""
+    placements, info = read_layout(MOUNTAIN_LAYOUT)
+    door = [a for layer, a, b, block in placements if layer == "visible" and block == info["door"]]
+    return (min(a[0] for a in door) + 3, min(a[1] for a in door), door[0][2])
+
+
+def mountain_pos(x, y, z, gen=False):
+    """A world position from layout space, or from generator space with gen=True."""
+    ox, oy, oz = MOUNTAIN_ORIGIN
+    if gen:
+        gx, gy, gz = mountain_offset()
+        x, y, z = x + gx, y + gy, z + gz
+    return (ox + x, oy + y, oz + z)
+
+
+def mountain_commands():
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    import gen_mountain as gm
+    ox, oy, oz = MOUNTAIN_ORIGIN
+    size = next(tuple(int(v) for v in line.split()[1:4]) for line in open(MOUNTAIN_LAYOUT) if line.startswith("size "))
+    floor = -1                       # the gorge's floor, generator y
+    ground = floor - MOUNTAIN_HILLS  # the world's grass, generator y
+    pad = MOUNTAIN_HILLS + 2         # how far the foothills reach out
+    rough_at = gm._noise(11)
+    lo = mountain_pos(gm.X0 - pad, ground + 1, gm.Z0 - pad, gen=True)
+    hi = mountain_pos(gm.X1 + pad, 40, gm.Z1 + pad, gen=True)
+    x0, z0 = min(lo[0], ox), min(lo[2], oz)
+    x1, z1 = max(hi[0], ox + size[0] - 1), max(hi[2], oz + size[2] - 1)
+    out = []
+    # hidden first, so blocks the shifters still hold are put back, then cleared; in slices (a fill's limit)
+    per = max(1, 32768 // ((size[0]) * (size[2])))
+    for y in range(oy, oy + size[1], per):
+        out.append(in_dimension(HIDDEN_OVERWORLD, f"fill {ox} {y} {oz} {ox + size[0] - 1} {min(y + per, oy + size[1]) - 1} "
+                                                  f"{oz + size[2] - 1} minecraft:air"))
+    per = max(1, 32768 // ((x1 - x0 + 1) * (z1 - z0 + 1)))
+    for y in range(-60, hi[1] + 1, per):
+        out.append(f"fill {x0} {y} {z0} {x1} {min(y + per - 1, hi[1])} {z1} minecraft:air")
+    out.append(f"fill {x0} -61 {z0} {x1} -61 {z1} minecraft:grass_block")
+    # the foothills: up from the ground to the mountain's footprint, one block per block out; solid under it
+    out.append(f"fill {coords(mountain_pos(gm.X0, ground + 1, gm.Z0, gen=True))} "
+               f"{coords(mountain_pos(gm.X1, floor - 1, gm.Z1, gen=True))} minecraft:dirt")
+    for x in range(gm.X0 - pad, gm.X1 + pad + 1):
+        run = None
+        for z in range(gm.Z0 - pad, gm.Z1 + pad + 2):
+            dx = max(gm.X0 - x, 0, x - gm.X1)
+            dz = max(gm.Z0 - z, 0, z - gm.Z1)
+            # roughened, but for the steps' columns and next to them
+            rough = 0 if abs(x) <= 2 and z < gm.Z0 else 4 * (rough_at(x, z, 5) - 0.5)
+            top = floor - round((dx * dx + dz * dz) ** 0.5 + rough) if z <= gm.Z1 + pad and (dx or dz) else None
+            if top is not None:
+                top = min(top, floor)
+            if top is not None and top <= ground:
+                top = None
+            if run and run[1] == top:
+                continue
+            if run and run[1] is not None:
+                out.append(f"fill {coords(mountain_pos(x, ground + 1, run[0], gen=True))} "
+                           f"{coords(mountain_pos(x, run[1], z - 1, gen=True))} minecraft:grass_block")
+            run = (z, top)
+    # steps up into the gorge, cut into the foothills
+    for i in range(MOUNTAIN_HILLS):
+        out.append(f"fill {coords(mountain_pos(-1, floor - 1 - i, gm.Z0 - 1 - i, gen=True))} "
+                   f"{coords(mountain_pos(1, floor - 1 - i, gm.Z0 - 1 - i, gen=True))} "
+                   "minecraft:stone_brick_stairs[facing=south]")
+    placements, _ = read_layout(MOUNTAIN_LAYOUT)
+    for layer, a, b, block in placements:
+        command = (f"fill {coords(mountain_pos(*a))} {coords(mountain_pos(*b))} {block}" if a != b
+                   else f"setblock {coords(mountain_pos(*a))} {block}")
+        out.append(in_dimension(HIDDEN_OVERWORLD, command) if layer == "hidden" else command)
+    out.append(sign(mountain_pos(-3, 0, gm.Z0 + 1, gen=True),
+                    ["24. Mountain", "door: flip the", "lever, it opens", "like a clock"]))
+    return out
+
+
+def mountain_state():
+    """'closed', 'open' or a picture (D = door block) of the 57 door blocks, bottom row first."""
+    placements, info = read_layout(MOUNTAIN_LAYOUT)
+    cells = [a for layer, a, b, block in placements if layer == "visible" and block == info["door"]]
+    replies = rcon.send_commands([f"phasecraft get {coords(mountain_pos(*c))}" for c in cells])
+    at = "".join("D" if info["door"] in r.split("visible: ", 1)[1].split(" |")[0] else "." for r in replies)
+    return "closed" if at == "D" * len(cells) else "open" if at == "." * len(cells) else at
+
+
+def mountain_lever(on):
+    _, info = read_layout(MOUNTAIN_LAYOUT)
+    rcon.send_commands([f"setblock {coords(mountain_pos(*info['lever']))} "
+                        f"minecraft:lever[face=floor,facing=north,powered={str(on).lower()}]"])
+
+
 def flying_observer_commands():
     """The engine's two observers, sent a second after flying_commands(): placed in the same
     batch, the engine starts on its own. They are placed "strict" because a plain setblock
@@ -958,6 +1057,8 @@ def build_commands():
         "weather clear 1000000",
         "forceload add -8 -18 286 18",
         in_dimension(HIDDEN_OVERWORLD, "forceload add -8 -18 286 18"),
+        "forceload add 270 -24 370 64",      # station 24, the mountain
+        in_dimension(HIDDEN_OVERWORLD, "forceload add 270 -24 370 64"),
         # Clear the area (visible) and lay a path of andesite under the stations.
         "fill -4 -60 -8 54 -55 4 minecraft:air",
         "fill -4 -61 -8 54 -61 4 minecraft:grass_block",
@@ -996,6 +1097,7 @@ def build_commands():
     commands += shifter_commands()
     commands += iris_commands()
     commands += falls_commands()
+    commands += mountain_commands()
     for station in STATIONS:
         for dimension, pos, *_ in station["hidden"]:
             commands.append(in_dimension(dimension, f"phasecraft clear {coords(pos)}"))
@@ -1173,6 +1275,17 @@ def main():
     falls_ok = [s for _, s in falls_steps] == ["running", "parted", "running"]
     ok &= falls_ok
     print(f"{'ok ' if falls_ok else 'BAD'} waterfall: " + ", ".join(f"{name}: {state}" for name, state in falls_steps))
+    try:
+        mountain_steps = [("before", mountain_state())]
+        mountain_lever(True); time.sleep(5); mountain_steps.append(("lever on", mountain_state()))
+        mountain_lever(False); time.sleep(5); mountain_steps.append(("lever off", mountain_state()))
+    except rcon.RconError as error:
+        print(error, file=sys.stderr)
+        return 1
+    mountain_ok = [s for _, s in mountain_steps] == ["closed", "open", "closed"]
+    ok &= mountain_ok
+    print(f"{'ok ' if mountain_ok else 'BAD'} mountain door: "
+          + ", ".join(f"{name}: {state}" for name, state in mountain_steps))
     print("Examples built and verified." if ok else "Some examples did not build as expected.")
     return 0 if ok else 1
 

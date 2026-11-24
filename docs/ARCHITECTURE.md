@@ -553,7 +553,7 @@ has such cells.
    closes it from the outside in (the person's idea, 2026-11-23: "you can't
    really do that in normal Minecraft"; `IrisDoorGameTests`, examples station
    22). Rings by distance from the centre: 1, 8, 12 and 16 blocks, 4 redstone
-   ticks apart; the centre opens 2.3 s after the lever.
+   ticks apart; the centre opens 2.2 s after the lever.
    - Each door block is held by a hidden phase shifter at its own spot, so no
      block travels: the hard part is only getting each ring its signal at the
      right moment, through a solid 7x7 wall of shifters, all hidden.
@@ -610,7 +610,28 @@ has such cells.
      meaning open, as in the iris, or closed, as here). `gen_iris.py` and
      `gen_waterfall.py` describe the two; the iris layout came out byte for
      byte as before.
-9. **Mob farm:** not a target yet; the person lists one among the showcase
+9. **Mountain door: done.** An arched door, 7 wide and 9 high (57 blocks), at
+   the back of a gorge cut into a mountain; one lever opens it like a clock
+   hand sweeping round, from twelve o'clock clockwise as you face it, an
+   eighth every 2 redstone ticks, and winds it shut the other way. Behind it
+   a tunnel leads to a vault (the person, 2026-11-24: "Door into a mountain
+   that opens/closes with a pattern"; `MountainDoorGameTests`, examples
+   station 24). The first eighth goes 2.4 s after the lever.
+   - The pattern is the door's rings: eight sectors round the door's middle
+     (`tools/gen_mountain.py`, in whole numbers so the GameTest computes the
+     same). Eight rings need eight levels of wiring, 18 blocks deep.
+   - What the deeper door taught `gen_door.py`: the lever's wire staircase
+     needs a repeater every 12 steps (a landing), and so does any long run of
+     flexible spots turned to wire (ring 0's line to its bus ran 20 blocks of
+     dust and faded out; the simulator caught it, the checker did not). The
+     lever's line is now wire but for its two end repeaters (one redstone
+     tick off every door).
+   - Speed: a ring's delay is set by its tallest torch tower, so the deepest
+     levels go to the rings reaching least high (28 redstone ticks to the
+     first eighth became 24 by also ordering rings of the same height).
+   - In the examples world the wiring needs the door 18 blocks above the
+     world's bottom, so the mountain stands on foothills with steps up.
+10. **Mob farm:** not a target yet; the person lists one among the showcase
    builds (AGENTS.md).
 
 ## Validation status
