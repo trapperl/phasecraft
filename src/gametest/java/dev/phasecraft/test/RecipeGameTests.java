@@ -46,6 +46,9 @@ public class RecipeGameTests {
                 PhaseCraftBlocks.STICKY_PHASE_PISTON_ITEM, 1, "sticky phase piston");
         assertMakes(helper, craft(helper, 2, 1, Items.STICKY_PISTON, phase),
                 PhaseCraftBlocks.STICKY_PHASE_PISTON_ITEM, 1, "sticky phase piston from a sticky piston");
+        // The person, 2026-11-23: ender pearls, "since this would be pretty powerful"; two per craft.
+        assertMakes(helper, craft(helper, 3, 1, phase, Items.ENDER_PEARL, Items.PISTON),
+                PhaseCraftBlocks.PHASE_SHIFTER_ITEM, 2, "phase shifter");
         helper.succeed();
     }
 }

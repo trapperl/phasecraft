@@ -134,6 +134,7 @@ Recipes (a starting point for balancing):
 | Phase Port | Phase Block + redstone torch |
 | Phase Piston | piston + Phase Block |
 | Sticky Phase Piston | Phase Piston + slime ball, or sticky piston + Phase Block |
+| Phase Shifter (2) | Phase Block + ender pearl + piston |
 
 ### Secret switches: the phase block
 
@@ -184,7 +185,8 @@ Station 18 shows the phase shifter: a plain stone-brick wall where one brick
 (right of the middle) hides a lever. Click it and four bricks vanish, leaving
 a doorway; click again and they come back. Behind each of those bricks a
 hidden phase shifter holds the brick while it is powered. The Phase Shifter
-is in the Redstone tab (Creative only for now: it has no recipe yet).
+is in the Redstone tab; crafting it (Phase Block + ender pearl + piston) makes
+two.
 
 ![A dark stone room lit by a glowstone hidden in its far wall](images/phased-light-room.png)
 

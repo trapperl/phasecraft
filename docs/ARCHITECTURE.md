@@ -83,8 +83,8 @@ phase piston pulls the visible block back by one on retracting, with
 vanilla's sticky rules. Placed in the visible layer it does nothing.
 `PhasePistonMover` is vanilla's `moveBlocks` minus the arm.
 
-**Phase shifter** (`phasecraft:phase_shifter`, Redstone tab, Creative only
-for now; the person's idea, 2026-11-23). Placed in the hidden layer: when
+**Phase shifter** (`phasecraft:phase_shifter`, Redstone tab; recipe: Phase
+Block + ender pearl + piston makes two; the person's idea, 2026-11-23). Placed in the hidden layer: when
 hidden power reaches it, it takes the visible block at its own spot out of
 the visible world and holds it (`PhaseShifterBlockEntity`, saved with the
 world); when the power goes, it puts that block back exactly as it was.
