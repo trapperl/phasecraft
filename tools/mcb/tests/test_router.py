@@ -112,3 +112,35 @@ class RouterTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def crossing(n, gap=3, height=7):
+    """n levers in a row at the west, their shifters in the east in the other order: every line crosses the others."""
+    s = Scene()
+    nets = []
+    for i in range(n):
+        s.set("hidden", (0, 0, i * gap), "minecraft:stone")
+        s.set("hidden", (0, 1, i * gap), LEVER)
+        s.set("hidden", (20, 1, (n - 1 - i) * gap), "phasecraft:phase_shifter")
+        nets.append(router.Net((1, 1, i * gap), "west", (19, 1, (n - 1 - i) * gap), "east"))
+    return s, nets, ((-1, 0, -3), (22, height, (n - 1) * gap + 3))
+
+
+class RouteAllTest(unittest.TestCase):
+    def test_lines_that_must_cross_each_reach_only_their_target(self):
+        n, gap = 4, 3
+        s, nets, box = crossing(n, gap)
+        for r in router.route_all(s, nets, box):
+            r.apply(s)
+        for i in range(n):
+            sim = Sim(s)
+            sim.run(5)
+            self.assertEqual(sim.popped, [])
+            sim.set_input((0, 1, i * gap), True)
+            sim.run(200)
+            self.assertEqual(sim.powered_shifters(), {(20, 1, (n - 1 - i) * gap)}, f"lever {i}")
+
+    def test_says_so_when_there_is_no_room(self):
+        s, nets, _ = crossing(3, gap=2)
+        with self.assertRaises(router.NoRoute):
+            router.route_all(s, nets, ((-1, 0, -1), (22, 2, 5)), rounds=8)
