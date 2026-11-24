@@ -167,6 +167,22 @@ players neither; ghosts show through
 visible blocks (fainter); in editing mode (J) a click on a visible block
 places the hidden block at that same spot.
 
+## Showcase builds (the person, 2026-11-24: "builds that impress people")
+Showcasing blocks pulled into and out of the main world. The person's list,
+in the agent's proposed order (the person: "I'm game"): a waterfall that
+parts in the middle (done, station 23: five ribbons between rock ribs, as
+water beside running water never drains), a door into a mountain that opens in a pattern,
+a staircase (or bridge) that appears in front of the player, then a castle
+tower built and unbuilt block by block. Also on the list: a hole in the
+ocean (glass walls put back into the sea, the water inside replaced by
+filler blocks that are then taken: dry and repeatable, no sponges), a
+sorting machine, mob farms. Liked (the person: "I like your suggestions
+too"): a shifter display (pixel wall), a track built ahead of a minecart,
+a shifting maze, a light-up dance floor, a treasure reveal, a combination
+lock. No movable shifters (the person, 2026-11-24: "Nah"), so no tunneling
+flying machine. Once something is cool: a trailer (the person; look up how
+others make them first).
+
 ## Building tools (tools/mcb)
 The person (2026-11-24): "build whatever harness and tools you want for
 building in Minecraft. Redstone, buildings, scenery etc." The agent's plan,

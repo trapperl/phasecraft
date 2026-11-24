@@ -591,7 +591,27 @@ has such cells.
      signal and no other), and a torch now goes out only on a direct signal
      into its block, as in vanilla (`SignalGetter.getSignal` of a
      conductor): side-by-side towers are fine.
-8. **Mob farm:** not a target; the hidden layer does not interact with mobs.
+8. **Parting waterfall: done.** A pool on a cliff spills in five ribbons of
+   water between rock ribs, a cave behind the middle; one lever stops them
+   from the middle outward, each draining from the top, and starts them
+   again from the outside in (the person, 2026-11-24: "Waterfall opening in
+   the middle"; `WaterfallGameTests`, examples station 23).
+   - Each ribbon is fed through a gate spot on the cliff's edge; a hidden
+     phase shifter there holds a stone while the water runs (it takes it
+     when placed, powered at rest) and puts it back to stop the ribbon: a
+     put-back block replaces the water in its spot.
+   - Water takes its level from the water beside it, falling water counting
+     as full. So nothing may run beside a ribbon: in one 9-wide fall the
+     gated columns stayed wet next to running ones, and a 3-wide stream
+     drained, but each level only after the one above (about 25 s). One
+     column between rock ribs drains top to bottom in about 3.5 s.
+   - The wiring is the iris door's: `tools/gen_door.py` builds both, from a
+     `Door` (cells, rings, step, planes, lever, polarity: a powered shifter
+     meaning open, as in the iris, or closed, as here). `gen_iris.py` and
+     `gen_waterfall.py` describe the two; the iris layout came out byte for
+     byte as before.
+9. **Mob farm:** not a target yet; the person lists one among the showcase
+   builds (AGENTS.md).
 
 ## Validation status
 
