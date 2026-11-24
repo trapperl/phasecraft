@@ -18,7 +18,11 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
  *
  * <p>Light is computed on the server's light thread, at its own pace, while the
  * GameTest server runs ticks as fast as it can (80 ticks can pass in a second),
- * so these tests allow many ticks. (Vanilla also starts queued light work only
+ * so these tests allow many ticks: 2400 since 2026-11-23, after two CI runs
+ * (full suite, small machine) ran out of 600 with the light not yet settled;
+ * neither reproduced locally, on one core or on two with the full suite. A
+ * passing check ends as soon as the light is right. If one fails even with
+ * 2400, suspect a light check that is lost, not slow. (Vanilla also starts queued light work only
  * in a server's spare time between ticks, which a GameTest server has none of;
  * PhasedLights starts it itself.)</p>
  */
@@ -43,7 +47,7 @@ public class PhasedLightGameTests {
     }
 
     /** Hidden glowstone on a phase block lights the visible world: 15 at its spot, fading by vanilla's rules. */
-    @GameTest(maxTicks = 600)
+    @GameTest(maxTicks = 2400)
     public void phasedGlowstoneLightsVisibleWorld(GameTestHelper helper) {
         floor(helper);
         HiddenLayer hidden = HiddenLayer.of(helper.getLevel());
@@ -57,7 +61,7 @@ public class PhasedLightGameTests {
     }
 
     /** Hidden glowstone on ordinary stone gives no visible light. */
-    @GameTest(maxTicks = 600)
+    @GameTest(maxTicks = 2400)
     public void hiddenGlowstoneWithoutPhaseBlockGivesNoVisibleLight(GameTestHelper helper) {
         floor(helper);
         HiddenLayer hidden = HiddenLayer.of(helper.getLevel());
@@ -71,7 +75,7 @@ public class PhasedLightGameTests {
     }
 
     /** A phased redstone lamp switches the visible light on and off with hidden redstone. */
-    @GameTest(maxTicks = 600)
+    @GameTest(maxTicks = 2400)
     public void phasedLampFollowsRedstone(GameTestHelper helper) {
         floor(helper);
         HiddenLayer hidden = HiddenLayer.of(helper.getLevel());
@@ -94,7 +98,7 @@ public class PhasedLightGameTests {
     }
 
     /** Taking the phase block away takes the light out of the visible world. */
-    @GameTest(maxTicks = 600)
+    @GameTest(maxTicks = 2400)
     public void removingPhaseBlockTakesLightAway(GameTestHelper helper) {
         floor(helper);
         HiddenLayer hidden = HiddenLayer.of(helper.getLevel());
@@ -109,7 +113,7 @@ public class PhasedLightGameTests {
     }
 
     /** A wall torch hanging on the side of a phase block is phased too (support = the block it hangs on). */
-    @GameTest(maxTicks = 600)
+    @GameTest(maxTicks = 2400)
     public void wallTorchOnPhaseBlockLights(GameTestHelper helper) {
         floor(helper);
         HiddenLayer hidden = HiddenLayer.of(helper.getLevel());
@@ -123,7 +127,7 @@ public class PhasedLightGameTests {
     }
 
     /** A phased light high in empty sky, far from any visible block, still lights the air around it. */
-    @GameTest(maxTicks = 600)
+    @GameTest(maxTicks = 2400)
     public void phasedLightInEmptySkyLights(GameTestHelper helper) {
         BlockPos high = SPOT.above(40);
         HiddenLayer hidden = HiddenLayer.of(helper.getLevel());
