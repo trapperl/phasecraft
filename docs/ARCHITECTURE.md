@@ -73,7 +73,11 @@ quasi-connectivity), it moves the **visible** blocks in front of its
 position. Which blocks move comes from vanilla's own `PistonStructureResolver`
 run on the visible level: push limit 12, obsidian and other immovable blocks
 stop it, slime and honey drag neighbours, fragile blocks break. The moved
-blocks animate as in vanilla. It has **no arm in either layer**: where a
+blocks slide on players' screens as in vanilla: a vanilla piston has each
+client run the move itself, which a hidden piston cannot, so the server sends
+the moved blocks to nearby players (`PhasePistonAnimation`) and their game
+places the same moving-block entities (until 2026-11-23 moved blocks
+blinked out for two ticks; `PhasePistonAnimationClientGameTest`). It has **no arm in either layer**: where a
 vanilla piston's head would be, the visible space is left empty. A sticky
 phase piston pulls the visible block back by one on retracting, with
 vanilla's sticky rules. Placed in the visible layer it does nothing.
