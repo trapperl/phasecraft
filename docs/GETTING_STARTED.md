@@ -248,6 +248,12 @@ dark arched door goes like a clock hand sweeping round, from twelve o'clock
 clockwise, and a tunnel to a vault full of gold appears; flip it back and
 the door winds shut the other way.
 
+Station 25 is a chasm past the mountain (x = 362 to 399): take the steps up
+to the cliff and walk towards the edge. A stone bridge appears in front of
+you, three blocks ahead, as you cross, and vanishes three blocks behind you;
+nothing is there when nobody is near. Jumping is safe. Hidden strings at
+head height over each step sense who is near.
+
 ![A dark stone room lit by a glowstone hidden in its far wall](images/phased-light-room.png)
 
 Save and exit your test world, reopen it, and run `/phasecraft get` again to

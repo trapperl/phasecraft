@@ -1031,6 +1031,70 @@ def mountain_lever(on):
                         f"minecraft:lever[face=floor,facing=north,powered={str(on).lower()}]"])
 
 
+# Station 25: the appearing bridge, built from its layout file (shared with AppearingBridgeGameTests; written by
+# tools/gen_path.py). Its cliffs' tops (generator y = 0) stand 6 above the world's grass, the chasm reaching the
+# world's bottom; steps lead up to the west end.
+BRIDGE_LAYOUT = pathlib.Path(__file__).resolve().parent.parent / "src/gametest/resources/contraptions/appearing_bridge.txt"
+BRIDGE_ORIGIN = (362, -64, -15)    # layout (0, 0, 0)
+
+
+def bridge_steps():
+    """The bridge's blocks (layout positions), in order across."""
+    placements, _ = read_layout(BRIDGE_LAYOUT)
+    return sorted(a for layer, a, b, block in placements if layer == "hidden" and "phase_shifter" in block)
+
+
+def bridge_pos(x, y, z, gen=False):
+    """A world position from layout space, or from generator space (the first step at 0, 0, 0) with gen=True."""
+    ox, oy, oz = BRIDGE_ORIGIN
+    if gen:
+        gx, gy, gz = bridge_steps()[0]
+        x, y, z = x + gx, y + gy, z + gz
+    return (ox + x, oy + y, oz + z)
+
+
+def bridge_commands():
+    ox, oy, oz = BRIDGE_ORIGIN
+    size = next(tuple(int(v) for v in line.split()[1:4]) for line in open(BRIDGE_LAYOUT) if line.startswith("size "))
+    out = []
+    per = max(1, 32768 // (size[0] * size[2]))
+    for y in range(oy, oy + size[1], per):          # hidden first (blocks the shifters hold go back), then visible
+        out.append(in_dimension(HIDDEN_OVERWORLD, f"fill {ox} {y} {oz} {ox + size[0] - 1} {min(y + per, oy + size[1]) - 1} "
+                                                  f"{oz + size[2] - 1} minecraft:air"))
+    x0 = bridge_pos(-19, 0, 0, gen=True)[0]
+    for y in range(oy, oy + size[1], per):
+        out.append(f"fill {x0} {y} {oz} {ox + size[0] - 1} {min(y + per, oy + size[1]) - 1} {oz + size[2] - 1} minecraft:air")
+    out.append(f"fill {x0} -61 {oz} {ox - 1} -61 {oz + size[2] - 1} minecraft:grass_block")
+    placements, _ = read_layout(BRIDGE_LAYOUT)
+    for layer, a, b, block in placements:
+        command = (f"fill {coords(bridge_pos(*a))} {coords(bridge_pos(*b))} {block}" if a != b
+                   else f"setblock {coords(bridge_pos(*a))} {block}")
+        out.append(in_dimension(HIDDEN_OVERWORLD, command) if layer == "hidden" else command)
+    # steps up to the west cliff's top (generator y = 0, 6 above the grass), on stone
+    for i in range(5):
+        x, y, _ = bridge_pos(-17 + i, -5 + i, 0, gen=True)
+        out.append(f"fill {x} -61 -1 {x} {y - 1} 1 minecraft:stone")
+        out.append(f"fill {x} {y} -1 {x} {y} 1 minecraft:stone_brick_stairs[facing=east]")
+    out.append(sign(bridge_pos(-19, -5, -2, gen=True), ["25. Bridge:", "walk onto it,", "it appears", "ahead of you"]))
+    return out
+
+
+def bridge_state():
+    """The steps there, as a picture: # there, . not."""
+    replies = rcon.send_commands([f"phasecraft get {coords(bridge_pos(*p))}" for p in bridge_steps()])
+    return "".join("." if "visible: minecraft:air" in r else "#" for r in replies)
+
+
+def bridge_walker(step):
+    """A villager that cannot move or fall, over a step (None: gone)."""
+    commands = ["kill @e[type=minecraft:villager,tag=pc_bridge]"]
+    if step is not None:
+        x, y, z = bridge_pos(step, 1, 0, gen=True)
+        commands.append(f"summon minecraft:villager {x + 0.5} {y} {z + 0.5} "
+                        "{NoAI:1b,NoGravity:1b,Silent:1b,Invulnerable:1b,Tags:[\"pc_bridge\"]}")
+    rcon.send_commands(commands)
+
+
 def flying_observer_commands():
     """The engine's two observers, sent a second after flying_commands(): placed in the same
     batch, the engine starts on its own. They are placed "strict" because a plain setblock
@@ -1059,6 +1123,8 @@ def build_commands():
         in_dimension(HIDDEN_OVERWORLD, "forceload add -8 -18 286 18"),
         "forceload add 270 -24 370 64",      # station 24, the mountain
         in_dimension(HIDDEN_OVERWORLD, "forceload add 270 -24 370 64"),
+        "forceload add 340 -16 402 16",      # station 25, the bridge
+        in_dimension(HIDDEN_OVERWORLD, "forceload add 340 -16 402 16"),
         # Clear the area (visible) and lay a path of andesite under the stations.
         "fill -4 -60 -8 54 -55 4 minecraft:air",
         "fill -4 -61 -8 54 -61 4 minecraft:grass_block",
@@ -1098,6 +1164,7 @@ def build_commands():
     commands += iris_commands()
     commands += falls_commands()
     commands += mountain_commands()
+    commands += bridge_commands()
     for station in STATIONS:
         for dimension, pos, *_ in station["hidden"]:
             commands.append(in_dimension(dimension, f"phasecraft clear {coords(pos)}"))
@@ -1286,6 +1353,19 @@ def main():
     ok &= mountain_ok
     print(f"{'ok ' if mountain_ok else 'BAD'} mountain door: "
           + ", ".join(f"{name}: {state}" for name, state in mountain_steps))
+    try:
+        bridge_walker(None); time.sleep(2)
+        bridge_steps_seen = [("nobody", bridge_state())]
+        bridge_walker(5); time.sleep(2); bridge_steps_seen.append(("someone over step 5", bridge_state()))
+        bridge_walker(11); time.sleep(2); bridge_steps_seen.append(("over step 11", bridge_state()))
+        bridge_walker(None); time.sleep(2); bridge_steps_seen.append(("gone", bridge_state()))
+    except rcon.RconError as error:
+        print(error, file=sys.stderr)
+        return 1
+    bridge_ok = [s for _, s in bridge_steps_seen] == ["." * 14, "..#######.....", "........######", "." * 14]
+    ok &= bridge_ok
+    print(f"{'ok ' if bridge_ok else 'BAD'} appearing bridge: "
+          + ", ".join(f"{name}: {state}" for name, state in bridge_steps_seen))
     print("Examples built and verified." if ok else "Some examples did not build as expected.")
     return 0 if ok else 1
 

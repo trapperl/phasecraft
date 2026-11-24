@@ -33,7 +33,7 @@ builds everything in one tick, with no time to settle.
 A layout too big to write by hand can come from a generator: `iris_door.txt`, `waterfall.txt` and
 `mountain_door.txt` are written by `tools/gen_iris.py`, `tools/gen_waterfall.py` and `tools/gen_mountain.py`
 (with their GameTest areas, `<name>.snbt`), all through `tools/gen_door.py` (doors of phase shifters switching
-in rings); change the generator and run it again.
+in rings), and `appearing_bridge.txt` by `tools/gen_path.py`; change the generator and run it again.
 
 `python3 tools/redstone_check.py <file>` reports every part or piston that
 receives a signal other than its own, following vanilla's power rules

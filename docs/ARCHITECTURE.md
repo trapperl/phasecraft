@@ -631,7 +631,39 @@ has such cells.
      first eighth became 24 by also ordering rings of the same height).
    - In the examples world the wiring needs the door 18 blocks above the
      world's bottom, so the mountain stands on foothills with steps up.
-10. **Mob farm:** not a target yet; the person lists one among the showcase
+10. **Appearing bridge: done.** A bridge of 14 blocks across a chasm whose
+   blocks are there only within 3 steps of someone: it appears ahead as you
+   walk and vanishes behind you (the person, 2026-11-24: "Staircase
+   appearing, maybe just in front of the player"; the bridge first, a
+   staircase next; `AppearingBridgeGameTests`, examples station 25). A step
+   appears within 8 game ticks of someone coming within 3 of it.
+   - The layout (`contraptions/appearing_bridge.txt`, about 950 hidden blocks)
+     is written by `tools/gen_path.py`, which checks it in mcb's simulator
+     for someone at every step and between every two.
+   - Sensing: a hidden string over each step at head height, between a hook
+     on a phase block and a hook on a stone. Head height because a jump lifts
+     the head clear of it for only about 3 ticks at the top; feet clear a
+     string at foot height for most of a jump (the GameTest's jumps, paused
+     0 to 11 ticks so the string's 10-tick recheck falls on every tick of a
+     jump, drop the step underfoot with strings at foot height).
+   - Reach: dust fades one level a block. Each tripped sensor puts exactly 4
+     into a line of wire along the bridge, through a branch 11 blocks long
+     from its hook's stone, so the line is powered exactly within 3 steps.
+     Each step's inverter (a repeater into a stone under a torch, the torch
+     powering the stone under the shifter) holds the block when its line is
+     off.
+   - The geometry is the hard part: every step's logic sits in its own
+     plane, and neighbouring planes touch, so wire at the same spot (or a
+     step above or below) in two neighbouring planes joins. And wire laid in
+     one upright plane cannot turn back across it (a turn needs one block to
+     be both stone, to carry the step, and not stone, to let it through), so
+     a branch of 11 blocks spans 11 columns: the strings reach 12 blocks out
+     to the side. Even steps feed a line on one side, odd steps a line on the
+     other, so no two neighbouring planes have a branch on the same side;
+     each step's inverter reads both lines.
+   - The simulator now knows tripwire hooks (inputs, powering like a lever on
+     a wall), and so does `tools/redstone_check.py`.
+11. **Mob farm:** not a target yet; the person lists one among the showcase
    builds (AGENTS.md).
 
 ## Validation status

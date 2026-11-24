@@ -35,6 +35,21 @@ class RedstoneTest(unittest.TestCase):
         sim.set_input((0, 1, 0), True)
         self.assertEqual([sim.wire_power[(x, 1, 0)] for x in range(1, 18)], list(range(15, 0, -1)) + [0, 0])
 
+    def test_a_tripwire_hook_powers_its_block_strongly_and_wire_beside_it(self):
+        scene = Scene()
+        scene.set("hidden", (0, 1, 0), "minecraft:stone")                                       # the hook's block
+        scene.set("hidden", (1, 1, 0), "minecraft:tripwire_hook[attached=true,facing=east,powered=false]")
+        for x, z in ((0, 1), (1, 1)):                                    # wire beside the block, and beside the hook
+            scene.set("hidden", (x, 0, z), "minecraft:glass")
+            scene.set("hidden", (x, 1, z), "minecraft:redstone_wire[north=side,south=side]")
+        scene.set("hidden", (1, 0, 1), "minecraft:glass")
+        sim = Sim(scene)
+        self.assertEqual(sim.popped, [])
+        self.assertEqual(sim.wire_power[(0, 1, 1)], 0)
+        sim.set_input((1, 1, 0), True)
+        self.assertEqual(sim.wire_power[(0, 1, 1)], 15, "beside the strongly powered block")
+        self.assertEqual(sim.wire_power[(1, 1, 1)], 15, "beside the hook")
+
     def test_repeater_delay_in_game_ticks(self):
         sim = Sim(line(LEVER, WIRE, "minecraft:repeater[delay=3,facing=west]", WIRE))
         sim.set_input((0, 1, 0), True)
