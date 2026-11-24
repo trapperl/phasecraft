@@ -93,7 +93,10 @@ transparent layer, not a separate world.
       can take, except that blocks with contents (chests...) are taken
       too, with their contents (done, station 21; on the person's list,
       2026-11-24); instant, no effect (the agent's default,
-      open to change). Recipe (the person, 2026-11-23: ender pearls, "since
+      open to change). Putting back breaks a visible block in the spot
+      (the person, 2026-11-24: "it should break the main world block";
+      done), silently; it waits for mobs and unbreakable blocks (the
+      agent's default). Recipe (the person, 2026-11-23: ender pearls, "since
       this would be pretty powerful", and "make two"): Phase Block + ender
       pearl + piston makes 2.
    b. The phase block (decided by the person, replacing dedicated
