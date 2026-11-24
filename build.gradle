@@ -11,12 +11,25 @@ base {
 
 repositories {
     mavenCentral()
+    // Sodium, for the Sodium client GameTests only (never part of the mod).
+    exclusiveContent {
+        forRepository { maven { url = 'https://api.modrinth.com/maven' } }
+        filter { includeGroup 'maven.modrinth' }
+    }
+}
+
+// Sodium (Modrinth) replaces Minecraft's chunk renderer and is in most
+// players' mod lists, so the client GameTests also run with it. Loaded into
+// that one run only, with Fabric Loader's fabric.addMods.
+configurations {
+    sodium { transitive = false }
 }
 
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+    sodium "maven.modrinth:sodium:${project.sodium_version}"
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -42,7 +55,8 @@ loom {
 //   ./gradlew restartTest   two server processes on one world folder:
 //                           PhaseLayerRestartPhases write, then verify
 //   ./gradlew clientTest    client GameTests (src/gametest/.../client): a real
-//                           client, once with OpenGL and once with Vulkan,
+//                           client, with OpenGL, with Vulkan, and with OpenGL
+//                           plus the Sodium mod,
 //                           taking screenshots (build/run/clientGameTest*/screenshots)
 //   ./gradlew check         unit tests + all of the above (build runs it)
 fabricApi {
@@ -102,6 +116,14 @@ loom {
             vmArg '-Dphasecraft.test.graphicsApi=vulkan'
             vmArgs offlineTestArgs
         }
+        clientGameTestSodium {
+            inherit clientGameTest
+            configName = 'Client GameTest: OpenGL with Sodium'
+            runDir = 'build/run/clientGameTestSodium'
+            vmArg '-Dphasecraft.test.graphicsApi=opengl'
+            vmArg '-Dphasecraft.test.sodium=true'
+            vmArgs offlineTestArgs
+        }
         clientGameTest {
             configName = 'Client GameTest: OpenGL'
             vmArg '-Dphasecraft.test.graphicsApi=opengl'
@@ -129,7 +151,7 @@ tasks.register('restartTest') {
 // private virtual display instead, so nothing appears on your screen and they
 // run the same way in CI. Without Xvfb they use your display.
 def xvfb = ['/usr/bin/Xvfb', '/usr/local/bin/Xvfb'].find { new File(it).canExecute() }
-['runClientGameTest', 'runClientGameTestVulkan'].each { name ->
+['runClientGameTest', 'runClientGameTestVulkan', 'runClientGameTestSodium'].each { name ->
     tasks.named(name) { task ->
         def server = null
         doFirst {
@@ -172,17 +194,28 @@ gradle.taskGraph.afterTask { task ->
 }
 tasks.register('clientTest') {
     group = 'verification'
-    description = 'Runs the client GameTests with OpenGL and with Vulkan.'
-    dependsOn 'runClientGameTest', 'runClientGameTestVulkan'
+    description = 'Runs the client GameTests with OpenGL, with Vulkan, and with OpenGL and Sodium.'
+    dependsOn 'runClientGameTest', 'runClientGameTestVulkan', 'runClientGameTestSodium'
 }
-tasks.named('runClientGameTestVulkan') {
-    mustRunAfter 'runClientGameTest'
-    dependsOn 'acceptGameTestEula'
-    // Loom accepts the EULA (see configureTests) only in the default run folder.
-    def eulaFile = file('build/run/clientGameTestVulkan/eula.txt')
+['runClientGameTestVulkan', 'runClientGameTestSodium'].each { name ->
+    def runDir = name == 'runClientGameTestVulkan' ? 'build/run/clientGameTestVulkan' : 'build/run/clientGameTestSodium'
+    tasks.named(name) { task ->
+        mustRunAfter 'runClientGameTest'
+        dependsOn 'acceptGameTestEula'
+        // Loom accepts the EULA (see configureTests) only in the default run folder.
+        def eulaFile = file("${runDir}/eula.txt")
+        doFirst {
+            eulaFile.parentFile.mkdirs()
+            eulaFile.text = '# Accepted for the test server, as in build/run/clientGameTest.\neula=true\n'
+        }
+    }
+}
+tasks.named('runClientGameTestSodium') { task ->
+    mustRunAfter 'runClientGameTestVulkan'
+    def sodiumJars = configurations.sodium
+    inputs.files(sodiumJars)
     doFirst {
-        eulaFile.parentFile.mkdirs()
-        eulaFile.text = '# Accepted for the test server, as in build/run/clientGameTest.\neula=true\n'
+        task.jvmArgs "-Dfabric.addMods=${sodiumJars.singleFile.absolutePath}"
     }
 }
 tasks.named('check') {
