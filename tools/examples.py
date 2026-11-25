@@ -1067,6 +1067,63 @@ def bridge_walker(step):
     rcon.send_commands(commands)
 
 
+# Station 26: the appearing staircase, built from its layout file (shared with AppearingStaircaseGameTests; written
+# by tools/gen_stairs.py). From the meadow (the world's grass, generator y = -1) up to a cliff's ledge 12 high.
+STAIRS_LAYOUT = pathlib.Path(__file__).resolve().parent.parent / "src/gametest/resources/contraptions/appearing_staircase.txt"
+STAIRS_ORIGIN = (410, -64, -16)    # layout (0, 0, 0)
+
+
+def stairs_steps():
+    """The staircase's steps (layout positions), in order up."""
+    placements, _ = read_layout(STAIRS_LAYOUT)
+    return sorted(a for layer, a, b, block in placements if layer == "hidden" and "phase_shifter" in block)
+
+
+def stairs_pos(x, y, z, gen=False):
+    """A world position from layout space, or from generator space (the first step at 0, 0, 0) with gen=True."""
+    ox, oy, oz = STAIRS_ORIGIN
+    if gen:
+        gx, gy, gz = stairs_steps()[0]
+        x, y, z = x + gx, y + gy, z + gz
+    return (ox + x, oy + y, oz + z)
+
+
+def stairs_commands():
+    ox, oy, oz = STAIRS_ORIGIN
+    size = next(tuple(int(v) for v in line.split()[1:4]) for line in open(STAIRS_LAYOUT) if line.startswith("size "))
+    out = []
+    per = max(1, 32768 // (size[0] * size[2]))
+    for y in range(oy, oy + size[1], per):          # hidden first (blocks the shifters hold go back), then visible
+        out.append(in_dimension(HIDDEN_OVERWORLD, f"fill {ox} {y} {oz} {ox + size[0] - 1} {min(y + per, oy + size[1]) - 1} "
+                                                  f"{oz + size[2] - 1} minecraft:air"))
+    for y in range(-60, oy + size[1], per):
+        out.append(f"fill {ox} {y} {oz} {ox + size[0] - 1} {min(y + per, oy + size[1]) - 1} {oz + size[2] - 1} minecraft:air")
+    out.append(f"fill {ox} -61 {oz} {ox + size[0] - 1} -61 {oz + size[2] - 1} minecraft:grass_block")
+    placements, _ = read_layout(STAIRS_LAYOUT)
+    for layer, a, b, block in placements:
+        command = (f"fill {coords(stairs_pos(*a))} {coords(stairs_pos(*b))} {block}" if a != b
+                   else f"setblock {coords(stairs_pos(*a))} {block}")
+        out.append(in_dimension(HIDDEN_OVERWORLD, command) if layer == "hidden" else command)
+    out.append(sign(stairs_pos(-3, 0, -2, gen=True), ["26. Staircase:", "climb it, it", "appears ahead", "of you"]))
+    return out
+
+
+def stairs_state():
+    """The steps there, as a picture: # there, . not."""
+    replies = rcon.send_commands([f"phasecraft get {coords(stairs_pos(*p))}" for p in stairs_steps()])
+    return "".join("." if "visible: minecraft:air" in r else "#" for r in replies)
+
+
+def stairs_walker(step):
+    """A villager that cannot move or fall, on a step (None: gone)."""
+    commands = ["kill @e[type=minecraft:villager,tag=pc_stairs]"]
+    if step is not None:
+        x, y, z = stairs_pos(step, step + 1, 0, gen=True)
+        commands.append(f"summon minecraft:villager {x + 0.5} {y} {z + 0.5} "
+                        "{NoAI:1b,NoGravity:1b,Silent:1b,Invulnerable:1b,Tags:[\"pc_stairs\"]}")
+    rcon.send_commands(commands)
+
+
 def flying_observer_commands():
     """The engine's two observers, sent a second after flying_commands(): placed in the same
     batch, the engine starts on its own. They are placed "strict" because a plain setblock
@@ -1097,6 +1154,8 @@ def build_commands():
         in_dimension(HIDDEN_OVERWORLD, "forceload add 270 -24 370 64"),
         "forceload add 340 -16 402 16",      # station 25, the bridge
         in_dimension(HIDDEN_OVERWORLD, "forceload add 340 -16 402 16"),
+        "forceload add 404 -18 450 18",      # station 26, the staircase
+        in_dimension(HIDDEN_OVERWORLD, "forceload add 404 -18 450 18"),
         # Clear the area (visible) and lay a path of andesite under the stations.
         "fill -4 -60 -8 54 -55 4 minecraft:air",
         "fill -4 -61 -8 54 -61 4 minecraft:grass_block",
@@ -1137,6 +1196,7 @@ def build_commands():
     commands += falls_commands()
     commands += mountain_commands()
     commands += bridge_commands()
+    commands += stairs_commands()
     for station in STATIONS:
         for dimension, pos, *_ in station["hidden"]:
             commands.append(in_dimension(dimension, f"phasecraft clear {coords(pos)}"))
@@ -1338,6 +1398,19 @@ def main():
     ok &= bridge_ok
     print(f"{'ok ' if bridge_ok else 'BAD'} appearing bridge: "
           + ", ".join(f"{name}: {state}" for name, state in bridge_steps_seen))
+    try:
+        stairs_walker(None); time.sleep(2)
+        stairs_seen = [("nobody", stairs_state())]
+        stairs_walker(5); time.sleep(2); stairs_seen.append(("someone on step 5", stairs_state()))
+        stairs_walker(10); time.sleep(2); stairs_seen.append(("on step 10", stairs_state()))
+        stairs_walker(None); time.sleep(2); stairs_seen.append(("gone", stairs_state()))
+    except rcon.RconError as error:
+        print(error, file=sys.stderr)
+        return 1
+    stairs_ok = [s for _, s in stairs_seen] == ["." * 12, "..#######...", ".......#####", "." * 12]
+    ok &= stairs_ok
+    print(f"{'ok ' if stairs_ok else 'BAD'} appearing staircase: "
+          + ", ".join(f"{name}: {state}" for name, state in stairs_seen))
     print("Examples built and verified." if ok else "Some examples did not build as expected.")
     return 0 if ok else 1
 

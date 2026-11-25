@@ -35,7 +35,7 @@ builds everything in one tick, with no time to settle.
 A layout too big to write by hand can come from a generator: `iris_door.txt` and `waterfall.txt` are written
 by `tools/gen_iris.py` and `tools/gen_waterfall.py` (with their GameTest areas, `<name>.snbt`), both through
 `tools/gen_door.py` (doors of phase shifters switching in rings); `mountain_door.txt` by `tools/gen_mountain.py`
-(hand-built wiring, signal names from a simulated run); `appearing_bridge.txt` by `tools/gen_path.py`. Change
+(hand-built wiring, signal names from a simulated run); `appearing_bridge.txt` by `tools/gen_path.py`; `appearing_staircase.txt` by `tools/gen_stairs.py`. Change
 the generator and run it again.
 
 `python3 tools/redstone_check.py <file>` reports every part or piston that

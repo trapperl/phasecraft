@@ -36,8 +36,10 @@ Tools: `tools/redstone_check.py` (static: which signal reaches each part), `tool
 - **C3. Neighbouring planes do not share wire.** When each step, row or ring has its logic in its own
   plane, wire at the same spot in two neighbouring planes joins, and so does wire one block above or below
   at the same spot (a step across). Use the other side, another height, or non-wire parts (repeaters,
-  torches, blocks are safe side by side). Lesson: the appearing bridge. Checked by: the simulator; the
-  generators' searches.
+  torches, blocks are safe side by side). Lesson: the appearing bridge. On a slope (planes rising a block
+  each), a part one block up in a plane's template sits beside the part one block down in the next plane's,
+  so a template's vertical neighbours are also neighbours across planes: feed a step's block from the side,
+  never from under it (the appearing staircase). Checked by: the simulator; the generators' searches.
 - **C4. A wire step carries a signal down only over a conductor**: the lower wire reads the upper one when the
   upper wire stands on a conductor and nothing conductive is above the lower wire. Up, the upper wire reads the
   lower one when the block beside it (at its own height) is not a conductor, whatever it stands on. So a step on
