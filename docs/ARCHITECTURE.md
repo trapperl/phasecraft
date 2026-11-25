@@ -681,6 +681,18 @@ has such cells.
      each step's inverter reads both lines.
    - The simulator now knows tripwire hooks (inputs, powering like a lever on
      a wall), and so does `tools/redstone_check.py`.
+   - **The staircase: done** (`AppearingStaircaseGameTests`, examples station
+     26, `tools/gen_stairs.py`): 12 steps from a meadow up to a cliff's
+     ledge, the same sensing and reach (918 hidden blocks in 18 x 19 x 29).
+     Each plane rises a block with its step, so a part one block up in a
+     plane's template sits beside the part one block down in the next
+     plane's: the bridge's stone under each shifter would sit beside the step
+     below's shifter and power it. So each shifter is fed from the side (a
+     torch on a stone the lines' repeaters power, under a stone beside the
+     shifter), and nothing above or below a shifter carries power. The lines
+     are wire staircases (stone under every wire, nothing over), level along
+     the approaches: before the stairs level with the ground, after them with
+     the ledge.
 11. **Mob farm:** not a target yet; the person lists one among the showcase
    builds (AGENTS.md).
 

@@ -177,7 +177,8 @@ parts in the middle (done, station 23: five ribbons between rock ribs, as
 water beside running water never drains), a door into a mountain that opens in a pattern
 (done, station 24: a clock-hand sweep, the agent's choice of pattern, open to change),
 a staircase (or bridge) that appears in front of the player (the bridge done, station 25:
-blocks there within 3 steps of someone, tools/gen_path.py; a staircase next), then a castle
+blocks there within 3 steps of someone, tools/gen_path.py; the staircase done, station 26,
+tools/gen_stairs.py), then a castle
 tower built and unbuilt block by block. Also on the list: a hole in the
 ocean (glass walls put back into the sea, the water inside replaced by
 filler blocks that are then taken: dry and repeatable, no sponges), a

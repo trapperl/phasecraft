@@ -254,6 +254,10 @@ you, three blocks ahead, as you cross, and vanishes three blocks behind you;
 nothing is there when nobody is near. Jumping is safe. Hidden strings at
 head height over each step sense who is near.
 
+Station 26 is a cliff past the bridge (x = 410 to 447): walk along the path
+to its foot and climb. A stone staircase appears three steps ahead of you as
+you go up to the ledge and its lookout, and vanishes behind you.
+
 ![A dark stone room lit by a glowstone hidden in its far wall](images/phased-light-room.png)
 
 Save and exit your test world, reopen it, and run `/phasecraft get` again to
