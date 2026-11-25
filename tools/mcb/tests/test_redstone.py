@@ -35,6 +35,32 @@ class RedstoneTest(unittest.TestCase):
         sim.set_input((0, 1, 0), True)
         self.assertEqual([sim.wire_power[(x, 1, 0)] for x in range(1, 18)], list(range(15, 0, -1)) + [0, 0])
 
+    def step(self, block, lever_below):
+        """A wire step: a lower wire at (1, 1), an upper wire on `block` at (2, 2); a lever beside one of them.
+        Returns (lower, upper) strengths with the lever on."""
+        scene = Scene()
+        for x in range(4):
+            scene.set("hidden", (x, 0, 0), "minecraft:glass")
+        scene.set("hidden", (1, 1, 0), "minecraft:redstone_wire")
+        scene.set("hidden", (2, 1, 0), block)
+        scene.set("hidden", (2, 2, 0), "minecraft:redstone_wire")
+        scene.set("hidden", (3, 1, 0), "minecraft:glass")
+        lever = (0, 1, 0) if lever_below else (3, 2, 0)
+        scene.set("hidden", lever, LEVER)
+        sim = Sim(scene)
+        sim.set_input(lever, True)
+        sim.run(4)
+        return sim.wire_power[(1, 1, 0)], sim.wire_power[(2, 2, 0)]
+
+    def test_a_step_on_glass_carries_a_signal_up_only(self):
+        # measured on the dev server with mcb.verify (2026-11-24): up 15 -> 14, down nothing
+        self.assertEqual(self.step("minecraft:glass", lever_below=True), (15, 14))
+        self.assertEqual(self.step("minecraft:glass", lever_below=False), (0, 15))
+
+    def test_a_step_on_stone_carries_a_signal_both_ways(self):
+        self.assertEqual(self.step("minecraft:stone", lever_below=True), (15, 14))
+        self.assertEqual(self.step("minecraft:stone", lever_below=False), (14, 15))
+
     def test_a_tripwire_hook_powers_its_block_strongly_and_wire_beside_it(self):
         scene = Scene()
         scene.set("hidden", (0, 1, 0), "minecraft:stone")                                       # the hook's block

@@ -213,21 +213,25 @@ class Sim:
         return max(self.get_signal(add(p, d), d) for d in DIRS)
 
     def wire_targets(self):
-        """Every wire's strength: the best signal from its non-wire neighbours, or a connected wire's minus one."""
+        """Every wire's strength: the best signal from its non-wire neighbours, or a connected wire's minus one.
+        A wire reads (vanilla's RedstoneWireEvaluator) the wires beside it, the wire on top of a conductor beside it
+        if nothing conductive is above itself, and the wire below a non-conductor beside it. So a step whose upper
+        wire stands on glass carries a signal up and not down (checked on the server: tests GlassStepTest)."""
         self.wires_signal = False
         base = {w: self.neighbor_signal(w) for w in self.wire_power}
         self.wires_signal = True
-        links = {}
+        links = {w: [] for w in self.wire_power}          # links[w]: the wires that read w
         for w in self.wire_power:
-            out = []
             for d in HORIZONTAL:
                 q = add(w, d)
-                out.append(q)
+                sources = [q]
                 if self.is_conductor(q) and not self.is_conductor(add(w, "up")):
-                    out.append(add(q, "up"))
+                    sources.append(add(q, "up"))
                 elif not self.is_conductor(q):
-                    out.append(add(q, "down"))
-            links[w] = [q for q in out if q in self.wire_power]
+                    sources.append(add(q, "down"))
+                for source in sources:
+                    if source in links:
+                        links[source].append(w)
         power = dict(base)
         heap = [(-v, w) for w, v in base.items() if v > 0]
         heapq.heapify(heap)

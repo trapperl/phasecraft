@@ -44,9 +44,25 @@ def observed(scene_or_sim, layer="hidden"):
     return out
 
 
+def _sub(p, q):
+    return tuple(p[i] - q[i] for i in range(3))
+
+
+def _to_origin(scene, lo):
+    moved = Scene()
+    for layer, blocks in scene.layers.items():
+        for p, (state, data) in blocks.items():
+            moved.set(layer, _sub(p, lo), state, data)
+    return moved
+
+
 def check(scene, inputs, ticks, name="verify"):
-    """inputs: {tick: [(pos, on)]} (levers or phase ports in the hidden layer). Returns [(tick, pos, real, sim)]."""
+    """inputs: {tick: [(pos, on)]} (levers or phase ports in the hidden layer). Returns [(tick, pos, real, sim)],
+    positions relative to the scene's lower corner (the server places that corner at AT)."""
     lo, hi = scene.bounds()
+    if lo != (0, 0, 0):
+        scene, inputs = _to_origin(scene, lo), {t: [(_sub(p, lo), on) for p, on in ins] for t, ins in inputs.items()}
+        lo, hi = (0, 0, 0), _sub(hi, lo)
     size = tuple(hi[i] - lo[i] + 1 for i in range(3))
     far = tuple(AT[i] + size[i] - 1 for i in range(3))
     server.command(f"forceload add {AT[0] - 1} {AT[2] - 1} {far[0] + 1} {far[2] + 1}",
