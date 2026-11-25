@@ -38,8 +38,12 @@ Tools: `tools/redstone_check.py` (static: which signal reaches each part), `tool
   at the same spot (a step across). Use the other side, another height, or non-wire parts (repeaters,
   torches, blocks are safe side by side). Lesson: the appearing bridge. Checked by: the simulator; the
   generators' searches.
-- **C4. A wire step needs a conductor under its upper wire and nothing conductive above its lower wire.**
-  Glass under the upper wire breaks the step. Lesson: the router. Checked by: the simulator, `mcb.router`.
+- **C4. A wire step carries a signal down only over a conductor**: the lower wire reads the upper one when the
+  upper wire stands on a conductor and nothing conductive is above the lower wire. Up, the upper wire reads the
+  lower one when the block beside it (at its own height) is not a conductor, whatever it stands on. So a step on
+  glass carries a signal up and not down: a one-way step, useful on purpose. Lessons: the router; the simulator had
+  the direction backwards until a dev-server check (2026-11-24). Checked by: the simulator (`mcb.verify` on the
+  server), `mcb.router` (which uses stone steps only).
 - **C5. Wire in one upright plane cannot turn back** (a turn needs one block to be both stone, to carry the
   step, and not stone, to let it through). A wire of n blocks in a plane spans n columns. Lesson: the
   appearing bridge.
@@ -109,8 +113,8 @@ wiki and the tools.
 - **R2. Pistons update from as far as 2 blocks (taxicab) away**: dust and torches update blocks up to 2 away,
   so quasi-connectivity (C9) can fire from a powered part 2 blocks off. Keep powered parts 2 blocks from a
   piston's upper cell unless meant. [wiki: Redstone mechanics, Quasi-connectivity] By hand.
-- **R3. Transparent supports never pass signal down and do not cut dust**: glass is a free one-way
-  diode, or a silent break (C4). [wiki: Transmission]
+- **R3. Transparent supports never pass signal down and do not cut dust**: dust stepping up onto glass is a free
+  one-way diode, up only (C4). [wiki: Transmission]
 - **R4. Every net has exactly one driver**, and every wire is within 14 blocks of it (Redpiler drops links of
   15 or more; Dewey inserts repeaters by walking from each net's driver). Our generators' lines that join on
   purpose (the bridge's lines, a door's OR) are the exception, listed with `allow`. Checked by: the
