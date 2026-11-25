@@ -52,6 +52,9 @@ public class RecipeGameTests {
         // A phase shifter that works like a piston: a phase shifter and a piston.
         assertMakes(helper, craft(helper, 2, 1, PhaseCraftBlocks.PHASE_SHIFTER_ITEM, Items.PISTON),
                 PhaseCraftBlocks.LINE_SHIFTER_ITEM, 1, "line shifter");
+        // Two corners make a box, so a craft makes two; dearer than a line shifter (it is an option, off by default).
+        assertMakes(helper, craft(helper, 2, 1, PhaseCraftBlocks.LINE_SHIFTER_ITEM, Items.DIAMOND_BLOCK),
+                PhaseCraftBlocks.AREA_SHIFTER_ITEM, 2, "area shifter");
         helper.succeed();
     }
 }

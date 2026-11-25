@@ -1,5 +1,7 @@
 package dev.phasecraft;
 
+import dev.phasecraft.shifter.AreaShifterBlock;
+import dev.phasecraft.shifter.AreaShifterBlockEntity;
 import dev.phasecraft.shifter.LineShifterBlock;
 import dev.phasecraft.shifter.LineShifterBlockEntity;
 import dev.phasecraft.shifter.PhaseShifterBlock;
@@ -63,6 +65,15 @@ public final class PhaseCraftBlocks {
             BuiltInRegistries.BLOCK_ENTITY_TYPE, id("line_shifter"),
             new BlockEntityType<>(LineShifterBlockEntity::new, Set.of(LINE_SHIFTER)));
 
+    /** Two at opposite corners switch a box of the visible world off and on (an option: a game rule, off by default). */
+    public static final Block AREA_SHIFTER = block("area_shifter", AreaShifterBlock::new,
+            BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_PURPLE).strength(1.5F).sound(SoundType.AMETHYST)
+                    .pushReaction(PushReaction.IMMOVEABLE).isRedstoneConductor((s, l, p) -> false));
+    public static final Item AREA_SHIFTER_ITEM = item("area_shifter", AREA_SHIFTER);
+    public static final BlockEntityType<AreaShifterBlockEntity> AREA_SHIFTER_ENTITY = Registry.register(
+            BuiltInRegistries.BLOCK_ENTITY_TYPE, id("area_shifter"),
+            new BlockEntityType<>(AreaShifterBlockEntity::new, Set.of(AREA_SHIFTER)));
+
     private static Identifier id(String path) {
         return Identifier.fromNamespaceAndPath(PhaseCraft.MOD_ID, path);
     }
@@ -90,6 +101,7 @@ public final class PhaseCraftBlocks {
                     output.accept(PHASE_BLOCK_ITEM);
                     output.accept(PHASE_SHIFTER_ITEM);
                     output.accept(LINE_SHIFTER_ITEM);
+                    output.accept(AREA_SHIFTER_ITEM);
                 });
     }
 }

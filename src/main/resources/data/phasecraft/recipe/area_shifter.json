@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "redstone",
+  "ingredients": [
+    "phasecraft:line_shifter",
+    "minecraft:diamond_block"
+  ],
+  "result": {
+    "id": "phasecraft:area_shifter",
+    "count": 2
+  }
+}
