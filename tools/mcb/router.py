@@ -28,7 +28,9 @@ import heapq
 from .structure import parse_state
 
 DIRS = {"north": (0, 0, -1), "south": (0, 0, 1), "west": (-1, 0, 0), "east": (1, 0, 0)}
-OPPOSITE = {"north": "south", "south": "north", "west": "east", "east": "west"}
+OPPOSITE = {"north": "south", "south": "north", "west": "east", "east": "west", "up": "down", "down": "up"}
+HORIZONTAL = ("north", "south", "west", "east")
+MAX_EXPAND = 250000       # search states one route may look at before it gives up
 REDSTONE = ("redstone_wire", "repeater", "comparator", "torch", "lever", "button", "pressure_plate", "observer",
             "piston", "phase_port", "phase_shifter", "redstone_block", "target", "daylight", "bulb", "lamp", "hopper",
             "dropper", "dispenser", "note_block", "tripwire")
@@ -57,6 +59,7 @@ class Route:
 class _Space:
     def __init__(self, scene, layer, box):
         self.blocks = {p: parse_state(s)[0].split(":")[-1] for p, (s, _) in scene.layers[layer].items()}
+        self.facing = {p: parse_state(s)[1].get("facing") for p, (s, _) in scene.layers[layer].items()}
         self.lo, self.hi = box
 
     def inside(self, p):
@@ -73,25 +76,63 @@ class _Space:
         return any(r in k for r in REDSTONE)
 
 
+def _end_allow(end, end_into):
+    """What may be next to a line's last part, a repeater: what it powers, and anything beside or above it (a
+    repeater takes its signal only from behind; only a diode pointing into its side could lock it)."""
+    out = {add(end, DIRS[end_into]), add(end, (0, 1, 0))}
+    for d in HORIZONTAL:
+        if d not in (end_into, OPPOSITE[end_into]):
+            out.add(add(end, DIRS[d]))
+    return out
+
+
+def _side_diode(space, end, end_into):
+    """Whether a repeater or comparator beside end points into its side (it would lock the end's repeater)."""
+    for d in HORIZONTAL:
+        if d in (end_into, OPPOSITE[end_into]):
+            continue
+        q = add(end, DIRS[d])
+        if space.kind(q) in ("repeater", "comparator") and space.facing.get(q) == d:
+            return True             # its output faces end (a diode's facing is its input side)
+    return False
+
+
 def _clear_around(space, c, path, allow=()):
-    """Nothing but air, glass or the line's own last cells next to c (sides, above, below), and no redstone anywhere
-    in the 3x3x3 around it (wire connects diagonally up and down), the line's earlier cells included: a line passing
-    next to itself would join across and skip its repeaters."""
+    """Nothing but air, glass or the line's own last cells next to c (sides, above, below), and no redstone where a
+    wire at c could join or power it: beside it or a step above or below it, along x or z (wire never connects
+    across a corner), the line's earlier cells included: a line passing next to itself would join across and skip
+    its repeaters."""
     recent = set(path[-2:])
     older = set(path[:-2])
     for dx in (-1, 0, 1):
         for dy in (-1, 0, 1):
             for dz in (-1, 0, 1):
+                if dx and dz:
+                    continue
                 q = (c[0] + dx, c[1] + dy, c[2] + dz)
                 if q == c or q in recent or q in allow:
                     continue
                 if q in older:
                     return False
+                if _side_on(space, q, dx, dy, dz):
+                    continue
                 if space.redstone(q):
                     return False
                 if abs(dx) + abs(dy) + abs(dz) == 1 and not (space.air(q) or space.kind(q).endswith("glass")):
                     return False
     return True
+
+
+def _side_on(space, q, dx, dy, dz):
+    """A repeater or comparator at q that a wire at q - (dx, dy, dz) cannot touch: level with it and beside its
+    flank (a diode takes and gives its signal only at its ends), or a step above or below it (steps join only
+    wire)."""
+    if space.kind(q) not in ("repeater", "comparator"):
+        return False
+    if dy:
+        return dx or dz
+    facing = space.facing.get(q)
+    return (dx == 0) if facing in ("east", "west") else (dz == 0) if facing in ("north", "south") else False
 
 
 def _can_hold(space, c, mine_supports):
@@ -109,10 +150,12 @@ def route(scene, start, start_from, end, end_into, box, layer="hidden", delay=No
     first_dir = OPPOSITE[start_from]      # the line leaves start this way
     last_dir = end_into                   # and reaches end going this way
     allow_start = {add(start, DIRS[start_from])}
-    allow_end = {add(end, DIRS[end_into])}
+    allow_end = _end_allow(end, end_into)
     for p in (start, end):
         if not space.inside(p) or not space.air(p):
             raise NoRoute(f"{p} is not free")
+    if _side_diode(space, end, end_into):
+        raise NoRoute(f"a diode beside {end} would lock it")
 
     def ok(c, prev_cells, extra_allow=()):
         return (space.inside(c) and space.air(c) and _can_hold(space, c, set())
@@ -125,18 +168,44 @@ def route(scene, start, start_from, end, end_into, box, layer="hidden", delay=No
     first = add(start, DIRS[first_dir])
     if not ok(start, [], allow_start) or not ok(first, [start], allow_start):
         raise NoRoute("no room to leave the start")
-    frontier = [(h(first) + 1, 1, first, first_dir, (start, first))]
+    path = _search(space, [((start, first), first_dir)], end, last_dir, allow_end, turn_cost, extra, level={start})
+    if path is None:
+        raise NoRoute(f"no line from {start} to {end} inside {box}")
+    return _finish(scene, space, list(path), first_dir, last_dir, delay)
+
+
+def _search(space, starts, end, last_dir, allow_end, turn_cost, extra, level=(), since0=None):
+    """A* over (cell, heading) from each (path, heading) in starts (a path's last cell is its first new one) to
+    end, reached going last_dir. A path's cells are checked against the cells before them on that path. No step
+    up or down out of a cell in `level`, or into end (both are repeaters). It keeps count of the cells since the
+    last one that could hold a repeater (level, between two cells in a straight line), and never lets the signal
+    fade before one: since0 gives each start's count (a repeater start: 0; a tree's wire: 16 - its strength).
+    Returns the path, or None."""
+    def ok(c, prev_cells, extra_allow=()):
+        return (space.inside(c) and space.air(c) and _can_hold(space, c, set())
+                and _clear_around(space, c, tuple(prev_cells), extra_allow))
+
+    def h(c):
+        return abs(c[0] - end[0]) + abs(c[1] - end[1]) + abs(c[2] - end[2])
+    frontier = [(h(path[-1]) + 1, 1, path[-1], heading, path, (since0 or {}).get(path[0], 0) + 1)
+                for path, heading in starts]
+    heapq.heapify(frontier)
     best = {}
+    expanded = 0
     while frontier:
-        f, g, c, heading, path = heapq.heappop(frontier)
+        f, g, c, heading, path, since = heapq.heappop(frontier)
+        expanded += 1
+        if expanded > MAX_EXPAND:
+            return None                    # a way this long to find is not worth it: report no route
         if c == end:
             if heading == last_dir and path[-2] == add(end, tuple(-v for v in DIRS[last_dir])):
-                return _finish(scene, space, list(path), first_dir, last_dir, delay)
+                return path
             continue
-        key = (c, heading)
-        if best.get(key, 1e9) <= g:
+        # a state no cheaper and no further from fading than one already taken from here is no use
+        seen = best.setdefault((c, heading), [])
+        if any(g2 <= g and s2 <= since for g2, s2 in seen):
             continue
-        best[key] = g
+        seen[:] = [(g2, s2) for g2, s2 in seen if not (g <= g2 and since <= s2)] + [(g, since)]
         if len(path) > 400:
             continue
         for d, v in DIRS.items():
@@ -150,7 +219,7 @@ def route(scene, start, start_from, end, end_into, box, layer="hidden", delay=No
                     continue
                 if dy == -1 and not space.air((c[0] + v[0], c[1], c[2] + v[2])):
                     continue
-                if dy and (c == start or n == end):                         # the ends are repeaters: level
+                if dy and (c in level or n == end):                         # the ends are repeaters: level
                     continue
                 allow = allow_end if n == end else ()
                 if not ok(n, path, allow):
@@ -159,9 +228,15 @@ def route(scene, start, start_from, end, end_into, box, layer="hidden", delay=No
                     continue
                 if dy == -1 and not step_support(space, (c[0], c[1] - 1, c[2]), path, mine=True):
                     continue
+                # c can hold a repeater if the line runs straight and level through it
+                straight = (dy == 0 and d == heading and len(path) >= 2 and path[-2][1] == c[1]
+                            and path[-2] not in level)
+                nxt = 1 if straight else since + 1
+                if nxt >= 14 and n != end:
+                    continue                   # would fade before a repeater could go in
                 cost = 1 + (turn_cost if d != heading else 0) + (0.4 if dy else 0) + (extra(n) if extra else 0)
-                heapq.heappush(frontier, (g + cost + h(n), g + cost, n, d, path + (n,)))
-    raise NoRoute(f"no line from {start} to {end} inside {box}")
+                heapq.heappush(frontier, (g + cost + h(n), g + cost, n, d, path + (n,), nxt))
+    return None
 
 
 def step_support(space, s, path, mine=False):
@@ -180,8 +255,10 @@ def step_support(space, s, path, mine=False):
     return True
 
 
-def _finish(scene, space, cells, first_dir, last_dir, delay):
-    """Parts for the cells: repeaters at the ends and where the signal fades, wire elsewhere, glass under all."""
+def _finish(scene, space, cells, first_dir, last_dir, delay, start_strength=None):
+    """Parts for the cells: repeaters at the ends and where the signal fades, wire elsewhere, glass under all.
+    With start_strength, cells[0] is a tree's wire at that strength (a branch): it is not placed again, and the
+    first repeater comes before the signal from it fades."""
     n = len(cells)
     heading = [None] * n
     for i in range(1, n):
@@ -196,15 +273,15 @@ def _finish(scene, space, cells, first_dir, last_dir, delay):
         a, b, c = cells[i - 1], cells[i], cells[i + 1]
         return a[1] == b[1] == c[1] and heading[i] == heading[i + 1]
 
-    repeaters = {0, n - 1}
-    run = 0
+    repeaters = {0, n - 1} if start_strength is None else {n - 1}
+    run = 0 if start_strength is None else 16 - start_strength
     last_ok = None
     for i in range(1, n - 1):
         run += 1
         if straight(i):
             last_ok = i
         if run >= 14:
-            if last_ok is None or last_ok in repeaters:
+            if last_ok is None or last_ok in repeaters or last_ok == 0:
                 raise NoRoute("no straight stretch for a repeater before the signal fades")
             repeaters.add(last_ok)
             run = i - last_ok
@@ -228,13 +305,16 @@ def _finish(scene, space, cells, first_dir, last_dir, delay):
         if need < 0:
             raise NoRoute(f"the line needs at least {len(repeaters)} redstone ticks, more than {delay}")
     parts = []
+    skip = 0 if start_strength is None else 1           # a branch's first cell is the tree's
     upper = {cells[i] if cells[i][1] > cells[i - 1][1] else cells[i - 1]
              for i in range(1, n) if cells[i][1] != cells[i - 1][1]}
     for i, c in enumerate(cells):
         below = (c[0], c[1] - 1, c[2])
-        if space.air(below):
+        if i >= skip and space.air(below):
             parts.append((below, "minecraft:stone" if c in upper else "minecraft:glass"))
     for i, c in enumerate(cells):
+        if i < skip:
+            continue
         if i in repeaters:
             facing = OPPOSITE[heading[i] if i > 0 else first_dir]
             if i == n - 1:
@@ -242,7 +322,118 @@ def _finish(scene, space, cells, first_dir, last_dir, delay):
             parts.append((c, f"minecraft:repeater[delay={delays[i]},facing={facing}]"))
         else:
             parts.append((c, "minecraft:redstone_wire[east=side,north=side,south=side,west=side]"))
-    return Route(parts, sum(delays.values()), cells)
+    route = Route(parts, sum(delays.values()), cells[skip:])
+    # each new cell's strength and the redstone ticks to it from the line's (or tree's) start
+    route.strength, route.ticks = {}, {}
+    run = 0 if start_strength is None else 16 - start_strength
+    ticks = 0
+    for i in range(skip, n):
+        if i in repeaters:
+            ticks += delays[i]
+            run = 0
+            route.strength[cells[i]] = 15
+        else:
+            run += 1
+            route.strength[cells[i]] = 16 - run
+        route.ticks[cells[i]] = ticks
+    route.repeaters = {cells[i] for i in repeaters if i >= skip}
+    return route
+
+
+# --- trees: one source, many ends ---
+class Tree:
+    """A source and several ends, joined by one tree of wire: its parts, cells, and per end the redstone ticks from
+    the source (ticks)."""
+
+    def __init__(self):
+        self.parts, self.cells, self.ends = [], [], {}
+        self.strength, self.at, self.repeaters = {}, {}, set()
+
+    @property
+    def delay(self):
+        return max(self.ends.values())
+
+    def add(self, r, base=0):
+        self.parts += r.parts
+        self.cells += r.cells
+        self.repeaters |= r.repeaters
+        self.strength.update(r.strength)
+        for c, t in r.ticks.items():
+            self.at[c] = base + t
+
+    def apply(self, scene, layer="hidden"):
+        for pos, state in self.parts:
+            scene.set(layer, pos, state)
+        return self
+
+
+def tree(scene, start, start_from, ends, box, layer="hidden", turn_cost=0.6, extra=None, space=None):
+    """As _tree; when an end cannot be reached, starts again with that end first (its earlier branches may have
+    walled it in), once per end."""
+    ends = list(ends)
+    first = []
+    for _ in range(len(ends)):
+        order = first + [e for e in ends if e not in first]
+        try:
+            return _tree(scene, start, start_from, order, box, layer, turn_cost, extra, space)
+        except NoRoute as e:
+            blocked = getattr(e, "end", None)
+            if blocked is None or blocked in first:
+                raise
+            first.insert(0, blocked)
+    raise NoRoute(f"no tree from {start} to all {len(ends)} ends")
+
+
+def _tree(scene, start, start_from, ends, box, layer="hidden", turn_cost=0.6, extra=None, space=None):
+    """Routes a tree from start (a repeater fed from start_from) to every (end, end_into) in ends: the first end by
+    route(), each next one (nearest first) from the wire already laid, never touching the tree but where it
+    branches. Raises NoRoute. Returns a Tree; tree.ends[end] is the redstone ticks from start to that end's
+    repeater output."""
+    space = space or _Space(scene, layer, box)
+    ends = list(ends)
+    first_end, first_into = ends[0]
+    t = Tree()
+    r = route(scene, start, start_from, first_end, first_into, box, layer, None, turn_cost, extra, space)
+    t.add(r)
+    t.ends[first_end] = t.at[first_end]
+    rest = ends[1:]
+    while rest:
+        laid = dict(space.blocks)
+        for pos, state in t.parts:
+            laid[pos] = parse_state(state)[0].split(":")[-1]
+        sp = _Space.__new__(_Space)
+        sp.blocks, sp.lo, sp.hi, sp.facing = laid, space.lo, space.hi, space.facing
+        rest.sort(key=lambda e: min(sum(abs(a - b) for a, b in zip(e[0], c)) for c in t.cells))
+        end, into = rest.pop(0)
+        allow_end = _end_allow(end, into)
+        if not sp.inside(end) or not sp.air(end):
+            raise NoRoute(f"{end} is not free")
+        starts = []
+        for j in t.cells:
+            if j in t.repeaters or t.strength.get(j, 0) < 12:      # room for a repeater before it fades
+                continue
+            for d, v in DIRS.items():
+                if d in ("up", "down"):
+                    continue
+                first = add(j, v)
+                if (sp.inside(first) and sp.air(first) and _can_hold(sp, first, set())
+                        and _clear_around(sp, first, (j,), {j})):
+                    starts.append(((j, first), d))
+        path = _search(sp, starts, end, into, allow_end, turn_cost, extra, level={p[0][0] for p in starts},
+                       since0={p[0][0]: 16 - t.strength[p[0][0]] for p in starts})
+        if path is None:
+            e = NoRoute(f"no branch to {end} inside {box}")
+            e.end = (end, into)
+            raise e
+        j = path[0]
+        try:
+            b = _finish(scene, sp, list(path), None, into, None, start_strength=t.strength[j])
+        except NoRoute as e:
+            e.end = (end, into)
+            raise
+        t.add(b, base=t.at[j])
+        t.ends[end] = t.at[end]
+    return t
 
 
 # --- many lines at once: negotiated congestion (PathFinder, as FPGA routers do it; docs/BUILD_RULES.md, R10) ---
@@ -256,6 +447,14 @@ def _halo(c):
     return out
 
 
+class TreeNet:
+    """One tree to route: as tree()'s arguments."""
+
+    def __init__(self, start, start_from, ends, name=None):
+        self.start, self.start_from, self.ends = start, start_from, list(ends)
+        self.name = name or f"{start}->{len(self.ends)} ends"
+
+
 class Net:
     """One line to route: as route()'s arguments."""
 
@@ -265,7 +464,7 @@ class Net:
 
 
 def route_all(scene, nets, box, layer="hidden", rounds=40, present=0.6, growth=1.6, history=0.4):
-    """Routes every net so that no two touch (see _halo), negotiating: each round every net is routed again, paying
+    """Routes every net (Net: a line; TreeNet: a tree) so that no two touch (see _halo), negotiating: each round every net is routed again, paying
     for cells other nets use (more each round) and for cells that stayed contested (history), until no cell is
     contested. Returns [Route] in the nets' order; raises NoRoute if a net has no route at all, or if they still
     conflict after `rounds` rounds. Existing blocks are hard obstacles, as in route()."""
@@ -305,16 +504,22 @@ def route_all(scene, nets, box, layer="hidden", rounds=40, present=0.6, growth=1
         for i, net in enumerate(nets):
             if routes[i] is not None and rnd and not conflicted(i):
                 continue
-            if routes[i] is not None:
-                mark(i, routes[i], -1)
+            old = routes[i]
+            if old is not None:
+                mark(i, old, -1)
 
             def extra(c, i=i):
                 return hist.get(c, 0) + factor * others(i, c) * (1 + hist.get(c, 0))
             try:
-                routes[i] = route(scene, net.start, net.start_from, net.end, net.end_into, box, layer, net.delay,
-                                  extra=extra, space=space)
+                if isinstance(net, TreeNet):
+                    routes[i] = tree(scene, net.start, net.start_from, net.ends, box, layer, extra=extra, space=space)
+                else:
+                    routes[i] = route(scene, net.start, net.start_from, net.end, net.end_into, box, layer, net.delay,
+                                      extra=extra, space=space)
             except NoRoute as e:
-                raise NoRoute(f"{net.name}: {e}") from None
+                if old is None:
+                    raise NoRoute(f"{net.name}: {e}") from None
+                routes[i] = old            # priced out of every way this round: keep last round's, negotiate on
             mark(i, routes[i], +1)
         contested = {c for i in range(len(nets)) for c in conflicted(i)}
         if not contested:
