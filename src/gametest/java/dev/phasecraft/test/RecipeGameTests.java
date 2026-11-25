@@ -49,6 +49,9 @@ public class RecipeGameTests {
         // The person, 2026-11-23: ender pearls, "since this would be pretty powerful"; two per craft.
         assertMakes(helper, craft(helper, 3, 1, phase, Items.ENDER_PEARL, Items.PISTON),
                 PhaseCraftBlocks.PHASE_SHIFTER_ITEM, 2, "phase shifter");
+        // A phase shifter that works like a piston: a phase shifter and a piston.
+        assertMakes(helper, craft(helper, 2, 1, PhaseCraftBlocks.PHASE_SHIFTER_ITEM, Items.PISTON),
+                PhaseCraftBlocks.LINE_SHIFTER_ITEM, 1, "line shifter");
         helper.succeed();
     }
 }

@@ -138,6 +138,7 @@ Recipes (a starting point for balancing):
 | Phase Piston | piston + Phase Block |
 | Sticky Phase Piston | Phase Piston + slime ball, or sticky piston + Phase Block |
 | Phase Shifter (2) | Phase Block + ender pearl + piston |
+| Line Shifter | Phase Shifter + piston |
 
 ### Secret switches: the phase block
 
@@ -224,6 +225,17 @@ other blocks with contents too: they go with everything in them and come
 back exactly as they were. If you build something in the gap meanwhile,
 the returning block breaks it (it drops as an item); only an unbreakable
 block like bedrock, or someone standing in the gap, makes it wait.
+
+The **Line Shifter** (Phase Shifter + piston) does the same for a whole row
+or column, with a piston's rules. It faces a way, like a piston (it faces
+you when you place it), and works on the visible blocks in front of it: when
+powered it takes them one by one from the far end, and when the power goes
+it puts them back one by one from its own end, so the line grows back out of
+it. It takes the line a piston there could push: up to the first gap, at
+most 12 blocks, and nothing at all if there are 13 or something immovable
+like obsidian is in the way. Click it to set its speed, as on a repeater:
+one block every 1 to 4 redstone ticks. One line shifter under a pillar,
+facing up, makes the whole pillar sink into the ground and rise again.
 
 Station 21 is a vault: a chest built into a small wall. Click the brick
 above it and the chest is gone, contents and all; click again and it is

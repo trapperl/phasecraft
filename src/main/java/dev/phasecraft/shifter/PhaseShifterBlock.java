@@ -1,27 +1,18 @@
 package dev.phasecraft.shifter;
 
-import dev.phasecraft.phased.PhasedItems;
 import dev.phasecraft.layer.HiddenDimensions;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.storage.TagValueInput;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.Containers;
-import net.minecraft.world.Container;
-import net.minecraft.util.ProblemReporter;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.piston.PistonBaseBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.redstone.Orientation;
-import net.minecraft.world.phys.shapes.CollisionContext;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -85,7 +76,7 @@ public class PhaseShifterBlock extends Block implements EntityBlock {
     @Override
     protected void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         if (!state.getValue(POWERED) && level.getBlockEntity(pos) instanceof PhaseShifterBlockEntity entity
-                && entity.held() != null && !putBack(level, pos, entity)) {
+                && entity.holding() != null && !putBack(level, pos, entity)) {
             level.scheduleTick(pos, this, 1);
         }
     }
@@ -103,107 +94,43 @@ public class PhaseShifterBlock extends Block implements EntityBlock {
         hidden.setBlock(pos, state.setValue(POWERED, powered), Block.UPDATE_CLIENTS);
         if (powered) {
             take(hidden, pos, entity);
-        } else if (entity.held() != null && !putBack(hidden, pos, entity)) {
+        } else if (entity.holding() != null && !putBack(hidden, pos, entity)) {
             hidden.scheduleTick(pos, this, 1);
         }
     }
 
-    private static @Nullable ServerLevel visibleOf(ServerLevel hidden) {
-        return HiddenDimensions.visibleOf(hidden.dimension()).map(key -> hidden.getServer().getLevel(key)).orElse(null);
-    }
-
-    /**
-     * Whether a piston could push this block without breaking it, block entities allowed (and it is not air):
-     * vanilla's PistonBaseBlock.isPushable without its last rule, "no block entities".
-     */
-    static boolean takeable(ServerLevel visible, BlockPos pos, BlockState state) {
-        if (state.isAir()) {
-            return false;
-        }
-        if (state.is(Blocks.PISTON) || state.is(Blocks.STICKY_PISTON)) {
-            return !state.getValue(PistonBaseBlock.EXTENDED);
-        }
-        if (state.getDestroySpeed(visible, pos) == -1.0F) {
-            return false;
-        }
-        return switch (state.getPistonPushReaction()) {
-            case IMMOVEABLE, POPPED -> false;
-            default -> true;
-        };
-    }
-
     private static void take(ServerLevel hidden, BlockPos pos, PhaseShifterBlockEntity entity) {
-        ServerLevel visible = visibleOf(hidden);
-        if (visible == null || !visible.isLoaded(pos) || entity.held() != null) {
+        ServerLevel visible = Shifting.visibleOf(hidden);
+        if (visible == null || entity.holding() != null) {
             return;
         }
-        BlockState state = visible.getBlockState(pos);
-        if (!takeable(visible, pos, state)) {
-            return;
+        Shifting.Held held = Shifting.take(visible, pos);
+        if (held != null) {
+            entity.setHeld(held);
         }
-        BlockEntity contents = visible.getBlockEntity(pos);
-        entity.setHeld(state, contents == null ? null : contents.saveWithoutMetadata(visible.registryAccess()));
-        // Skipping block entity side effects: a chest taken away does not spill its items.
-        visible.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL | Block.UPDATE_SKIP_BLOCK_ENTITY_SIDEEFFECTS);
     }
 
-    /**
-     * Puts the held block back, breaking a visible block in its spot first (the person, 2026-11-24:
-     * "I think it should break the main world block"): it drops as if broken with no tool, contents
-     * included, silently. It waits while a mob or player stands there, or while the block there is
-     * unbreakable (bedrock, a moving piston...).
-     */
+    /** Puts the held block back (see {@link Shifting#putBack}): false if it has to wait. */
     private static boolean putBack(ServerLevel hidden, BlockPos pos, PhaseShifterBlockEntity entity) {
-        ServerLevel visible = visibleOf(hidden);
-        BlockState held = entity.held();
-        if (visible == null || held == null || !visible.isLoaded(pos)) {
+        ServerLevel visible = Shifting.visibleOf(hidden);
+        Shifting.Held held = entity.holding();
+        if (visible == null || held == null || !Shifting.putBack(visible, pos, held)) {
             return false;
         }
-        if (!visible.isUnobstructed(held, pos, CollisionContext.empty())) {
-            return false;
-        }
-        BlockState there = visible.getBlockState(pos);
-        if (!there.canBeReplaced()) {
-            if (there.getDestroySpeed(visible, pos) < 0.0F) {
-                return false;
-            }
-            PhasedItems.silently(visible, () -> visible.destroyBlock(pos, true));
-        }
-        CompoundTag data = entity.heldData();
-        entity.setHeld(null, null);
-        visible.setBlock(pos, Block.updateFromNeighbourShapes(held, visible, pos), Block.UPDATE_ALL);
-        BlockEntity contents = visible.getBlockEntity(pos);
-        if (data != null && contents != null) {
-            contents.loadWithComponents(TagValueInput.create(ProblemReporter.DISCARDING, visible.registryAccess(), data));
-            contents.setChanged();
-        }
+        entity.setHeld(null);
         return true;
     }
 
     /** The shifter is being removed: what it holds goes back to its spot, or drops there as an item if it cannot. */
     static void release(PhaseShifterBlockEntity entity) {
-        if (!(entity.getLevel() instanceof ServerLevel hidden) || entity.held() == null) {
+        if (!(entity.getLevel() instanceof ServerLevel hidden) || entity.holding() == null) {
             return;
         }
-        BlockState held = entity.held();
-        CompoundTag data = entity.heldData();
-        BlockPos pos = entity.getBlockPos();
-        if (!putBack(hidden, pos, entity)) {
-            ServerLevel visible = visibleOf(hidden);
-            entity.setHeld(null, null);
-            if (visible != null) {
-                BlockEntity contents = null;
-                if (data != null && held.getBlock() instanceof EntityBlock block) {
-                    contents = block.newBlockEntity(pos, held);
-                    if (contents != null) {
-                        contents.loadWithComponents(TagValueInput.create(ProblemReporter.DISCARDING, visible.registryAccess(), data));
-                    }
-                }
-                if (contents instanceof Container container) {
-                    Containers.dropContents(visible, pos, container);
-                }
-                Block.dropResources(held, visible, pos, contents);
-            }
+        Shifting.Held held = entity.holding();
+        entity.setHeld(null);
+        ServerLevel visible = Shifting.visibleOf(hidden);
+        if (visible != null) {
+            Shifting.putBackOrDrop(visible, entity.getBlockPos(), held);
         }
     }
 }

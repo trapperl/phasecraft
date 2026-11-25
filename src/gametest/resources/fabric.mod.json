@@ -33,6 +33,7 @@
       "dev.phasecraft.test.HiddenPortGameTests",
       "dev.phasecraft.test.SilentHiddenGameTests",
       "dev.phasecraft.test.PhaseShifterGameTests",
+      "dev.phasecraft.test.LineShifterGameTests",
       "dev.phasecraft.test.PhasedWatcherGameTests",
       "dev.phasecraft.test.PhasedItemGameTests",
       "dev.phasecraft.test.HiddenEditingGameTests",

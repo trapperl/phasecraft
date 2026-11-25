@@ -124,6 +124,41 @@ not placed in the hidden layer, so it never collides with hidden machinery.
   four bricks of a wall vanish into a doorway; station 21: a chest in a
   wall vanishes with its contents.
 
+**Line shifter** (`phasecraft:line_shifter`, Redstone tab; recipe: Phase
+Shifter + piston; the person's idea, 2026-11-25: "'pushing' phase blocks in
+a row or column would be an intuitive fix", after the castle tower needed
+3,483 hidden blocks to give each of its 112 blocks its own wire). A phase
+shifter for a whole line, with a piston's rules: it faces a way, as a piston
+does (placed facing the player), and acts on the visible blocks in front of
+it, not on its own spot.
+- Powered, it takes the line one block at a time from the far end; unpowered,
+  it puts it back one block at a time from the near end, so the line grows
+  back out of it. Each block is taken and put back as a phase shifter would
+  (`Shifting`, shared by both blocks: contents go along, putting back breaks
+  a block in the way, waits for mobs and unbreakable blocks).
+- The line is the one a piston in its place could push
+  (`PistonStructureResolver`, straight line only): up to the first air, or
+  the first block a piston would break (a torch, a cobweb, water), which
+  stays. Twelve blocks at most: with a thirteenth, or an immovable block in
+  the line, nothing happens, as with a piston. Blocks it already holds count
+  towards the twelve. Slime and honey are taken like any block and pull
+  nothing along.
+- Speed: one block every 1 to 4 redstone ticks, its `delay`, set by
+  clicking it as on a repeater (default 1). The first block goes the moment
+  the power arrives.
+- Turned around mid-move, it goes the other way: what it took comes back,
+  nearest first; or it takes the line again from its new far end (the
+  visible line up to the first spot it still holds). The next block moves one
+  step after the last one (`next_step`), so the rhythm holds.
+- `LineShifterBlockEntity` saves the held blocks by distance, the distance
+  still to take and the next step's game time; the step itself is a block
+  tick, saved with the chunk, so a move goes on after a restart.
+- Removed, it puts back everything it holds, nearest first, or drops what
+  cannot go back. Not a redstone conductor, like the phase shifter.
+- `LineShifterGameTests` (order and timing, delay by clicking, turning
+  around, a piston's line, contents, waiting, removal), `RecipeGameTests`,
+  and `PhaseLayerRestartPhases` (a move under way across a restart).
+
 ## The overlay: seeing the hidden layer from the visible world
 
 The hidden layer is a separate dimension, but it is meant to be seen as a
