@@ -33,7 +33,8 @@ NOT_CONDUCTORS = ("air", "glass", "pane", "redstone_wire", "repeater", "comparat
                   "pressure_plate", "piston", "slab", "stairs", "leaves", "ice", "fence", "wall", "door", "trapdoor",
                   "lantern", "chain", "water", "lava", "phase_port", "redstone_block", "glowstone", "sea_lantern",
                   "observer", "hopper", "carpet", "rail", "sign", "ladder", "bars", "scaffolding", "barrier", "light",
-                  "tripwire", "flower", "sapling", "grass", "fern", "snow", "cactus", "bulb", "daylight_detector")
+                  "tripwire", "flower", "sapling", "grass", "fern", "snow", "cactus", "bulb", "daylight_detector",
+                  "phase_shifter")
 
 
 def add(p, d):
@@ -43,7 +44,7 @@ def add(p, d):
 
 def conductor(name):
     base = name.split(":")[-1]
-    if base in ("redstone_lamp", "target", "note_block", "dispenser", "dropper", "phase_shifter", "phase_block"):
+    if base in ("redstone_lamp", "target", "note_block", "dispenser", "dropper", "phase_block"):
         return True
     return not any(n in base for n in NOT_CONDUCTORS)
 
@@ -96,7 +97,7 @@ class Sim:
         """Whether the block at p can hold a wire, repeater, torch or lever (a full block)."""
         k = self.kind(p)
         return self.is_conductor(p) or k in ("glass", "tinted_glass", "redstone_block", "glowstone", "sea_lantern",
-                                             "observer", "phase_port", "barrier") or k.endswith("_glass") and "pane" not in k \
+                                             "observer", "phase_port", "barrier", "phase_shifter") or k.endswith("_glass") and "pane" not in k \
             or k.endswith("copper_bulb")
 
     def support(self, p):

@@ -43,9 +43,10 @@ public final class PhaseCraftBlocks {
                     .pushReaction(PushReaction.IMMOVEABLE));
     public static final Item PHASE_BLOCK_ITEM = item("phase_block", PHASE_BLOCK);
 
+    /** Passes no power on, as a piston does not: powering one shifter powers no other (the person, 2026-11-25). */
     public static final Block PHASE_SHIFTER = block("phase_shifter", PhaseShifterBlock::new,
             BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_PURPLE).strength(1.5F).sound(SoundType.AMETHYST)
-                    .pushReaction(PushReaction.IMMOVEABLE));
+                    .pushReaction(PushReaction.IMMOVEABLE).isRedstoneConductor((s, l, p) -> false));
     public static final Item PHASE_SHIFTER_ITEM = item("phase_shifter", PHASE_SHIFTER);
     public static final BlockEntityType<PhaseShifterBlockEntity> PHASE_SHIFTER_ENTITY = Registry.register(
             BuiltInRegistries.BLOCK_ENTITY_TYPE, id("phase_shifter"),

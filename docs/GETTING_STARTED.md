@@ -218,7 +218,8 @@ Station 18 shows the phase shifter: a plain stone-brick wall where one brick
 a doorway; click again and they come back. Behind each of those bricks a
 hidden phase shifter holds the brick while it is powered. The Phase Shifter
 is in the Redstone tab; crafting it (Phase Block + ender pearl + piston) makes
-two. It takes what a piston could push, and chests, furnaces, barrels and
+two. Like a piston it passes no power on: a repeater into one shifter of a
+wall takes just that block. It takes what a piston could push, and chests, furnaces, barrels and
 other blocks with contents too: they go with everything in them and come
 back exactly as they were. If you build something in the gap meanwhile,
 the returning block breaks it (it drops as an item); only an unbreakable

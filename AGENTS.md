@@ -183,12 +183,12 @@ tower built and unbuilt block by block. Also on the list: a hole in the
 ocean (glass walls put back into the sea, the water inside replaced by
 filler blocks that are then taken: dry and repeatable, no sponges), a
 sorting machine (done, station 27: a hidden hopper sorter, tools/gen_sorter.py;
-its four kinds the agent's choice, open to change), mob farms. The tower and
-the ocean hole wait on the person (2026-11-25: "Let's move on to the things and
-I'll think about it"): a shifter conducts power, so a powered one powers the
-shifters touching it, and a one-block wall or a solid volume has blocks no feed
-can reach alone; a shifter that does not conduct (as phase pistons do not)
-would allow them, a change to the block for the person to decide. Liked (the person: "I like your suggestions
+its four kinds the agent's choice, open to change), mob farms. A shifter
+passes no power on, as a piston does not (the person, 2026-11-25: "Let's make
+the change, I think it opens up more building opportunities"), so every block
+of a one-block wall or tower can be fed on its own; a shifter still needs a free
+neighbour (the person: "Free neighbor is what a piston needs too"), so the
+ocean hole is at most two blocks across, or hollowed another way. Liked (the person: "I like your suggestions
 too"): a shifter display (pixel wall), a track built ahead of a minecart,
 a shifting maze, a light-up dance floor, a treasure reveal, a combination
 lock. No movable shifters (the person, 2026-11-24: "Nah"), so no tunneling

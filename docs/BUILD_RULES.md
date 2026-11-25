@@ -54,9 +54,15 @@ Tools: `tools/redstone_check.py` (static: which signal reaches each part), `tool
   strength the design relies on is counted.** Flexible repeater spots turned to wire still need one every
   12. Lessons: the iris's ring 3 bus, the mountain door's staircase and bus line. Checked by: the simulator
   (the static checker does not model strength).
-- **C7. A phase shifter is fed through a stone, never by a diode or torch pointing straight into it.**
-  A shifter is a solid conductor: strongly powered, it would power the shifters beside it. Lesson: the
-  iris door. Checked by: `tools/redstone_check.py` (each shifter gets its own signal only).
+- **C7. A phase shifter passes no power on** (since 2026-11-25, the person: "Let's make the change, I think it
+  opens up more building opportunities"; as a piston): a repeater, comparator or torch pointing into it
+  powers that shifter only, so any free side of a block can feed it, even a cell that touches other
+  shifters. A powered stone beside a shifter still powers it, and every other mechanism it touches, so a
+  feed stone must touch no other shifter. A shifter still needs a free neighbour, as a piston does: the
+  middle of a solid volume three blocks thick cannot be fed. Until then a shifter conducted: strongly
+  powered, it powered the shifters beside it (lesson: the iris door), so builds fed every shifter through
+  a stone. Checked by: `tools/redstone_check.py` (each shifter gets its own signal only),
+  `PhaseShifterGameTests`.
 - **C8. Torches go out only on a direct signal into their block.** Side-by-side torch towers are safe.
   Lesson: the iris door (the checker had this wrong). Checked by: the checker and the simulator.
 - **C9. Pistons, phase pistons included, have quasi-connectivity**: whatever powers the block above a
