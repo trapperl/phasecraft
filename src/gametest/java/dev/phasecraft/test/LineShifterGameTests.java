@@ -427,6 +427,54 @@ public class LineShifterGameTests {
                 .thenSucceed();
     }
 
+    /**
+     * A comparator behind a line shifter reads how many blocks it holds, step by step (1 to 5 as it takes a line of
+     * five, back to 0 as it puts it back), and powers what it points into (a lamp).
+     */
+    @GameTest(structure = STRUCTURE, maxTicks = 200)
+    public void aComparatorReadsHowManyBlocksItHolds(GameTestHelper helper) {
+        BlockPos at = new BlockPos(3, 2, 3);
+        List<BlockPos> line = line(at, Direction.UP, 5);
+        for (BlockPos p : line) {
+            helper.setBlock(p, Blocks.OAK_PLANKS);
+        }
+        HiddenLayer layer = hidden(helper);
+        // the shifter faces up and is powered from the west; the comparator reads it from the south
+        BlockPos comparator = at.south();
+        BlockPos lamp = comparator.south();
+        for (BlockPos p : List.of(at.below(), comparator.below(), lamp.below())) {
+            layer.setBlock(helper.absolutePos(p), Blocks.GLASS.defaultBlockState());
+        }
+        lineShifter(helper, at, Direction.UP, 2);  // a count every 4 game ticks: a comparator (2) shows each
+        layer.setBlock(helper.absolutePos(comparator), Blocks.COMPARATOR.defaultBlockState()
+                .setValue(net.minecraft.world.level.block.ComparatorBlock.FACING, Direction.NORTH));
+        layer.setBlock(helper.absolutePos(lamp), Blocks.REDSTONE_LAMP.defaultBlockState());
+        List<Integer> readings = new ArrayList<>();
+        Runnable read = () -> {
+            int now = ((net.minecraft.world.level.block.entity.ComparatorBlockEntity) layer.level()
+                    .getBlockEntity(helper.absolutePos(comparator))).getOutputSignal();
+            if (readings.isEmpty() || readings.get(readings.size() - 1) != now) {
+                readings.add(now);
+            }
+        };
+        GameTestSequence sequence = helper.startSequence().thenIdle(3).thenExecute(read)
+                .thenExecute(() -> layer.setBlock(helper.absolutePos(at.west()), Blocks.REDSTONE_BLOCK.defaultBlockState()));
+        for (int i = 0; i < 30; i++) {
+            sequence = sequence.thenIdle(1).thenExecute(read);
+        }
+        sequence = sequence.thenExecute(() -> {
+            helper.assertTrue(layer.getBlock(helper.absolutePos(lamp)).getValue(net.minecraft.world.level.block.RedstoneLampBlock.LIT),
+                    "the lamp is not lit with the whole line gone");
+            layer.setBlock(helper.absolutePos(at.west()), Blocks.AIR.defaultBlockState());
+        });
+        for (int i = 0; i < 30; i++) {
+            sequence = sequence.thenIdle(1).thenExecute(read);
+        }
+        sequence.thenExecute(() -> helper.assertValueEqual(readings, List.of(0, 1, 2, 3, 4, 5, 4, 3, 2, 1, 0),
+                        "comparator readings"))
+                .thenSucceed();
+    }
+
     /** Removed while it holds blocks, it puts them back; one that cannot go back (bedrock in its spot) drops. */
     @GameTest(structure = STRUCTURE, maxTicks = 100)
     public void removedItPutsBackWhatItHolds(GameTestHelper helper) {

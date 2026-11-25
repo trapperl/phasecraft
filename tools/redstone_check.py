@@ -42,7 +42,7 @@ HORIZONTAL = ["north", "south", "west", "east"]
 OPPOSITE = {"north": "south", "south": "north", "west": "east", "east": "west", "up": "down", "down": "up"}
 
 
-CONTAINERS = ("hopper", "chest", "barrel", "dropper", "dispenser")
+CONTAINERS = ("hopper", "chest", "barrel", "dropper", "dispenser", "line_shifter")  # a comparator reads how full
 
 
 def add(p, d):

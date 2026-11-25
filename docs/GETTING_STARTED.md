@@ -235,7 +235,9 @@ it. It takes the line a piston there could push: up to the first gap, at
 most 12 blocks, and nothing at all if there are 13 or something immovable
 like obsidian is in the way. Click it to set its speed, as on a repeater:
 one block every 1 to 4 redstone ticks. One line shifter under a pillar,
-facing up, makes the whole pillar sink into the ground and rise again.
+facing up, makes the whole pillar sink into the ground and rise again. A
+comparator behind it reads how many blocks it holds, like a chest's fill
+level: wait for a line to be all gone before the next thing moves.
 
 Station 21 is a vault: a chest built into a small wall. Click the brick
 above it and the chest is gone, contents and all; click again and it is

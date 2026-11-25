@@ -111,6 +111,16 @@ transparent layer, not a separate world.
       block (the plain shifter unchanged), recipe Phase Shifter + piston,
       speed 1 to 4 redstone ticks a block set by clicking. The castle tower
       (station 28) runs on line shifters: 226 hidden blocks instead of 3,483.
+      A comparator reads how many blocks a line shifter holds (done; the
+      agent's proposal, the person: "Let's do that").
+   a4. The area shifter (the person's idea, 2026-11-25: two corners make a
+      box that can be turned off and on; "It does feel like cheating
+      though. We could keep it as an option"; "Let's do that"): two area
+      shifters at opposite corners (hidden), each pairs with its nearest
+      other within 16; the box moves only while both are powered, layer by
+      layer from the top, back from the bottom, speed by clicking; piston
+      rules per block, contents kept; a game rule, off by default; a size
+      cap; a dearer recipe. Next.
    b. The phase block (decided by the person, replacing dedicated
       plate/button blocks): a hidden block standing on a phase block, or
       hanging on its side, is phased: it reacts to the visible world at its
