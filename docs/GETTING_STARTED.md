@@ -139,6 +139,7 @@ Recipes (a starting point for balancing):
 | Sticky Phase Piston | Phase Piston + slime ball, or sticky piston + Phase Block |
 | Phase Shifter (2) | Phase Block + ender pearl + piston |
 | Line Shifter | Phase Shifter + piston |
+| Area Shifter (2) | Line Shifter + diamond block |
 
 ### Secret switches: the phase block
 
@@ -238,6 +239,15 @@ one block every 1 to 4 redstone ticks. One line shifter under a pillar,
 facing up, makes the whole pillar sink into the ground and rise again. A
 comparator behind it reads how many blocks it holds, like a chest's fill
 level: wait for a line to be all gone before the next thing moves.
+
+The **Area Shifter** is an option, off unless a world turns it on
+(`/gamerule phasecraft:area_shifters true`): it can switch a whole box of the
+world off and on, which is more than a piston could ever do. Put two in the
+hidden layer at opposite corners of a box (up to 16 x 16 x 16) and wire one
+switch to both: while both are powered, everything in the box goes, a layer
+at a time from the top, and when the power goes it comes back from the
+bottom. Click a corner to set the speed (0 is all at once). Keep boxes apart:
+each corner pairs with its nearest other one.
 
 Station 21 is a vault: a chest built into a small wall. Click the brick
 above it and the chest is gone, contents and all; click again and it is

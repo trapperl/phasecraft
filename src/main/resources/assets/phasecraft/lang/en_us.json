@@ -17,5 +17,7 @@
   "block.phasecraft.phase_block": "Phase Block",
   "phasecraft.edit.not_allowed": "Editing the hidden layer needs Creative, or Survival with the game rule phasecraft:survival_access on",
   "block.phasecraft.phase_shifter": "Phase Shifter",
-  "block.phasecraft.line_shifter": "Line Shifter"
+  "block.phasecraft.line_shifter": "Line Shifter",
+  "block.phasecraft.area_shifter": "Area Shifter",
+  "gamerule.phasecraft.area_shifters": "Area shifters work (two corners switch a box of the world off and on)"
 }

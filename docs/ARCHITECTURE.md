@@ -170,6 +170,44 @@ it, not on its own spot.
   around, a piston's line, contents, waiting, removal), `RecipeGameTests`,
   and `PhaseLayerRestartPhases` (what a move under way saves: the blocks held and those still to take; put back after the restart).
 
+**Area shifter** (`phasecraft:area_shifter`, Redstone tab; recipe: Line
+Shifter + diamond block makes two; the person's idea, 2026-11-25: two corners
+make a box "and then you could turn the whole cube off and on"; "It does feel
+like cheating though. We could keep it as an option"). **An option:** it does
+nothing unless the game rule `phasecraft:area_shifters` is on (off by
+default).
+- Two area shifters in the hidden layer at opposite corners of a box (their
+  own spots included, at most 16 x 16 x 16) pair: each pairs with its nearest
+  other area shifter at most 15 blocks away on every axis, if that one's
+  nearest is it, and not on a tie. Keep boxes apart.
+- The box goes only while both corners are powered (one switch wired to
+  both; a stray signal into one corner does nothing), layer by layer from the
+  top; when either loses its power it comes back layer by layer from the
+  bottom. A layer every 1 to 4 redstone ticks, or 0: all at once (`delay`,
+  set by clicking, default 1; the leader's counts). A layer with nothing to
+  take costs no time. Turned around mid-move, it goes the other way with the
+  rhythm kept.
+- Each block is taken and put back as a phase shifter does it (`Shifting`):
+  piston rules, blocks with contents too; air, fragile blocks (torches,
+  flowers) and immovable ones (obsidian) stay. A torch on a block that goes
+  pops, as it would off a pushed block. Putting back breaks what is in the
+  way and waits for a mob in a spot; the layers above wait for it.
+- The leader (the corner whose position sorts first) holds the blocks
+  (`AreaShifterBlockEntity`, saved by offset) and runs the move; the other
+  corner only remembers its leader. Removing the leader puts everything back
+  at once (or drops what cannot go back); removing the other corner makes the
+  leader put the box back layer by layer.
+- `AreaShifterGameTests` (layers and their ticks both ways, contents, one
+  corner is not enough, delay 0, piston rules, too far apart and a tie do not
+  pair, the 16-block cap at its edge, turned around, removing either corner)
+  run in a test environment with the rule on
+  (`phasecraft-test:area_shifters_on`), apart from `offByDefault`. Their
+  structure is 24 x 17 x 24 though only 8 x 17 x 8 is used: tests in a batch
+  stand about 5 blocks apart, and a corner looks 15 blocks around, so in a
+  smaller structure corners paired with the next test's hut;
+  `RecipeGameTests`; `PhaseLayerRestartPhases` (a box held across a restart,
+  put back after it).
+
 ## The overlay: seeing the hidden layer from the visible world
 
 The hidden layer is a separate dimension, but it is meant to be seen as a
