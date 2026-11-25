@@ -94,7 +94,7 @@ class Layout:
         k = self.kind(q)
         if k == "redstone_wire":
             return True
-        if k == "repeater":
+        if k == "repeater":               # along its axis only; a comparator connects from any side (below)
             facing = self.parts[q][1].get("facing")
             return facing in (d, OPPOSITE[d])
         if k in ("redstone_torch", "redstone_wall_torch", "phase_port", "lever", "comparator", "tripwire_hook") \

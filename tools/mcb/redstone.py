@@ -1,10 +1,12 @@
 """A redstone simulator for one layer of a Scene, following vanilla's rules (Minecraft 26.3 sources), tick by tick.
 
 What it knows: wire (strength, how it connects, up and down steps), repeaters (delay, locking, the order vanilla
-ticks them in), torches (standing and on walls), levers, redstone blocks, phase ports and tripwire hooks (inputs: set
-them on or off; a hook powers like a lever on a wall) and phase shifters (outputs: when each was powered). Blocks are redstone conductors unless they are see-through or
-redstone parts (see `conductor`). Not yet: comparators, observers, pistons, buttons, pressure plates, copper bulbs,
-torch burnout.
+ticks them in), comparators (compare and subtract, side inputs, reading a copper bulb behind them or through a block),
+torches (standing and on walls), observers (a 2-tick pulse 2 ticks after the block they face changes state), copper
+bulbs (toggling as their power comes on), levers, redstone blocks, phase ports and tripwire hooks (inputs: set them on
+or off; a hook powers like a lever on a wall) and phase shifters (outputs: when each was powered). Blocks are redstone
+conductors unless they are see-through or redstone parts (see `conductor`). Not yet: pistons, buttons, pressure
+plates, containers for comparators, torch burnout.
 
     sim = Sim(scene)                     # the "hidden" layer by default
     sim.run(10)                          # let it settle
@@ -64,6 +66,13 @@ class Sim:
         self.conductive = {p: conductor(v[0]) for p, v in self.parts.items()}
         self.popped = self.drop_unsupported()
         self.wire_power = {p: int(v[1].get("power", 0)) for p, v in self.parts.items() if v[0] == "redstone_wire"}
+        for p, (k, props) in self.parts.items():
+            if k == "comparator":           # its output strength (vanilla keeps it in a block entity)
+                props.setdefault("_out", 15 if props.get("powered") == "true" else 0)
+        self.watchers = {}                  # the block an observer faces -> the observers facing it
+        for p, (k, props) in self.parts.items():
+            if k == "observer":
+                self.watchers.setdefault(add(p, props.get("facing", "south")), []).append(p)
         self.react()
 
     def adopt(self, scene, layer="hidden"):
@@ -77,6 +86,8 @@ class Sim:
                         self.parts[p][1][key] = props[key]
                 if self.parts[p][0] == "redstone_wire":
                     self.wire_power[p] = int(props.get("power", 0))
+                if self.parts[p][0] == "comparator":
+                    self.parts[p][1]["_out"] = int((_ or {}).get("OutputSignal", 15 if props.get("powered") == "true" else 0))
         self.queue, self.scheduled = [], set()
         self.react()
 
@@ -85,7 +96,8 @@ class Sim:
         """Whether the block at p can hold a wire, repeater, torch or lever (a full block)."""
         k = self.kind(p)
         return self.is_conductor(p) or k in ("glass", "tinted_glass", "redstone_block", "glowstone", "sea_lantern",
-                                             "observer", "phase_port", "barrier") or k.endswith("_glass") and "pane" not in k
+                                             "observer", "phase_port", "barrier") or k.endswith("_glass") and "pane" not in k \
+            or k.endswith("copper_bulb")
 
     def support(self, p):
         k = self.kind(p)
@@ -135,9 +147,9 @@ class Sim:
         k = self.kind(q)
         if k == "redstone_wire":
             return True
-        if k in ("repeater", "comparator"):
+        if k == "repeater":                # a repeater along its axis only; a comparator from any side
             return self.prop(q, "facing") in (d, OPPOSITE[d])
-        if k in ("redstone_torch", "redstone_wall_torch", "lever", "tripwire_hook", "redstone_block", "phase_port",
+        if k in ("comparator", "redstone_torch", "redstone_wall_torch", "lever", "tripwire_hook", "redstone_block", "phase_port",
                  "observer") \
                 or "button" in k or "pressure_plate" in k:
             return k != "observer" or self.prop(q, "facing") == d
@@ -170,8 +182,10 @@ class Sim:
             if power == 0:
                 return 0
             return power if d == "up" or OPPOSITE[d] in self.wire_points(src) else 0
-        if k in ("repeater", "comparator"):
+        if k in ("repeater", "observer"):
             return 15 if self.is_on(src, "powered") and self.prop(src, "facing") == d else 0
+        if k == "comparator":
+            return self.prop(src, "_out", 0) if self.is_on(src, "powered") and self.prop(src, "facing") == d else 0
         if k == "redstone_torch":
             return 15 if self.is_on(src, "lit") and d != "up" else 0
         if k == "redstone_wall_torch":
@@ -189,7 +203,7 @@ class Sim:
         k = self.kind(src)
         if k == "redstone_wire":
             return self.emit(src, d)
-        if k in ("repeater", "comparator"):
+        if k in ("repeater", "comparator", "observer"):
             return self.emit(src, d)
         if k in ("redstone_torch", "redstone_wall_torch"):
             return self.emit(src, d) if d == "down" else 0
@@ -255,6 +269,51 @@ class Sim:
             signal = max(signal, self.wire_power.get(q, 0))
         return signal
 
+    def analog(self, q):
+        """A block's comparator output (hasAnalogOutputSignal), or None: copper bulbs only, for now."""
+        if self.kind(q).endswith("copper_bulb"):
+            return 15 if self.is_on(q, "lit") else 0
+        return None
+
+    def comparator_input(self, p):
+        """ComparatorBlock.getInputSignal: the diode's input, or the analog output of the block behind it, or of the
+        block behind that if the one behind is a conductor."""
+        f = self.prop(p, "facing")
+        signal = self.repeater_input(p)
+        q = add(p, f)
+        a = self.analog(q)
+        if a is not None:
+            return a
+        if signal < 15 and self.is_conductor(q):
+            a = self.analog(add(q, f))
+            if a is not None:
+                return a
+        return signal
+
+    def control(self, q, d):
+        """SignalGetter.getControlInputSignal(q, d, false): a comparator's side input."""
+        k = self.kind(q)
+        if k == "redstone_block":
+            return 15
+        if k == "redstone_wire":
+            return self.wire_power.get(q, 0)
+        return self.direct(q, d)
+
+    def comparator_state(self, p):
+        """(output strength, whether it should be on), as ComparatorBlock computes them."""
+        inp = self.comparator_input(p)
+        side = max(self.control(add(p, d), d) for d in SIDES[self.prop(p, "facing")])
+        subtract = self.prop(p, "mode", "compare") == "subtract"
+        out = 0 if inp == 0 or side > inp else (inp - side if subtract else inp)
+        should = inp > 0 and (inp > side or (inp == side and not subtract))
+        return out, should
+
+    def notify(self, p):
+        """A block's state changed: observers facing it start their pulse (unless already on or due)."""
+        for o in self.watchers.get(p, ()):
+            if not self.is_on(o, "powered") and o not in self.scheduled:
+                self.schedule(o, 2, NORMAL)
+
     def locked(self, p):
         if self.kind(p) != "repeater":
             return False
@@ -281,7 +340,10 @@ class Sim:
 
     def set(self, p, key, value):
         """Changes a part's state and lets everything react, as a block update would."""
+        changed = self.parts[p][1].get(key) != value
         self.parts[p][1][key] = value
+        if changed:
+            self.notify(p)
         self.react()
 
     def react(self):
@@ -292,7 +354,10 @@ class Sim:
             changed = False
             target = self.wire_targets()
             if target != self.wire_power:
+                moved = [w for w in target if target[w] != self.wire_power.get(w)]
                 self.wire_power = target
+                for w in moved:
+                    self.notify(w)
                 changed = True
             for p, (k, props) in self.parts.items():
                 if k == "phase_shifter":
@@ -300,6 +365,21 @@ class Sim:
                     if on != (props.get("powered") == "true"):
                         props["powered"] = "true" if on else "false"
                         self.events.append((self.tick, p, "shifter", on))
+                        self.notify(p)
+                        changed = True
+                elif k == "repeater":             # RepeaterBlock.updateShape: its locked state (an observer sees it)
+                    lk = "true" if self.locked(p) else "false"
+                    if props.get("locked", "false") != lk:
+                        props["locked"] = lk
+                        self.notify(p)
+                elif k.endswith("copper_bulb"):   # CopperBulbBlock.checkAndFlip: toggles as its power comes on
+                    on = self.neighbor_signal(p) > 0
+                    if on != (props.get("powered") == "true"):
+                        if on:
+                            props["lit"] = "false" if props.get("lit") == "true" else "true"
+                            self.events.append((self.tick, p, "bulb", props["lit"] == "true"))
+                        props["powered"] = "true" if on else "false"
+                        self.notify(p)
                         changed = True
         for p, (k, props) in self.parts.items():
             if k == "repeater" and p not in self.scheduled and not self.locked(p):
@@ -314,6 +394,13 @@ class Sim:
             elif k in ("redstone_torch", "redstone_wall_torch") and p not in self.scheduled:
                 if (props.get("lit", "true") == "true") != self.torch_should_be_lit(p):
                     self.schedule(p, 2, NORMAL)
+            elif k == "comparator" and p not in self.scheduled:
+                out, should = self.comparator_state(p)
+                if out != props.get("_out", 0) or should != (props.get("powered") == "true"):
+                    f = props["facing"]
+                    front = add(p, OPPOSITE[f])
+                    prioritize = self.kind(front) in ("repeater", "comparator") and self.prop(front, "facing") != OPPOSITE[f]
+                    self.schedule(p, 2, HIGH if prioritize else NORMAL)
 
     def run_tick(self, p):
         k, props = self.parts[p]
@@ -333,6 +420,22 @@ class Sim:
             should = self.torch_should_be_lit(p)
             if lit != should:
                 self.set(p, "lit", "true" if should else "false")
+        elif k == "comparator":                  # ComparatorBlock.refreshOutputState
+            out, should = self.comparator_state(p)
+            old = props.get("_out", 0)
+            props["_out"] = out
+            if old != out or props.get("mode", "compare") == "compare":
+                on = props.get("powered") == "true"
+                if on != should:
+                    self.set(p, "powered", "true" if should else "false")
+                    return
+            self.react()
+        elif k == "observer":                    # ObserverBlock.tick: on for 2 game ticks, then off
+            if props.get("powered") == "true":
+                self.set(p, "powered", "false")
+            else:                                # its off tick is scheduled before its neighbours hear of it
+                self.schedule(p, 2, NORMAL)
+                self.set(p, "powered", "true")
 
     # --- driving it ---
     def set_input(self, p, on):

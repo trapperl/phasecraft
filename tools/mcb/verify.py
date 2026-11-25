@@ -4,7 +4,7 @@ A circuit (a Scene; its redstone in the hidden layer) is placed on the dev serve
 (/tick freeze), and in a Sim; then, one game tick at a time, inputs are switched on both sides and the server steps
 (/tick step 1) and exports the region. Every repeater, torch, wire and shifter must agree each tick.
 
-    python3 -m mcb.verify [--random N] [--seed S]
+    python3 -m mcb.verify [--random N] [--seed S] [--extra]    (--extra: with comparators, observers, copper bulbs)
 """
 
 import random
@@ -18,6 +18,7 @@ from .structure import parse_state
 
 AT = (300, -40, 100)             # a free spot on the dev server, both layers
 HIDDEN = "phasecraft:hidden_overworld"
+SETTLE_WATCH = 8                 # game ticks a placed circuit must stay unchanged to count as settled
 
 
 def observed(scene_or_sim, layer="hidden"):
@@ -27,19 +28,23 @@ def observed(scene_or_sim, layer="hidden"):
         for p, (k, props) in scene_or_sim.parts.items():
             if k == "redstone_wire":
                 out[p] = scene_or_sim.wire_power.get(p, 0)
-            elif k in ("repeater", "phase_shifter", "lever"):
+            elif k in ("repeater", "phase_shifter", "lever", "comparator", "observer"):
                 out[p] = props.get("powered") == "true"
             elif k in ("redstone_torch", "redstone_wall_torch"):
                 out[p] = props.get("lit", "true") == "true"
+            elif k.endswith("copper_bulb"):
+                out[p] = props.get("lit") == "true"
         return out
     for p, (state, _) in scene_or_sim.layers[layer].items():
         name, props = parse_state(state)
         k = name.split(":")[-1]
         if k == "redstone_wire":
             out[p] = int(props.get("power", 0))
-        elif k in ("repeater", "phase_shifter", "lever"):
+        elif k in ("repeater", "phase_shifter", "lever", "comparator", "observer"):
             out[p] = props.get("powered") == "true"
         elif k in ("redstone_torch", "redstone_wall_torch"):
+            out[p] = props.get("lit") == "true"
+        elif k.endswith("copper_bulb"):
             out[p] = props.get("lit") == "true"
     return out
 
@@ -87,14 +92,16 @@ def check(scene, inputs, ticks, name="verify"):
                 mismatches.append((t, p, real.get(p), mine.get(p)))
 
     compare(0)
-    # a circuit that never settles (a clock) has ticks pending that no export shows: not comparable
-    server.command("tick step 1")
-    time.sleep(0.12)
-    if sim.queue or observed(server.export(AT, far, name + "_snap")) != observed(settled):
-        server.command("tick unfreeze")
-        return None
-    sim.run(1)
-    for t in range(2, ticks + 1):
+    # a circuit that never settles (a clock) has ticks pending that no export shows: not comparable. Observers make
+    # clocks of any period, so watch it a while
+    for _ in range(SETTLE_WATCH):
+        server.command("tick step 1")
+        time.sleep(0.12)
+        if sim.queue or observed(server.export(AT, far, name + "_snap")) != observed(settled):
+            server.command("tick unfreeze")
+            return None
+        sim.run(1)
+    for t in range(SETTLE_WATCH + 1, ticks + 1):
         for pos, on in inputs.get(t, []):
             k = scene.get("hidden", pos)
             if "lever" in k:
@@ -113,8 +120,9 @@ def check(scene, inputs, ticks, name="verify"):
     return mismatches
 
 
-def random_circuit(rng, size=(9, 3, 9)):
-    """A random little circuit on a glass floor: wires, repeaters, torches, stone, two levers."""
+def random_circuit(rng, size=(9, 3, 9), extra=False):
+    """A random little circuit on a glass floor: wires, repeaters, torches, stone, two levers; with extra, also
+    comparators, observers and copper bulbs."""
     scene = Scene(size)
     sx, sy, sz = size
     scene.fill("hidden", (0, 0, 0), (sx - 1, 0, sz - 1), "minecraft:glass")
@@ -132,6 +140,13 @@ def random_circuit(rng, size=(9, 3, 9)):
                     scene.set("hidden", (x, 2, z), "minecraft:redstone_torch")
             elif r < 0.74:
                 scene.set("hidden", (x, 1, z), f"minecraft:redstone_wall_torch[facing={rng.choice(facings)}]")
+            elif extra and r < 0.80:
+                mode = rng.choice(["compare", "subtract"])
+                scene.set("hidden", (x, 1, z), f"minecraft:comparator[facing={rng.choice(facings)},mode={mode}]")
+            elif extra and r < 0.85:
+                scene.set("hidden", (x, 1, z), "minecraft:copper_bulb")
+            elif extra and r < 0.89:
+                scene.set("hidden", (x, 1, z), f"minecraft:observer[facing={rng.choice(facings + ['up', 'down'])}]")
     levers = []
     for _ in range(2):
         x, z = rng.randrange(sx), rng.randrange(sz)
@@ -156,11 +171,12 @@ def main(argv=None):
     count = int(argv[argv.index("--random") + 1]) if "--random" in argv else 3
     seed = int(argv[argv.index("--seed") + 1]) if "--seed" in argv else 1
     rng = random.Random(seed)
+    extra = "--extra" in argv
     bad = 0
     for i in range(count):
-        scene, levers = random_circuit(rng)
-        inputs = {3: [(levers[0], True)], 15: [(levers[1], True)], 31: [(levers[0], False)], 45: [(levers[1], False)]}
-        found = check(scene, inputs, 90, name=f"verify{i}")
+        scene, levers = random_circuit(rng, extra=extra)
+        inputs = {12: [(levers[0], True)], 24: [(levers[1], True)], 40: [(levers[0], False)], 54: [(levers[1], False)]}
+        found = check(scene, inputs, 100, name=f"verify{i}")
         if found is None:
             print(f"circuit {i} (seed {seed}): a clock, skipped")
             continue
