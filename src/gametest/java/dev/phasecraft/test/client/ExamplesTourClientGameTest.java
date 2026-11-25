@@ -62,7 +62,8 @@ public class ExamplesTourClientGameTest implements FabricClientGameTest {
             new View("stairs", "428.5 -50 17.5 180 10"),
             // someone on step 6: the steps within 3 of them appear
             new View("stairs_walker", "428.5 -50 17.5 180 10", "summon minecraft:villager 428.5 -53 0.5 "
-                    + "{NoAI:1b,NoGravity:1b,Silent:1b,Invulnerable:1b}", 40));
+                    + "{NoAI:1b,NoGravity:1b,Silent:1b,Invulnerable:1b}", 40),
+            new View("sorter", "463.5 -56.5 4.5 180 20"));
 
     @Override
     public void runTest(ClientGameTestContext context) {

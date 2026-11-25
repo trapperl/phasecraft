@@ -48,6 +48,38 @@ class CheckTest(unittest.TestCase):
             "hidden 1 0 1 minecraft:glass", "hidden 1 1 1 minecraft:redstone_wire[east=side,west=side] @b"])
         self.assertEqual(got[(1, 1, 1)], {"a"})
 
+    def report(self, lines):
+        """The checker's printed problems for a layout."""
+        import contextlib, io
+        with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False) as f:
+            f.write("\n".join(lines) + "\n")
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            redstone_check.check(f.name)
+        return [line for line in out.getvalue().splitlines() if not line.endswith("problem(s)")]
+
+    def test_a_comparator_reads_a_container_and_takes_a_redstone_block(self):
+        # a comparator reading a hopper carries its own signal; one behind a redstone block carries the block's
+        self.assertEqual(self.report([
+            "hidden 0 1 0 minecraft:hopper", "hidden 1 0 0 minecraft:glass",
+            "hidden 1 1 0 minecraft:comparator[facing=west] @f",
+            "hidden 0 1 2 minecraft:redstone_block @on", "hidden 1 0 2 minecraft:glass",
+            "hidden 1 1 2 minecraft:comparator[facing=west,mode=subtract] @g<on"]), [])
+
+    def test_a_powered_block_gives_a_comparator_side_nothing(self):
+        # vanilla's getControlInputSignal: a redstone block, a wire or a source counts; a powered stone does not
+        quiet = self.report([
+            "hidden 0 1 1 minecraft:redstone_block @on", "hidden 1 0 1 minecraft:glass",
+            "hidden 1 1 1 minecraft:comparator[facing=west,mode=subtract] @g<on",
+            "hidden 1 1 0 minecraft:stone", "hidden 1 0 -1 minecraft:glass",
+            "hidden 1 1 -1 minecraft:repeater[facing=north] @t"])
+        self.assertEqual(quiet, ["UNPOWERED  repeater at (1, 1, -1) (@t): nothing at its input (1, 1, -2)"])
+        loud = self.report([
+            "hidden 0 1 1 minecraft:redstone_block @on", "hidden 1 0 1 minecraft:glass",
+            "hidden 1 1 1 minecraft:comparator[facing=west,mode=subtract] @g<on",
+            "hidden 1 0 0 minecraft:glass", "hidden 1 1 0 minecraft:redstone_wire @t"])
+        self.assertTrue(any("side input" in line and "'t'" in line for line in loud), loud)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -23,6 +23,8 @@ visible x y z <block>
 hidden x y z <block> @signal                 a hidden redstone part or piston, and the signal it carries
 hidden x y z <block> @out<in                 a repeater or torch that turns signal "in" into "out"
 allow <signal> <other>...                    a part of <signal> may also receive <other> (nested signals)
+items visible|hidden x y z <item>*<count>... a container's contents, slot by slot (items as /give takes them),
+                                             put in once the contraption has settled
 ```
 
 Blocks use `/setblock` syntax. A wire with nothing to connect to is a dot (it powers only the
@@ -35,7 +37,7 @@ builds everything in one tick, with no time to settle.
 A layout too big to write by hand can come from a generator: `iris_door.txt` and `waterfall.txt` are written
 by `tools/gen_iris.py` and `tools/gen_waterfall.py` (with their GameTest areas, `<name>.snbt`), both through
 `tools/gen_door.py` (doors of phase shifters switching in rings); `mountain_door.txt` by `tools/gen_mountain.py`
-(hand-built wiring, signal names from a simulated run); `appearing_bridge.txt` by `tools/gen_path.py`; `appearing_staircase.txt` by `tools/gen_stairs.py`. Change
+(hand-built wiring, signal names from a simulated run); `appearing_bridge.txt` by `tools/gen_path.py`; `appearing_staircase.txt` by `tools/gen_stairs.py`; `sorting_machine.txt` by `tools/gen_sorter.py`. Change
 the generator and run it again.
 
 `python3 tools/redstone_check.py <file>` reports every part or piston that

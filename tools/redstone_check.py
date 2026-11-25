@@ -42,6 +42,9 @@ HORIZONTAL = ["north", "south", "west", "east"]
 OPPOSITE = {"north": "south", "south": "north", "west": "east", "east": "west", "up": "down", "down": "up"}
 
 
+CONTAINERS = ("hopper", "chest", "barrel", "dropper", "dispenser")
+
+
 def add(p, d):
     return (p[0] + DIRS[d][0], p[1] + DIRS[d][1], p[2] + DIRS[d][2])
 
@@ -85,7 +88,7 @@ class Layout:
     def is_conductor(self, p):
         k = self.kind(p)
         return k not in ("air", "redstone_wire", "repeater", "comparator", "redstone_torch", "redstone_wall_torch",
-                         "phase_port", "lever", "glass") and "piston" not in k and "button" not in k and "bulb" not in k \
+                         "phase_port", "lever", "glass", "redstone_block", "observer", "hopper", "chest") and "piston" not in k and "button" not in k and "bulb" not in k \
             and "pressure_plate" not in k and "tripwire" not in k
 
     def wire_connects(self, p, d):
@@ -130,8 +133,10 @@ class Layout:
             if d == "up" or OPPOSITE[d] in self.wire_points(src):
                 return {signal}
             return set()
-        if k in ("repeater", "comparator"):
+        if k in ("repeater", "comparator", "observer"):
             return {signal} if props.get("facing") == d else set()
+        if k == "redstone_block":
+            return {signal}
         if k == "redstone_torch":
             return set() if d == "up" else {signal}
         if k == "redstone_wall_torch":
@@ -155,7 +160,7 @@ class Layout:
             toward = OPPOSITE[d]  # direction from src to block
             if k == "redstone_wire" and wires and (toward == "down" or toward in self.wire_points(src)):
                 out.add(signal)
-            elif k in ("repeater", "comparator") and props.get("facing") == d:
+            elif k in ("repeater", "comparator", "observer") and props.get("facing") == d:
                 out.add(signal)
             elif "button" in k and props.get("face") == "wall" and toward == OPPOSITE[props.get("facing")]:
                 out.add(signal)
@@ -248,15 +253,20 @@ def check(path):
             got = layout.emits(src, facing) if not layout.is_conductor(src) else layout.strong(src)
             if layout.kind(src) == "redstone_wire" or (k == "comparator" and "bulb" in layout.kind(src)):
                 got = {parts[src][2]}
+            if k == "comparator" and layout.kind(src) in CONTAINERS:
+                got = {inputs.get(p, signal)}     # it reads the container's fill level: its own signal
             if k == "comparator":
                 for side in HORIZONTAL:
                     if side not in (facing, OPPOSITE[facing]):
                         q = add(p, side)
-                        side_in = layout.emits(q, side) if not layout.is_conductor(q) else layout.strong(q)
+                        # vanilla's getControlInputSignal: a redstone block or a wire (any shape) gives its
+                        # signal, a diode, torch or other source its direct signal; a powered block gives nothing
+                        side_in = set() if layout.is_conductor(q) else layout.emits(q, side)
                         if layout.kind(q) == "redstone_wire":
                             side_in = {parts[q][2]}
-                        if side_in - {None}:
-                            print(f"LEAK       comparator at {p} (@{signal}): side input {q} carries {sorted(side_in - {None})}")
+                        bad_side = side_in - {None} - allow.get(signal, set())
+                        if bad_side:
+                            print(f"LEAK       comparator at {p} (@{signal}): side input {q} carries {sorted(bad_side)}")
                             problems += 1
             want = inputs.get(p, signal)
             bad = got - {want, None} - allow.get(want, set())

@@ -258,6 +258,12 @@ Station 26 is a cliff past the bridge (x = 410 to 447): walk along the path
 to its foot and climb. A stone staircase appears three steps ahead of you as
 you go up to the ledge and its lookout, and vanishes behind you.
 
+Station 27 is a sorting machine (x = 455 to 471): take the steps at the west
+end up onto the wall, put items in the chest on top, and they come out sorted
+into the chests below, one kind per chest (the frames show which: cobblestone,
+dirt, oak logs, iron ingots), everything else in the last one. Nothing but the
+wall and the chests is there: the sorter is in the hidden layer.
+
 ![A dark stone room lit by a glowstone hidden in its far wall](images/phased-light-room.png)
 
 Save and exit your test world, reopen it, and run `/phasecraft get` again to
