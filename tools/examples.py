@@ -1173,6 +1173,8 @@ def sorter_commands():
         fx, fy, fz = sorter_pos(x, y + 1, z)
         out.append(f"summon minecraft:item_frame {fx} {fy} {fz} {{Facing:3b,Fixed:1b,Invulnerable:1b,"
                    f"Tags:[\"pc_sorter\"],Item:{{id:\"{kind}\",count:1}}}}")
+    # the sign stands west of the cleared area: clear its spot (a setblock that changes nothing fails on a rebuild)
+    out.append(f"fill {ox - 5} {Y} {SIGN_Z} {ox - 5} {Y} {SIGN_Z} minecraft:air")
     out.append(sign((ox - 5, Y, SIGN_Z), ["27. Sorter: put", "items in the", "chest on top,", "get them sorted"]))
     return out
 
@@ -1216,6 +1218,57 @@ def sorter_check():
     return found
 
 
+# Station 28: the castle tower, built from its layout file (shared with CastleTowerGameTests; written by
+# tools/gen_tower.py). It stands at rest; its lever, by the path to its door (north), takes it down from the top, a
+# line shifter under each column.
+TOWER_LAYOUT = pathlib.Path(__file__).resolve().parent.parent / "src/gametest/resources/contraptions/castle_tower.txt"
+TOWER_MIDDLE = (545, -60, 8)     # the tower's middle at its lowest course (generator (0, 0, 0)); grass at -61
+# Cleared before building: the station's ground, and what the first layout (all redstone, before the line shifter)
+# put further west, in case a world still has it.
+TOWER_CLEAR = [((494, -64, -27), (515, -44, 21)), ((516, -64, -27), (537, -44, 21)), ((538, -64, -27), (558, -44, 21))]
+TOWER_WALL = ("minecraft:stone_bricks", "minecraft:mossy_stone_bricks", "minecraft:cracked_stone_bricks",
+              "minecraft:iron_bars")
+
+
+def tower_pos(x, y, z):
+    """A world position from layout space."""
+    line = next(raw for raw in open(TOWER_LAYOUT) if raw.startswith("# The tower's middle at "))
+    mx, my, mz = (int(v) for v in line.split("middle at ", 1)[1].split()[:3])
+    wx, wy, wz = TOWER_MIDDLE
+    return (wx - mx + x, wy - my + y, wz - mz + z)
+
+
+def tower_commands():
+    size = next(tuple(int(v) for v in line.split()[1:4]) for line in open(TOWER_LAYOUT) if line.startswith("size "))
+    x0, y0, z0 = tower_pos(0, 0, 0)
+    x1, y1, z1 = tower_pos(size[0] - 1, size[1] - 1, size[2] - 1)
+    # hidden first, so blocks the shifters still hold are put back, then cleared
+    out = [in_dimension(HIDDEN_OVERWORLD, f"fill {coords(a)} {coords(b)} minecraft:air") for a, b in TOWER_CLEAR]
+    out += [f"fill {a[0]} -60 {a[2]} {coords(b)} minecraft:air" for a, b in TOWER_CLEAR]
+    placements, _ = read_layout(TOWER_LAYOUT)
+    for layer, a, b, block in placements:
+        command = (f"fill {coords(tower_pos(*a))} {coords(tower_pos(*b))} {block}" if a != b
+                   else f"setblock {coords(tower_pos(*a))} {block}")
+        out.append(in_dimension(HIDDEN_OVERWORLD, command) if layer == "hidden" else command)
+    out.append(sign((TOWER_MIDDLE[0] - 6, Y, SIGN_Z), ["28. Castle", "tower: flip the", "lever, it comes", "down and back"]))
+    return out
+
+
+def tower_state():
+    """'standing', 'down' or how many of its blocks stand."""
+    placements, _ = read_layout(TOWER_LAYOUT)
+    cells = [a for layer, a, b, block in placements if layer == "visible" and block.split("[")[0] in TOWER_WALL]
+    replies = rcon.send_commands([f"phasecraft get {coords(tower_pos(*c))}" for c in cells])
+    there = sum(1 for r in replies if "minecraft:air" not in r.split("visible: ", 1)[1].split(" |")[0])
+    return "standing" if there == len(cells) else "down" if there == 0 else f"{there} of {len(cells)} standing"
+
+
+def tower_lever(on):
+    _, info = read_layout(TOWER_LAYOUT)
+    rcon.send_commands([f"setblock {coords(tower_pos(*info['lever']))} "
+                        f"minecraft:lever[face=floor,facing=north,powered={str(on).lower()}]"])
+
+
 def flying_observer_commands():
     """The engine's two observers, sent a second after flying_commands(): placed in the same
     batch, the engine starts on its own. They are placed "strict" because a plain setblock
@@ -1250,6 +1303,8 @@ def build_commands():
         in_dimension(HIDDEN_OVERWORLD, "forceload add 404 -18 450 18"),
         "forceload add 448 -8 476 4",        # station 27, the sorter
         in_dimension(HIDDEN_OVERWORLD, "forceload add 448 -8 476 4"),
+        "forceload add 494 -27 558 21",      # station 28, the castle tower (and what its first layout used)
+        in_dimension(HIDDEN_OVERWORLD, "forceload add 494 -27 558 21"),
         # Clear the area (visible) and lay a path of andesite under the stations.
         "fill -4 -60 -8 54 -55 4 minecraft:air",
         "fill -4 -61 -8 54 -61 4 minecraft:grass_block",
@@ -1292,6 +1347,7 @@ def build_commands():
     commands += bridge_commands()
     commands += stairs_commands()
     commands += sorter_commands()
+    commands += tower_commands()
     for station in STATIONS:
         for dimension, pos, *_ in station["hidden"]:
             commands.append(in_dimension(dimension, f"phasecraft clear {coords(pos)}"))
@@ -1514,6 +1570,16 @@ def main():
     sorter_ok = sorted_out == SORTER_EXPECTED
     ok &= sorter_ok
     print(f"{'ok ' if sorter_ok else 'BAD'} sorting machine: {sorted_out}")
+    try:
+        tower_seen = [("before", tower_state())]
+        tower_lever(True); time.sleep(8); tower_seen.append(("lever on", tower_state()))
+        tower_lever(False); time.sleep(8); tower_seen.append(("lever off", tower_state()))
+    except rcon.RconError as error:
+        print(error, file=sys.stderr)
+        return 1
+    tower_ok = [s for _, s in tower_seen] == ["standing", "down", "standing"]
+    ok &= tower_ok
+    print(f"{'ok ' if tower_ok else 'BAD'} castle tower: " + ", ".join(f"{name}: {state}" for name, state in tower_seen))
     print("Examples built and verified." if ok else "Some examples did not build as expected.")
     return 0 if ok else 1
 
