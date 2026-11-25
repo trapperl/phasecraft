@@ -7,7 +7,7 @@ from (a lesson in this project, or an established practice of the redstone commu
 
 Tools: `tools/redstone_check.py` (static: which signal reaches each part), `tools/mcb` (the simulator
 `mcb.redstone`, checked tick by tick against the real game; the router; shapes), the generators
-(`tools/gen_door.py` and its configs, `tools/gen_path.py`), GameTests, `tools/examples.py`.
+(`tools/gen_door.py` and its configs, `tools/gen_path.py`, `tools/gen_sorter.py`), GameTests, `tools/examples.py`.
 
 ## 1. What a build must do
 
@@ -20,7 +20,8 @@ Tools: `tools/redstone_check.py` (static: which signal reaches each part), `tool
   The GameTest covers each behaviour the build depends on (the bridge's jumps with pauses swept over the
   string's 10-tick recheck). Checked by: GameTests.
 - **B4. It never loses or duplicates anything**: a shifter that cannot put a block back drops it, with its
-  contents. Checked by: GameTests (shifter tests).
+  contents. An item machine leaves nothing inside once it is done, and waits while its output is full
+  (the sorting machine's drain hoppers). Checked by: GameTests (shifter tests, sorting machine).
 - **B5. It survives being built**: placed in one tick (GameTests, `/mcb place`) and placed over many ticks
   (RCON in `tools/examples.py`), it settles into its resting state without moving anything visible.
   Checked by: the GameTest's "stays closed while settling" check, `tools/examples.py`.
@@ -68,6 +69,9 @@ Tools: `tools/redstone_check.py` (static: which signal reaches each part), `tool
 - **C12. The layout is written in its settled state**: repeaters `powered`, torches `lit` as they rest;
   shifters unpowered (so a powered one takes its block when placed); an extended piston after whatever
   holds it out. Lessons: the iris door (repeaters written off flickered it open), the trapdoor floor.
+  Except a block that changes itself when placed: write it as it will be at that moment. Vanilla updates a
+  placed block's neighbours only if it is still the block placed, so a hopper written locked, whose lock is
+  not on yet, unlocks itself and its lock never hears of it (the sorting machine).
   Checked by: the GameTest's settling check, the simulator from the written state.
 - **C13. Sensors see visible entities only when phased**: a hidden plate stands on a phase block, a string
   line ends at a hook on a phase block; a string at head height stays pressed through a jump. Lessons:
@@ -132,8 +136,9 @@ wiki and the tools.
 - **R6. Pulses**: a repeater stretches shorter on-pulses to its delay and drops shorter off-pulses (the
   bridge's jump rule rides on this); torches and comparators do not reliably answer 2-game-tick pulses; a
   torch burns out when forced off more than 8 times in 60 game ticks. Anything a player can flicker (a
-  sensor) must not drive a torch that fast. [wiki: Repeater, Torch] By hand; the simulator does not model
-  burnout.
+  sensor) must not drive a torch that fast, nor anything items drive (a stack goes through a sorter's filter
+  at 2.5 items a second): the sorting machine's lock is a comparator in subtract mode with a redstone block
+  behind it. [wiki: Repeater, Torch] By hand; the simulator does not model burnout.
 - **R7. Never rely on the order in which dust updates its neighbours within one tick**: in Java it
   depends on position and direction, so a circuit can behave differently elsewhere. Timing goes through
   diodes. [MC-11193; vanilla's experimental redstone changes this, unconfirmed for 26.3] Nor on which of two

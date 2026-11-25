@@ -26,6 +26,7 @@ Add a station here whenever a milestone adds something worth seeing.
 
 import importlib.util
 import pathlib
+import re
 import sys
 import time
 
@@ -1124,6 +1125,97 @@ def stairs_walker(step):
     rcon.send_commands(commands)
 
 
+# Station 27: the sorting machine, built from its layout file (shared with SortingMachineGameTests; written by
+# tools/gen_sorter.py). A wall with a ledge on top; the input chest on the ledge, steps up to it at the west end.
+SORTER_LAYOUT = pathlib.Path(__file__).resolve().parent.parent / "src/gametest/resources/contraptions/sorting_machine.txt"
+SORTER_ORIGIN = (455, -63, -6)   # layout (0, 0, 0); the layout's floor (y = 2) replaces the grass
+SORTER_KINDS = ["minecraft:cobblestone", "minecraft:dirt", "minecraft:oak_log", "minecraft:iron_ingot"]
+SORTER_EXPECTED = [[("cobblestone", 7)], [("dirt", 3)], [("oak_log", 4)], [("iron_ingot", 2)], [("flint", 2)]]
+
+
+def sorter_pos(x, y, z):
+    ox, oy, oz = SORTER_ORIGIN
+    return (ox + x, oy + y, oz + z)
+
+
+def sorter_chests():
+    """(input, outputs west to east) in layout space: the input chest is the highest."""
+    placements, _ = read_layout(SORTER_LAYOUT)
+    chests = [a for layer, a, b, block in placements if layer == "visible" and block.startswith("minecraft:chest")]
+    top = max(chests, key=lambda p: p[1])
+    return top, sorted((c for c in chests if c != top), key=lambda p: p[0])
+
+
+def sorter_commands():
+    ox, oy, oz = SORTER_ORIGIN
+    size = next(tuple(int(v) for v in line.split()[1:4]) for line in open(SORTER_LAYOUT) if line.startswith("size "))
+    x2, z2 = ox + size[0] - 1, oz + size[2] - 1
+    out = [
+        "kill @e[type=minecraft:item_frame,tag=pc_sorter]",
+        in_dimension(HIDDEN_OVERWORLD, f"fill {ox} {oy} {oz} {x2} {oy + size[1] - 1} {z2} minecraft:air"),
+        f"fill {ox - 4} -60 {oz} {x2} -52 {z2} minecraft:air",
+        f"fill {ox - 4} -61 {oz} {x2} -61 {z2} minecraft:grass_block",
+    ]
+    placements, _ = read_layout(SORTER_LAYOUT)
+    for layer, a, b, block in placements:
+        command = (f"fill {coords(sorter_pos(*a))} {coords(sorter_pos(*b))} {block}" if a != b
+                   else f"setblock {coords(sorter_pos(*a))} {block}")
+        out.append(in_dimension(HIDDEN_OVERWORLD, command) if layer == "hidden" else command)
+    # Steps up to the ledge (its top at layout y = 5) at the west end, along the wall.
+    for i in range(3):
+        x = ox - 3 + i
+        if i:
+            out.append(f"fill {x} -60 {oz} {x} {-61 + i} {oz + 2} minecraft:stone_bricks")
+        out.append(f"fill {x} {-60 + i} {oz} {x} {-60 + i} {oz + 2} minecraft:stone_brick_stairs[facing=east]")
+    # A frame over each output chest with its kind (the last one, everything else, gets a chest).
+    _, outputs = sorter_chests()
+    for (x, y, z), kind in zip(outputs, SORTER_KINDS + ["minecraft:chest"]):
+        fx, fy, fz = sorter_pos(x, y + 1, z)
+        out.append(f"summon minecraft:item_frame {fx} {fy} {fz} {{Facing:3b,Fixed:1b,Invulnerable:1b,"
+                   f"Tags:[\"pc_sorter\"],Item:{{id:\"{kind}\",count:1}}}}")
+    out.append(sign((ox - 5, Y, SIGN_Z), ["27. Sorter: put", "items in the", "chest on top,", "get them sorted"]))
+    return out
+
+
+def sorter_fill_commands():
+    """The filters' contents (the layout's items lines), put in once the machine has settled (its gates locked)."""
+    out = []
+    for raw in open(SORTER_LAYOUT):
+        words = raw.split("#", 1)[0].split()
+        if words[:2] != ["items", "hidden"]:
+            continue
+        pos = coords(sorter_pos(*(int(v) for v in words[2:5])))
+        for slot, spec in enumerate(words[5:]):
+            item, _, count = spec.rpartition("*")
+            out.append(in_dimension(HIDDEN_OVERWORLD, f"item replace block {pos} container.{slot} with {item} {count}"))
+    return out
+
+
+def sorter_check():
+    """Puts a mixed load in the input chest; returns each output chest's contents once it has gone through."""
+    top, outputs = sorter_chests()
+    load = [("minecraft:cobblestone", 7), ("minecraft:flint", 2), ("minecraft:dirt", 3), ("minecraft:oak_log", 4),
+            ("minecraft:iron_ingot", 2)]
+    rcon.send_commands([f"data merge block {coords(sorter_pos(*c))} {{Items:[]}}" for c in [top] + outputs])
+    rcon.send_commands([f"item replace block {coords(sorter_pos(*top))} container.{i} with {item} {n}"
+                        for i, (item, n) in enumerate(load)])
+    found = None
+    for _ in range(40):                  # an item takes 8 game ticks a hopper: about 15 seconds for this load
+        time.sleep(1)
+        replies = rcon.send_commands([f"data get block {coords(sorter_pos(*c))} Items" for c in outputs])
+        found = []
+        for reply in replies:
+            stacks = []
+            for stack in re.findall(r"\{[^{}]*\}", reply.split("data:", 1)[-1]):
+                kind, count = re.search(r'id: "minecraft:(\w+)"', stack), re.search(r"count: (\d+)", stack)
+                if kind:
+                    stacks.append((kind.group(1), int(count.group(1)) if count else 1))
+            found.append(sorted(stacks))
+        if found == SORTER_EXPECTED:
+            break
+    return found
+
+
 def flying_observer_commands():
     """The engine's two observers, sent a second after flying_commands(): placed in the same
     batch, the engine starts on its own. They are placed "strict" because a plain setblock
@@ -1156,6 +1248,8 @@ def build_commands():
         in_dimension(HIDDEN_OVERWORLD, "forceload add 340 -16 402 16"),
         "forceload add 404 -18 450 18",      # station 26, the staircase
         in_dimension(HIDDEN_OVERWORLD, "forceload add 404 -18 450 18"),
+        "forceload add 448 -8 476 4",        # station 27, the sorter
+        in_dimension(HIDDEN_OVERWORLD, "forceload add 448 -8 476 4"),
         # Clear the area (visible) and lay a path of andesite under the stations.
         "fill -4 -60 -8 54 -55 4 minecraft:air",
         "fill -4 -61 -8 54 -61 4 minecraft:grass_block",
@@ -1197,6 +1291,7 @@ def build_commands():
     commands += mountain_commands()
     commands += bridge_commands()
     commands += stairs_commands()
+    commands += sorter_commands()
     for station in STATIONS:
         for dimension, pos, *_ in station["hidden"]:
             commands.append(in_dimension(dimension, f"phasecraft clear {coords(pos)}"))
@@ -1223,7 +1318,7 @@ def main():
         return 1 if bad else 0
     if "--print-commands" in sys.argv[1:]:
         # For the screenshot tour (ExamplesTourClientGameTest): the build, without RCON.
-        print("\n".join(build_commands() + flying_observer_commands()))
+        print("\n".join(build_commands() + flying_observer_commands() + sorter_fill_commands()))
         return 0
     props = rcon.read_properties(rcon.PROPERTIES)
     if props.get("pause-when-empty-seconds", "60") not in ("0", ""):
@@ -1237,7 +1332,7 @@ def main():
             print(f"FAILED: {command}\n  {reply}")
 
         time.sleep(1)  # let cross-layer updates (one tick) settle before checking
-        rcon.send_commands(flying_observer_commands())
+        rcon.send_commands(flying_observer_commands() + sorter_fill_commands())
         checks = [(cell[0], cell[1], cell[-1]) for s in STATIONS for cell in s["hidden"]]
         answers = rcon.send_commands([in_dimension(d, f"phasecraft get {coords(pos)}") for d, pos, _ in checks])
     except rcon.RconError as error:
@@ -1290,7 +1385,7 @@ def main():
         after = flying_cargo_x()
         rcon.send_commands(flying_commands())  # ready for another flight
         time.sleep(1)
-        rcon.send_commands(flying_observer_commands())
+        rcon.send_commands(flying_observer_commands() + sorter_fill_commands())
         time.sleep(1)
         reset = flying_cargo_x()
     except rcon.RconError as error:
@@ -1411,6 +1506,14 @@ def main():
     ok &= stairs_ok
     print(f"{'ok ' if stairs_ok else 'BAD'} appearing staircase: "
           + ", ".join(f"{name}: {state}" for name, state in stairs_seen))
+    try:
+        sorted_out = sorter_check()
+    except rcon.RconError as error:
+        print(error, file=sys.stderr)
+        return 1
+    sorter_ok = sorted_out == SORTER_EXPECTED
+    ok &= sorter_ok
+    print(f"{'ok ' if sorter_ok else 'BAD'} sorting machine: {sorted_out}")
     print("Examples built and verified." if ok else "Some examples did not build as expected.")
     return 0 if ok else 1
 

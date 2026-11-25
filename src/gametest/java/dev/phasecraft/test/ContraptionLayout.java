@@ -12,10 +12,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.commands.arguments.blocks.BlockStateParser;
+import net.minecraft.commands.arguments.item.ItemParser;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.world.Container;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -28,10 +31,14 @@ import net.minecraft.world.level.block.state.BlockState;
 public final class ContraptionLayout {
     private record Placement(boolean hidden, BlockPos from, BlockPos to, BlockState state) {}
 
+    /** Contents for a container: item text (with components, as /give takes it) and counts, slot by slot. */
+    private record Contents(boolean hidden, BlockPos pos, List<String> items, List<Integer> counts, String where) {}
+
     /** A visible block a player clicks to operate the contraption, and the face clicked. */
     public record Click(BlockPos pos, Direction face) {}
 
     private final List<Placement> placements = new ArrayList<>();
+    private final List<Contents> contents = new ArrayList<>();
     private BlockPos lever;
     private final List<Click> clicks = new ArrayList<>();
     private BlockPos step;
@@ -71,6 +78,16 @@ public final class ContraptionLayout {
             case "door" -> door = state(w[1], where).getBlock();
             case "visible" -> placements.add(new Placement(false, pos(w, 1), pos(w, 1), state(w[4], where)));
             case "hidden" -> placements.add(new Placement(true, pos(w, 1), pos(w, 1), state(w[4], where)));
+            case "items" -> {
+                List<String> items = new ArrayList<>();
+                List<Integer> counts = new ArrayList<>();
+                for (int i = 5; i < w.length; i++) {
+                    int star = w[i].lastIndexOf('*');
+                    items.add(w[i].substring(0, star));
+                    counts.add(Integer.parseInt(w[i].substring(star + 1)));
+                }
+                contents.add(new Contents(w[1].equals("hidden"), pos(w, 2), items, counts, where));
+            }
             case "fill" -> placements.add(new Placement(w[1].equals("hidden"), pos(w, 2), pos(w, 5), state(w[8], where)));
             default -> throw new IllegalArgumentException(where + ": unknown line " + String.join(" ", w));
         }
@@ -102,6 +119,32 @@ public final class ContraptionLayout {
         }
     }
 
+    /**
+     * Puts the layout's container contents in (its "items" lines), replacing what is there. Call it once the
+     * built contraption has settled: a hopper put in before its lock is on could pass items on.
+     */
+    public void fillContainers(GameTestHelper helper) {
+        HiddenLayer hidden = HiddenLayer.of(helper.getLevel());
+        ItemParser parser = new ItemParser(helper.getLevel().registryAccess());
+        for (Contents c : contents) {
+            BlockPos abs = helper.absolutePos(c.pos());
+            Level level = c.hidden() ? hidden.level() : helper.getLevel();
+            if (!(level.getBlockEntity(abs) instanceof Container container)) {
+                throw new IllegalStateException(c.where() + ": no container at " + c.pos().toShortString());
+            }
+            container.clearContent();
+            for (int slot = 0; slot < c.items().size(); slot++) {
+                try {
+                    container.setItem(slot, parser.parse(new StringReader(c.items().get(slot)))
+                            .createItemStack(c.counts().get(slot)));
+                } catch (CommandSyntaxException e) {
+                    throw new IllegalArgumentException(c.where() + ": " + e.getMessage(), e);
+                }
+            }
+            container.setChanged();
+        }
+    }
+
     public BlockPos lever() {
         return lever;
     }
@@ -117,6 +160,17 @@ public final class ContraptionLayout {
 
     public Block door() {
         return door;
+    }
+
+    /** Where the layout places the given block in the visible world (single placements, not fills). */
+    public List<BlockPos> visible(Block block) {
+        return placements.stream().filter(p -> !p.hidden() && p.from().equals(p.to()) && p.state().is(block))
+                .map(Placement::from).toList();
+    }
+
+    /** The hidden containers the layout fills (its "items" lines). */
+    public List<BlockPos> filledHidden() {
+        return contents.stream().filter(Contents::hidden).map(Contents::pos).toList();
     }
 
     /** Where the layout places the given block in the hidden layer (single placements, not fills). */

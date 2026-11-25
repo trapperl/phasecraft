@@ -20,6 +20,7 @@
       "dev.phasecraft.test.MountainDoorGameTests",
       "dev.phasecraft.test.AppearingBridgeGameTests",
       "dev.phasecraft.test.AppearingStaircaseGameTests",
+      "dev.phasecraft.test.SortingMachineGameTests",
       "dev.phasecraft.test.PhaseBlockGameTests",
       "dev.phasecraft.test.PhasedLightGameTests",
       "dev.phasecraft.test.SurvivalPlayGameTests",

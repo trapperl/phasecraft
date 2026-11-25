@@ -693,7 +693,36 @@ has such cells.
      are wire staircases (stone under every wire, nothing over), level along
      the approaches: before the stairs level with the ground, after them with
      the ledge.
-11. **Mob farm:** not a target yet; the person lists one among the showcase
+11. **Sorting machine: done** (`SortingMachineGameTests`, examples station 27,
+   `tools/gen_sorter.py`; on the person's showcase list). Put items in a
+   chest on top of a wall: they come out sorted into the chests below it, one
+   kind per chest (cobblestone, dirt, oak logs, iron ingots), everything else
+   in the last. Visible: the wall and the chests; 123 hidden blocks in
+   17 x 8 x 8. The redstone community's hopper item sorter in the hidden
+   layer: a phased hopper under the input chest feeds a line of hoppers in
+   the wall; under it, per kind, a filter hopper (18 of its kind and 4 sticks
+   named "Filter": a comparator reads 1) and a gate hopper that is unlocked
+   while the filter holds one more (the comparator reads 2, two wires on, a
+   stone). Phased droppers under the chests push the items up into them,
+   fired by a clock (two observers watching each other) through their phase
+   blocks; a full chest's items wait in its dropper. Changes to the classic:
+   - A drain hopper under each gate pulls the item straight out. The gate is
+     locked again 6 game ticks after it pulls (comparator, repeater,
+     comparator) and a hopper waits 8 before it pushes, so a gate on its own
+     would keep the last item of each kind until the next one came.
+   - The lock is a comparator in subtract mode with a redstone block behind
+     it, which a repeater into its side turns off, not the classic redstone
+     torch: a stack of one kind toggles the lock 64 times in about 30
+     seconds, and a torch forced off 8 times in 60 game ticks burns out.
+   - A block that changes itself when it is placed sends its neighbours no
+     update (vanilla's setBlock updates them only if the block is still the
+     one placed): a gate written locked unlocked itself before its lock was
+     on, and the lock never heard of it. Written unlocked, it is locked once
+     the lock comes on (BUILD_RULES C12).
+   - The checker now knows hoppers, chests and redstone blocks; it reads a
+     comparator's side as vanilla does (a redstone block, a wire or a
+     source; a powered stone gives nothing).
+12. **Mob farm:** not a target yet; the person lists one among the showcase
    builds (AGENTS.md).
 
 ## Validation status

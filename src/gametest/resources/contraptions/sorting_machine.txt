@@ -1,0 +1,184 @@
+# Written by tools/gen_sorter.py; change the generator and run it again.
+# The sorting machine (examples station 27, SortingMachineGameTests): put items in a chest on top of a wall and
+# they come out sorted into a row of chests below, one kind per chest, everything else in the last one. Visible:
+# a wall, the input chest on its top, the output chests in front of it. Everything else is hidden.
+#
+# Usage: python3 tools/gen_sorter.py && python3 tools/redstone_check.py src/gametest/resources/contraptions/sorting_machine.txt
+#
+# The redstone community's hopper item sorter, rebuilt in the hidden layer with two changes:
+#
+# - The classic gate hopper (under the filter, locked by a redstone torch) keeps the last item it lets through until
+#   the next one of its kind comes: it pulls the item and is locked again before its 8-tick cooldown ends. Here a
+#   second hopper under the gate (the drain, never locked) pulls it straight out. A gate hopper locked again in time
+#   never pulls twice, so the filter never loses its own items.
+# - The lock is a comparator in subtract mode with a redstone block behind it (15, gate locked), not a torch: a full
+#   stack of one kind toggles the lock 64 times in under 30 seconds, and a torch toggled 8 times in 60 game ticks
+#   burns out. A repeater into the comparator's side takes it to 0 (gate open).
+#
+# Logical coordinates: x along the wall (east), y up from the floor (the floor at y = 0), z out from the wall (the
+# wall at z = -1, the output chests at z = 0, the player at z > 0). Written to the layout as X = x + 1, Y = y + 2,
+# Z = z + 3. Output chests are three apart (x = 2, 5, 8, 11; overflow 14): a column's wiring uses x + 1 and x + 2.
+#
+# Per sorted column x:
+# - The item line: hoppers at y = 3 inside the wall, x = 1..13 pointing east (the last, x = 14, down to the overflow).
+#   The phased input hopper (x = 0, on a phase block) pulls from the visible chest on the wall's top.
+# - F, the filter hopper (x, 2, -1), under the line, pointing north at nothing: 18 of its kind and 4 sticks named
+#   "Filter" (rest 22 items, comparator 1). It pulls only items that stack onto what it holds.
+# - Q, a comparator reading F (x + 1, 2, -1), two wires to C, a stone (x + 2, 1, -2): C is powered only from 23 items
+#   up (comparator 2). The repeater Rs reads C and powers the side of S, the subtract comparator (x, 1, -2) with a
+#   redstone block behind it, which feeds the gate G (x, 1, -1). So G is unlocked while F has an extra item.
+# - G pulls one item from F (pointing down at the drain); the drain D (x, 0, -1) pulls it out of G and pushes it
+#   into the phased dropper (x, 0, 0) under the visible chest, facing up into it.
+# - A clock (two observers watching each other, under the floor at the west end) runs a wire along z = 2, y = -1;
+#   a repeater from it into every dropper's phase block fires the droppers, so they push out what they hold, and
+#   wait (keeping it) while a chest is full. An empty phased dropper's click is heard only in the hidden layer.
+size 17 8 8
+# The visible build: ground, floor, the wall (three deep, its top a ledge), the chests.
+fill visible 0 0 0 16 1 7 minecraft:stone
+fill visible 0 2 0 16 2 7 minecraft:polished_andesite
+fill visible 0 3 0 16 5 2 minecraft:stone_bricks
+visible 1 6 2 minecraft:chest[facing=south]
+visible 3 3 3 minecraft:chest[facing=south]
+visible 6 3 3 minecraft:chest[facing=south]
+visible 9 3 3 minecraft:chest[facing=south]
+visible 12 3 3 minecraft:chest[facing=south]
+visible 15 3 3 minecraft:chest[facing=south]
+# The clock: two observers watching each other, a wire along z = 2 under the floor.
+hidden 3 0 5 minecraft:stone
+hidden 4 0 5 minecraft:stone
+hidden 5 0 5 minecraft:stone
+hidden 6 0 5 minecraft:stone
+hidden 7 0 5 minecraft:stone
+hidden 8 0 5 minecraft:stone
+hidden 9 0 5 minecraft:stone
+hidden 10 0 5 minecraft:stone
+hidden 11 0 5 minecraft:stone
+hidden 12 0 5 minecraft:stone
+hidden 13 0 5 minecraft:stone
+hidden 14 0 5 minecraft:stone
+hidden 15 0 5 minecraft:stone
+hidden 2 1 5 minecraft:observer[facing=west,powered=false] @K
+hidden 1 1 5 minecraft:observer[facing=east,powered=false] @K
+hidden 3 1 5 minecraft:redstone_wire[east=side,west=side,north=side] @K
+hidden 4 1 5 minecraft:redstone_wire[east=side,west=side] @K
+hidden 5 1 5 minecraft:redstone_wire[east=side,west=side] @K
+hidden 6 1 5 minecraft:redstone_wire[east=side,west=side,north=side] @K
+hidden 7 1 5 minecraft:redstone_wire[east=side,west=side] @K
+hidden 8 1 5 minecraft:redstone_wire[east=side,west=side] @K
+hidden 9 1 5 minecraft:redstone_wire[east=side,west=side,north=side] @K
+hidden 10 1 5 minecraft:redstone_wire[east=side,west=side] @K
+hidden 11 1 5 minecraft:redstone_wire[east=side,west=side] @K
+hidden 12 1 5 minecraft:redstone_wire[east=side,west=side,north=side] @K
+hidden 13 1 5 minecraft:redstone_wire[east=side,west=side] @K
+hidden 14 1 5 minecraft:redstone_wire[east=side,west=side] @K
+hidden 15 1 5 minecraft:redstone_wire[east=side,west=side,north=side] @K
+# Each output: a phased dropper under its chest, facing up, fired from the clock through its phase block.
+hidden 3 0 4 minecraft:stone
+hidden 3 1 4 minecraft:repeater[facing=south,delay=1,powered=false] @K
+hidden 3 1 3 phasecraft:phase_block
+hidden 3 2 3 minecraft:dropper[facing=up,triggered=false]
+hidden 6 0 4 minecraft:stone
+hidden 6 1 4 minecraft:repeater[facing=south,delay=1,powered=false] @K
+hidden 6 1 3 phasecraft:phase_block
+hidden 6 2 3 minecraft:dropper[facing=up,triggered=false]
+hidden 9 0 4 minecraft:stone
+hidden 9 1 4 minecraft:repeater[facing=south,delay=1,powered=false] @K
+hidden 9 1 3 phasecraft:phase_block
+hidden 9 2 3 minecraft:dropper[facing=up,triggered=false]
+hidden 12 0 4 minecraft:stone
+hidden 12 1 4 minecraft:repeater[facing=south,delay=1,powered=false] @K
+hidden 12 1 3 phasecraft:phase_block
+hidden 12 2 3 minecraft:dropper[facing=up,triggered=false]
+hidden 15 0 4 minecraft:stone
+hidden 15 1 4 minecraft:repeater[facing=south,delay=1,powered=false] @K
+hidden 15 1 3 phasecraft:phase_block
+hidden 15 2 3 minecraft:dropper[facing=up,triggered=false]
+# The input: a phased hopper under the visible chest on the wall, then the item line.
+hidden 1 4 2 phasecraft:phase_block
+hidden 1 5 2 minecraft:hopper[facing=east,enabled=true]
+hidden 2 5 2 minecraft:hopper[facing=east,enabled=true]
+hidden 3 5 2 minecraft:hopper[facing=east,enabled=true]
+hidden 4 5 2 minecraft:hopper[facing=east,enabled=true]
+hidden 5 5 2 minecraft:hopper[facing=east,enabled=true]
+hidden 6 5 2 minecraft:hopper[facing=east,enabled=true]
+hidden 7 5 2 minecraft:hopper[facing=east,enabled=true]
+hidden 8 5 2 minecraft:hopper[facing=east,enabled=true]
+hidden 9 5 2 minecraft:hopper[facing=east,enabled=true]
+hidden 10 5 2 minecraft:hopper[facing=east,enabled=true]
+hidden 11 5 2 minecraft:hopper[facing=east,enabled=true]
+hidden 12 5 2 minecraft:hopper[facing=east,enabled=true]
+hidden 13 5 2 minecraft:hopper[facing=east,enabled=true]
+hidden 14 5 2 minecraft:hopper[facing=east,enabled=true]
+hidden 15 5 2 minecraft:hopper[facing=down,enabled=true]
+# Column 1 (minecraft:cobblestone): filter F, its comparator and threshold, the lock S, gate G, drain D.
+hidden 3 2 2 minecraft:hopper[facing=south,enabled=true]
+hidden 3 4 2 minecraft:hopper[facing=north,enabled=true]
+hidden 4 3 2 minecraft:glass
+hidden 4 4 2 minecraft:comparator[facing=west,mode=compare,powered=false] @F1
+hidden 5 3 2 minecraft:glass
+hidden 5 4 2 minecraft:redstone_wire[west=side,north=side] @F1
+hidden 5 3 1 minecraft:stone
+hidden 5 4 1 minecraft:redstone_wire[north=side,south=side] @F1
+hidden 4 2 1 minecraft:stone
+hidden 4 3 1 minecraft:repeater[facing=east,delay=1,powered=false] @T1<F1
+hidden 3 3 0 minecraft:redstone_block @ON1
+hidden 3 2 1 minecraft:stone
+hidden 3 3 1 minecraft:comparator[facing=north,mode=subtract,powered=true] @G1<ON1
+hidden 3 3 2 minecraft:hopper[facing=down,enabled=true] @G1
+items hidden 3 4 2 minecraft:cobblestone*18 minecraft:stick[custom_name="Filter"]*1 minecraft:stick[custom_name="Filter"]*1 minecraft:stick[custom_name="Filter"]*1 minecraft:stick[custom_name="Filter"]*1
+allow G1 T1
+# Column 2 (minecraft:dirt): filter F, its comparator and threshold, the lock S, gate G, drain D.
+hidden 6 2 2 minecraft:hopper[facing=south,enabled=true]
+hidden 6 4 2 minecraft:hopper[facing=north,enabled=true]
+hidden 7 3 2 minecraft:glass
+hidden 7 4 2 minecraft:comparator[facing=west,mode=compare,powered=false] @F2
+hidden 8 3 2 minecraft:glass
+hidden 8 4 2 minecraft:redstone_wire[west=side,north=side] @F2
+hidden 8 3 1 minecraft:stone
+hidden 8 4 1 minecraft:redstone_wire[north=side,south=side] @F2
+hidden 7 2 1 minecraft:stone
+hidden 7 3 1 minecraft:repeater[facing=east,delay=1,powered=false] @T2<F2
+hidden 6 3 0 minecraft:redstone_block @ON2
+hidden 6 2 1 minecraft:stone
+hidden 6 3 1 minecraft:comparator[facing=north,mode=subtract,powered=true] @G2<ON2
+hidden 6 3 2 minecraft:hopper[facing=down,enabled=true] @G2
+items hidden 6 4 2 minecraft:dirt*18 minecraft:stick[custom_name="Filter"]*1 minecraft:stick[custom_name="Filter"]*1 minecraft:stick[custom_name="Filter"]*1 minecraft:stick[custom_name="Filter"]*1
+allow G2 T2
+# Column 3 (minecraft:oak_log): filter F, its comparator and threshold, the lock S, gate G, drain D.
+hidden 9 2 2 minecraft:hopper[facing=south,enabled=true]
+hidden 9 4 2 minecraft:hopper[facing=north,enabled=true]
+hidden 10 3 2 minecraft:glass
+hidden 10 4 2 minecraft:comparator[facing=west,mode=compare,powered=false] @F3
+hidden 11 3 2 minecraft:glass
+hidden 11 4 2 minecraft:redstone_wire[west=side,north=side] @F3
+hidden 11 3 1 minecraft:stone
+hidden 11 4 1 minecraft:redstone_wire[north=side,south=side] @F3
+hidden 10 2 1 minecraft:stone
+hidden 10 3 1 minecraft:repeater[facing=east,delay=1,powered=false] @T3<F3
+hidden 9 3 0 minecraft:redstone_block @ON3
+hidden 9 2 1 minecraft:stone
+hidden 9 3 1 minecraft:comparator[facing=north,mode=subtract,powered=true] @G3<ON3
+hidden 9 3 2 minecraft:hopper[facing=down,enabled=true] @G3
+items hidden 9 4 2 minecraft:oak_log*18 minecraft:stick[custom_name="Filter"]*1 minecraft:stick[custom_name="Filter"]*1 minecraft:stick[custom_name="Filter"]*1 minecraft:stick[custom_name="Filter"]*1
+allow G3 T3
+# Column 4 (minecraft:iron_ingot): filter F, its comparator and threshold, the lock S, gate G, drain D.
+hidden 12 2 2 minecraft:hopper[facing=south,enabled=true]
+hidden 12 4 2 minecraft:hopper[facing=north,enabled=true]
+hidden 13 3 2 minecraft:glass
+hidden 13 4 2 minecraft:comparator[facing=west,mode=compare,powered=false] @F4
+hidden 14 3 2 minecraft:glass
+hidden 14 4 2 minecraft:redstone_wire[west=side,north=side] @F4
+hidden 14 3 1 minecraft:stone
+hidden 14 4 1 minecraft:redstone_wire[north=side,south=side] @F4
+hidden 13 2 1 minecraft:stone
+hidden 13 3 1 minecraft:repeater[facing=east,delay=1,powered=false] @T4<F4
+hidden 12 3 0 minecraft:redstone_block @ON4
+hidden 12 2 1 minecraft:stone
+hidden 12 3 1 minecraft:comparator[facing=north,mode=subtract,powered=true] @G4<ON4
+hidden 12 3 2 minecraft:hopper[facing=down,enabled=true] @G4
+items hidden 12 4 2 minecraft:iron_ingot*18 minecraft:stick[custom_name="Filter"]*1 minecraft:stick[custom_name="Filter"]*1 minecraft:stick[custom_name="Filter"]*1 minecraft:stick[custom_name="Filter"]*1
+allow G4 T4
+# The overflow: the line's last hopper down a column of hoppers into the last dropper.
+hidden 15 4 2 minecraft:hopper[facing=down,enabled=true]
+hidden 15 3 2 minecraft:hopper[facing=down,enabled=true]
+hidden 15 2 2 minecraft:hopper[facing=south,enabled=true]
