@@ -4,7 +4,9 @@ What it knows: wire (strength, how it connects, up and down steps), repeaters (d
 ticks them in), comparators (compare and subtract, side inputs, reading a copper bulb behind them or through a block),
 torches (standing and on walls), observers (a 2-tick pulse 2 ticks after the block they face changes state), copper
 bulbs (toggling as their power comes on), levers, redstone blocks, phase ports and tripwire hooks (inputs: set them on
-or off; a hook powers like a lever on a wall) and phase shifters (outputs: when each was powered). Blocks are redstone
+or off; a hook powers like a lever on a wall) and phase and line shifters (outputs: when each was powered; which
+visible block a line shifter moves when is up to the caller: its line, from the far end, a block every 2 x delay
+game ticks). Blocks are redstone
 conductors unless they are see-through or redstone parts (see `conductor`). Not yet: pistons, buttons, pressure
 plates, containers for comparators, torch burnout.
 
@@ -12,7 +14,7 @@ plates, containers for comparators, torch burnout.
     sim.run(10)                          # let it settle
     sim.set_input(port_pos, True)        # a phase port (or a lever) on
     sim.run(100)
-    sim.events                           # [(tick, pos, "shifter", True), ...]
+    sim.events                           # [(tick, pos, "shifter", True), ...] ("line_shifter" for a line shifter)
 
 Directions follow vanilla's signal queries: emit(src, d) is what the part at src sends to the cell at src - d, d being
 the direction from that cell to src (SignalGetter.getSignal(pos.relative(d), d)).
@@ -34,7 +36,7 @@ NOT_CONDUCTORS = ("air", "glass", "pane", "redstone_wire", "repeater", "comparat
                   "lantern", "chain", "water", "lava", "phase_port", "redstone_block", "glowstone", "sea_lantern",
                   "observer", "hopper", "carpet", "rail", "sign", "ladder", "bars", "scaffolding", "barrier", "light",
                   "tripwire", "flower", "sapling", "grass", "fern", "snow", "cactus", "bulb", "daylight_detector",
-                  "phase_shifter")
+                  "phase_shifter", "line_shifter")
 
 
 def add(p, d):
@@ -97,7 +99,7 @@ class Sim:
         """Whether the block at p can hold a wire, repeater, torch or lever (a full block)."""
         k = self.kind(p)
         return self.is_conductor(p) or k in ("glass", "tinted_glass", "redstone_block", "glowstone", "sea_lantern",
-                                             "observer", "phase_port", "barrier", "phase_shifter") or k.endswith("_glass") and "pane" not in k \
+                                             "observer", "phase_port", "barrier", "phase_shifter", "line_shifter") or k.endswith("_glass") and "pane" not in k \
             or k.endswith("copper_bulb")
 
     def support(self, p):
@@ -361,11 +363,11 @@ class Sim:
                     self.notify(w)
                 changed = True
             for p, (k, props) in self.parts.items():
-                if k == "phase_shifter":
+                if k in ("phase_shifter", "line_shifter"):
                     on = self.neighbor_signal(p) > 0
                     if on != (props.get("powered") == "true"):
                         props["powered"] = "true" if on else "false"
-                        self.events.append((self.tick, p, "shifter", on))
+                        self.events.append((self.tick, p, "shifter" if k == "phase_shifter" else k, on))
                         self.notify(p)
                         changed = True
                 elif k == "repeater":             # RepeaterBlock.updateShape: its locked state (an observer sees it)

@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "redstone",
+  "ingredients": [
+    "phasecraft:phase_shifter",
+    "minecraft:piston"
+  ],
+  "result": {
+    "id": "phasecraft:line_shifter",
+    "count": 1
+  }
+}

@@ -1,5 +1,7 @@
 package dev.phasecraft;
 
+import dev.phasecraft.shifter.LineShifterBlock;
+import dev.phasecraft.shifter.LineShifterBlockEntity;
 import dev.phasecraft.shifter.PhaseShifterBlock;
 import dev.phasecraft.shifter.PhaseShifterBlockEntity;
 import java.util.Set;
@@ -52,6 +54,15 @@ public final class PhaseCraftBlocks {
             BuiltInRegistries.BLOCK_ENTITY_TYPE, id("phase_shifter"),
             new BlockEntityType<>(PhaseShifterBlockEntity::new, Set.of(PHASE_SHIFTER)));
 
+    /** A phase shifter for the line of blocks in front of it, as a piston pushes (the person, 2026-11-25). */
+    public static final Block LINE_SHIFTER = block("line_shifter", LineShifterBlock::new,
+            BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_PURPLE).strength(1.5F).sound(SoundType.AMETHYST)
+                    .pushReaction(PushReaction.IMMOVEABLE).isRedstoneConductor((s, l, p) -> false));
+    public static final Item LINE_SHIFTER_ITEM = item("line_shifter", LINE_SHIFTER);
+    public static final BlockEntityType<LineShifterBlockEntity> LINE_SHIFTER_ENTITY = Registry.register(
+            BuiltInRegistries.BLOCK_ENTITY_TYPE, id("line_shifter"),
+            new BlockEntityType<>(LineShifterBlockEntity::new, Set.of(LINE_SHIFTER)));
+
     private static Identifier id(String path) {
         return Identifier.fromNamespaceAndPath(PhaseCraft.MOD_ID, path);
     }
@@ -78,6 +89,7 @@ public final class PhaseCraftBlocks {
                     output.accept(STICKY_PHASE_PISTON_ITEM);
                     output.accept(PHASE_BLOCK_ITEM);
                     output.accept(PHASE_SHIFTER_ITEM);
+                    output.accept(LINE_SHIFTER_ITEM);
                 });
     }
 }

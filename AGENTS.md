@@ -101,6 +101,16 @@ transparent layer, not a separate world.
       agent's default). Recipe (the person, 2026-11-23: ender pearls, "since
       this would be pretty powerful", and "make two"): Phase Block + ender
       pearl + piston makes 2.
+   a3. The line shifter (the person's idea, 2026-11-25: "'pushing' phase
+      blocks in a row or column would be an intuitive fix"; "I like this,
+      let's implement and test"): a hidden block facing a way, as a piston,
+      that takes the line in front of it (a piston's line: up to the first
+      gap, at most 12, nothing if 13 or an immovable block) one block at a
+      time from the far end, and puts it back from the near end. Done
+      (`LineShifterGameTests`). The agent's defaults, open to change: a new
+      block (the plain shifter unchanged), recipe Phase Shifter + piston,
+      speed 1 to 4 redstone ticks a block set by clicking. Next: rebuild the
+      castle tower (PR #58) on line shifters.
    b. The phase block (decided by the person, replacing dedicated
       plate/button blocks): a hidden block standing on a phase block, or
       hanging on its side, is phased: it reacts to the visible world at its

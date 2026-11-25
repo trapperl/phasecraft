@@ -1,0 +1,30 @@
+{
+  "variants": {
+    "facing=up": {
+      "model": "phasecraft:block/line_shifter"
+    },
+    "facing=down": {
+      "model": "phasecraft:block/line_shifter",
+      "x": 180
+    },
+    "facing=north": {
+      "model": "phasecraft:block/line_shifter",
+      "x": 90
+    },
+    "facing=south": {
+      "model": "phasecraft:block/line_shifter",
+      "x": 90,
+      "y": 180
+    },
+    "facing=west": {
+      "model": "phasecraft:block/line_shifter",
+      "x": 90,
+      "y": 270
+    },
+    "facing=east": {
+      "model": "phasecraft:block/line_shifter",
+      "x": 90,
+      "y": 90
+    }
+  }
+}
