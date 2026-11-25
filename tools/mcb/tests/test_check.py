@@ -82,7 +82,7 @@ class CheckTest(unittest.TestCase):
 
 
     def gate(self, allowed):
-        """An AND of two torches' signals (the castle tower's): repeaters @a and @b point into a stone with a torch
+        """An AND of two torches' signals: repeaters @a and @b point into a stone with a torch
         on its side (@q<ab, lit unless the stone is powered); `allowed` the allow line's signals."""
         return self.report([
             f"allow ab {allowed}",
@@ -95,6 +95,21 @@ class CheckTest(unittest.TestCase):
 
     def test_a_gate_torch_takes_no_other_signal(self):
         self.assertEqual(len([line for line in self.gate("a") if line.startswith("TORCH")]), 1)
+
+    def fed_twice(self, allowed):
+        """A line shifter @s fed by two repeaters, @a from the west and @b from the north (an OR, as the castle
+        tower's full columns); `allowed` the allow line's signals."""
+        return self.report([
+            f"allow s {allowed}",
+            "hidden 0 0 1 minecraft:glass", "hidden 0 1 1 minecraft:repeater[facing=west] @a<off",
+            "hidden 1 0 0 minecraft:glass", "hidden 1 1 0 minecraft:repeater[facing=north] @b<off",
+            "hidden 1 1 1 phasecraft:line_shifter[facing=up] @s"])
+
+    def test_a_shifter_fed_twice_takes_the_signals_it_is_made_of(self):
+        self.assertEqual([line for line in self.fed_twice("a b") if "line_shifter" in line], [])
+
+    def test_a_shifter_fed_twice_takes_no_other_signal(self):
+        self.assertEqual(len([line for line in self.fed_twice("a") if "line_shifter" in line]), 2)
 
 
 if __name__ == "__main__":

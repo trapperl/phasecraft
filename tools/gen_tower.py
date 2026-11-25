@@ -1,46 +1,46 @@
 #!/usr/bin/env python3
 """The castle tower (examples station 28, CastleTowerGameTests): a square stone tower that comes down block by
-block from the top when its lever is flipped, and builds itself up again from the ground when it is flipped back.
+block from the top when its lever is flipped, and builds itself up again from the ground when it is flipped back,
+on line shifters (one under each column of the tower; see the line shifter in docs/ARCHITECTURE.md).
 
 Usage: python3 tools/gen_tower.py && python3 tools/redstone_check.py src/gametest/resources/contraptions/castle_tower.txt
 
-The tower: 5 x 5, one-block walls, courses y = 0..7 (the top one battlements), a doorway in the north wall (the side a visitor comes from), arrow
-slits; 112 blocks, each held by a hidden phase shifter at its own spot. Order: course by course, and in each course
-clockwise seen from above, from the north-west corner: block i of the build (i = 16 y + 4 f + c, face f = north, east,
-south, west, column c = 0..3 along the face) comes STEP redstone ticks after block i - 1; coming down, course 7 goes
-first (i = 16 (7 - y) + 4 f + c). Blocks missing from the shape (doorway, slits, gaps of the battlements) keep their
-turn, so the rhythm stays even.
+The tower: 5 x 5, one-block walls, courses y = 0..7 (the top one battlements), a doorway in the north wall (the side
+a visitor comes from) and barred windows (iron bars, so that every column is one unbroken line); 118 blocks.
 
 Generator space: the tower's middle at x = z = 0, its courses at y = 0..7, the ground at y = -1. North is -z.
 
+Order: a helix. Its 16 columns in turn, clockwise seen from above from the north-west corner: column k = 4 f + c
+(face f = north, east, south, west; c = 0..3 along the face, each corner the first of its face) starts one redstone
+tick after column k - 1, and in a column a block goes every STEP redstone ticks (the line shifters' delay). Coming
+down (lever on), the block at course y goes at k + STEP (7 - y) redstone ticks after the first: the top comes off
+in a spiral, a course lower every face. Going up (lever off), it comes back at k + STEP y + STEP: from the ground,
+the same spiral the other way.
+
 The wiring, all hidden:
-- Faces as a pinwheel: the north face feeds its columns x = -2..1 from the north, the east face z = -2..1 from the
-  east, the south face x = 2..-1 from the south, the west face z = 2..-1 from the west (each corner belongs to one
-  face), so every block has a free side facing out, with the free quadrants between the faces.
-- Channels: each block's course is fed by a straight channel out from its face, at the block's own height,
-  alternating stone and repeater along it and from course to course (a repeater always stands on the stone of the
-  channel below; a stone powers the next repeater in, and the shifter if it touches it). Course y's channel is
-  depth(y) = 9 - y blocks long: each course up one block shorter, a staircase. Its last repeater reads a stone
-  (the course's input) under a wire.
-- Rings: course y's wire (y + 1 up) runs over its four faces' input stones, a square ring round the tower, open in
-  the north-west, where its feed comes in. Between faces the ring has repeaters adding FACE redstone ticks, and each
-  channel's outermost repeater adds its column's c, so block i lights i redstone ticks after the ring's start. A
-  stone above every ring cuts it from the ring above, one block in and up (wire joins a diagonal step).
-- Timing: a delay line from the lever with eight taps, COURSE redstone ticks apart (L0..L7). Coming down (lever on),
-  course y goes at tap 7 - y; going up (lever off), at tap y. So course y's shifters follow L(7-y) OR L(y) for the
-  top four courses (on at the earlier tap, off at the later) and L(y) AND L(7-y) for the bottom four (on at the
-  later, off at the earlier): one tap pair per two courses. The AND is a torch fed by the two taps' torches.
-- The router (tools/mcb/router.py) lays the lines from the taps to the courses' gates, each with the delay that
-  makes every block's turn exact, and the lever's line to the first tap.
+- Each column's line shifter (delay STEP) sits under the column's lowest block, facing up: under the ground for
+  15 columns, in the doorway (just under its lintel) for the doorway's. It takes its column from the top and puts
+  it back from the bottom, one block every STEP redstone ticks.
+- A battlement gap (a crenel) makes a column one block shorter at the top: coming down it must start STEP later
+  than a full column (on later), going up at the same moment (off at the same time). A line shifter takes from its
+  power's coming and puts back from its going, so: ring A gives column k a signal at k (S_k), ring B one at k + 4
+  (S_k+4). A full column's shifter takes both (on at k, off at k + 4); a crenel's takes ring B's only (on and off
+  at k + 4). Going up, every column so starts STEP after its turn; that STEP is the + STEP above.
+- Rings: square rings round the tower, ring A at y = 0 (in the visible air beside the tower's lowest course, and
+  inside its walls), ring B at y = -2 (under the shifters). On each face, a wire FOUR blocks out from the wall feeds
+  a repeater three blocks out (delay c + 1) that points into a stone at the column: above the shifter (ring A, full
+  columns only) or under it (ring B). Between faces a repeater adds 4 redstone ticks.
+- The doorway's column starts at its lintel (course 2): it takes at k = 2 like a full column, and puts back at
+  k + 2 STEP + STEP = 14 = S_14, the signal of the west face's middle column. A wire from that column's ring A stone
+  runs through the tower's inside up onto the doorway's shifter.
+- The lever powers a phase port under it. A repeater takes ring A's signal from the port (1 redstone tick), two
+  take ring B's (5), so ring B runs 4 redstone ticks behind ring A everywhere.
 """
 
-import itertools
-import pathlib
 import sys
 
 import gen_door
-from mcb import router
-from mcb.redstone import SIDES, Sim, add
+from mcb.redstone import Sim
 from mcb.report import hidden_size
 from mcb.scene import Scene
 
@@ -49,63 +49,62 @@ NAME = "castle_tower"
 
 TOP = 7                       # courses 0..TOP
 HALF = 2                      # the tower is 2 * HALF + 1 wide
-D_TOP = 2                     # the top course's channel length
-COURSE, FACE = 16, 4          # redstone ticks per course, per face (a block a redstone tick)
-ZG = 15                       # the feeds' ends at z = -ZG, the gates just north of them
-ZL = 26                       # the delay line along z = -ZL
-LEVER = (3, 0, -5)            # beside the path to the door, in front of the tower (north)
+STEP = 4                      # redstone ticks a block in a column: the line shifters' delay
+LEVER = (-2, 0, -7)           # beside the path to the door, in front of the tower (north)
+PORT = (LEVER[0], LEVER[1] - 1, LEVER[2])
+DOOR = (0, -HALF)             # the doorway's column
+DOOR_LOW = 2                  # its lowest block (the lintel)
+A_Y, B_Y = 0, -2              # the rings' heights
 
 STONE, GLASS, WIRE = "minecraft:stone", "minecraft:glass", "minecraft:redstone_wire"
-SHIFTER, PORT = "phasecraft:phase_shifter", "phasecraft:phase_port"
-WALL = "minecraft:stone_bricks"
+SHIFTER = f"phasecraft:line_shifter[delay={STEP},facing=up,powered=false]"
 WALL_MIX = {"minecraft:stone_bricks": 6, "minecraft:mossy_stone_bricks": 1, "minecraft:cracked_stone_bricks": 1}
-VEC = {"north": (0, 0, -1), "south": (0, 0, 1), "west": (-1, 0, 0), "east": (1, 0, 0)}
-OPP = {"north": "south", "south": "north", "west": "east", "east": "west"}
-FACES = [("north", [(x, -HALF) for x in (-2, -1, 0, 1)]),
-         ("east", [(HALF, z) for z in (-2, -1, 0, 1)]),
-         ("south", [(x, HALF) for x in (2, 1, 0, -1)]),
-         ("west", [(-HALF, z) for z in (2, 1, 0, -1)])]
+BARS = "minecraft:iron_bars"
+DIR = {(0, -1): "north", (0, 1): "south", (-1, 0): "west", (1, 0): "east"}
+# Faces in turn: their columns in order along the face (a pinwheel, each corner the first of a face), the way out.
+FACES = [((0, -1), [(x, -HALF) for x in (-2, -1, 0, 1)]),
+         ((1, 0), [(HALF, z) for z in (-2, -1, 0, 1)]),
+         ((0, 1), [(x, HALF) for x in (2, 1, 0, -1)]),
+         ((-1, 0), [(-HALF, z) for z in (2, 1, 0, -1)])]
 
 
-def depth(y):
-    return D_TOP + TOP - y
-
-
-def radius(y):
-    """Course y's ring: a square this far out from the middle."""
-    return HALF + 1 + depth(y)
-
-
-def feed_x(y):
-    """Course y's feed turns north at x = -feed_x(y), its gate north of that."""
-    return 5 + 4 * y
+def columns():
+    """[(k, (x, z), out)] for the 16 columns in turn."""
+    return [(4 * f + c, col, out) for f, (out, cols) in enumerate(FACES) for c, col in enumerate(cols)]
 
 
 def present(y, x, z):
-    """Whether the tower has a block at (x, y, z) of its wall: battlements on top, a doorway, arrow slits."""
+    """Whether the tower has a block at (x, y, z) of its wall: battlements on top, a doorway."""
     if y == TOP:
         return (x + z) % 2 == 0
-    if (x, z) == (0, -HALF) and y in (0, 1):
-        return False
-    if y in (3, 4) and (x, z) in ((0, HALF), (HALF, 0), (-HALF, 0)):
+    if (x, z) == DOOR and y < DOOR_LOW:
         return False
     return True
 
 
+def window(y, x, z):
+    """Barred windows: courses 3 and 4 in the middle of the east, south and west walls."""
+    return y in (3, 4) and (x, z) in ((0, HALF), (HALF, 0), (-HALF, 0))
+
+
+def full(col):
+    """Whether a column reaches the top course (a merlon above it) rather than stopping one below (a crenel)."""
+    return present(TOP, col[0], col[1])
+
+
 def blocks():
-    """[(pos, y, f, c)] of every block of the tower."""
-    out = []
-    for f, (_, cols) in enumerate(FACES):
-        for c, (x, z) in enumerate(cols):
-            for y in range(TOP + 1):
-                if present(y, x, z):
-                    out.append(((x, y, z), y, f, c))
-    return out
+    """[(pos, y, k)] of every block of the tower."""
+    return [((x, y, z), y, k) for k, (x, z), _ in columns() for y in range(TOP + 1) if present(y, x, z)]
 
 
-def turn(y, f, c, up):
+def turn(y, k, up):
     """Redstone ticks after the first block: going up (lever off) or coming down (lever on)."""
-    return COURSE * (y if up else TOP - y) + FACE * f + c
+    return k + STEP * y + STEP if up else k + STEP * (TOP - y)
+
+
+def shifter_at(col):
+    low = DOOR_LOW if col == DOOR else 0
+    return (col[0], low - 1, col[1])
 
 
 class Parts:
@@ -135,379 +134,115 @@ class Parts:
         self.put(p, WIRE)
 
 
-def channels(b):
-    """Each block's channel, out from its face at its own height, and the course's input stone at its end."""
-    for name, cols in FACES:
-        vx, _, vz = VEC[name]
+def ring(b, y, wanted):
+    """A ring of face wires four blocks out, a branch repeater (delay c + 1) three blocks out into a stone at each
+    wanted column (at height y), and a 4-redstone-tick repeater from each face's wire to the next face's. Returns
+    the north face's first wire (where the ring's signal comes in)."""
+    for f, (out, cols) in enumerate(FACES):
+        ox, oz = out
+        along = (cols[1][0] - cols[0][0], cols[1][1] - cols[0][1])
         for c, (x, z) in enumerate(cols):
-            for y in range(TOP + 1):
-                d_end = depth(y)
-                here = present(y, x, z)
-                for d in range(1, d_end + 2):
-                    p = (x + vx * d, y, z + vz * d)
-                    if d == d_end + 1:
-                        b.put(p, STONE if here else GLASS)     # the input, under the ring's wire
-                    elif not here:
-                        continue
-                    elif (d + y) % 2:
-                        b.rep(p, name, 1 + c if d == d_end else 1)
-                    else:
-                        b.put(p, STONE)
-    # a repeater over a missing block's channel stands on glass
-    for p, state in list(b.b.items()):
-        if "repeater" in state:
-            b.support(p)
-
-
-def ring_path(y):
-    """Course y's ring, in the signal's order: [north row, NE, east row, SE, south row, SW, west row] as (x, z)."""
-    r = radius(y)
-    return [[(x, -r) for x in range(-2, 2)],
-            [(x, -r) for x in range(2, r + 1)] + [(r, z) for z in range(-r + 1, -2)],
-            [(r, z) for z in range(-2, 2)],
-            [(r, z) for z in range(2, r + 1)] + [(x, r) for x in range(r - 1, 2, -1)],
-            [(x, r) for x in (2, 1, 0, -1)],
-            [(x, r) for x in range(-2, -r - 1, -1)] + [(-r, z) for z in range(r - 1, 2, -1)],
-            [(-r, z) for z in (2, 1, 0, -1)]]
-
-
-def spots(y):
-    """Where the repeaters go in each of course y's corner stretches (indexes; all four alike) and their delays: as
-    few as keep every stretch of wire under 14, as even as can be. The corner itself (index r - 2) cannot hold one."""
-    r = radius(y)
-    n = 2 * r - 4
-    allowed = [i for i in range(n) if i != r - 2]
-    best = None
-    for m in (1, 2, 3):
-        delays = {1: [FACE], 2: [FACE // 2, FACE - FACE // 2], 3: [1, 1, FACE - 2]}[m]
-
-        for pos in itertools.combinations(allowed, m):
-            runs = [4 + pos[0]]                                     # from the feed's last repeater
-            runs += [pos[k + 1] - pos[k] - 1 for k in range(m - 1)]
-            runs.append(n - 1 - pos[-1] + 4 + pos[0])               # across a row to the next stretch
-            worst = max(runs)
-            if worst <= 13 and (best is None or worst < best[0]):
-                best = (worst, pos, delays)
-        if best:
-            return best[1], best[2]
-    raise ValueError(f"no repeater spots for course {y}")
-
-
-def facing_from(a, b):
-    """The direction from b back to a, both (x, z) (a repeater at b fed from a has this facing)."""
-    d = (a[0] - b[0], a[1] - b[1])
-    return next(k for k, v in VEC.items() if (v[0], v[2]) == d)
-
-
-GATE_Y = 1                    # the gates' height: each feed climbs from there to its course
-
-
-def feed_path(y):
-    """Course y's feed in the signal's order, as (x, y, z): its end E at the gates' height (z = -ZG), south and up a
-    step a block (on glass: a one-way step, up) to its ring's height, on to z = -r - 1; then the corner and east
-    along z = -r to (-3, -r), its last repeater, which feeds the ring's start."""
-    h, r, fx = y + 1, radius(y), feed_x(y)
-    cells, level = [], GATE_Y
-    for i, z in enumerate(range(-ZG, -r)):
-        if i >= 2 and level < h:
-            level += 1
-        cells.append((-fx, level, z))
-    if level != h:
-        raise ValueError(f"course {y}'s feed cannot climb to {h} by z = {-r - 1}")
-    cells += [(x, h, -r) for x in range(-fx, -2)]
-    return cells
-
-
-def feed_repeaters(cells, delay=None):
-    """{index: delay} for a feed: its last cell, and one before the signal fades (never on E, a step or a turn);
-    with delay= (redstone ticks), delays raised, then repeaters added on spare straight cells, to make it."""
-    n = len(cells)
-
-    def straight(i):
-        a, b, c = cells[i - 1], cells[i], cells[i + 1]
-        return a[1] == b[1] == c[1] and (b[0] - a[0], b[2] - a[2]) == (c[0] - b[0], c[2] - b[2])
-    ok = [i for i in range(1, n - 1) if straight(i)]
-    reps = {n - 1: 1}
-    run, cand = 0, None
-    for i in range(n - 1):
-        run += 1
-        if i in ok:
-            cand = i
-        if run >= 13:
-            reps[cand] = 1
-            run = i - cand
-            cand = None
-    if delay is not None:
-        need = delay - len(reps)
-        spare = [i for i in ok if i not in reps and i - 1 not in reps and i + 1 not in reps]
-        while need > 0:
-            room = [i for i in sorted(reps) if reps[i] < 4]
-            if room:
-                reps[room[0]] += 1
-            elif spare:
-                reps[spare.pop(len(spare) // 2)] = 1
-            else:
-                raise ValueError(f"no room for {delay} redstone ticks in a feed of {n} cells")
-            need -= 1
-        if need < 0:
-            raise ValueError(f"a feed of {n} cells needs at least {len(reps)} redstone ticks, more than {delay}")
-    return reps
-
-
-def rings(b, feed_delays=None):
-    """Each course's ring over its input stones, with the cutting stones above it, and its feed from the gates.
-    Returns {course: (E, the feed's delay)}."""
-    ends = {}
-    for y in range(TOP + 1):
-        h = y + 1
-        parts = ring_path(y)
-        pos, delays = spots(y)
-        feed = feed_path(y)
-        reps = feed_repeaters(feed, (feed_delays or {}).get(y))
-        for i, p in enumerate(feed):
-            if i in reps:
-                prev = feed[i - 1]
-                b.rep(p, facing_from((prev[0], prev[2]), (p[0], p[2])), reps[i])
-            else:
-                b.wire(p)
-            if p[1] == h and y < TOP and p[2] == -radius(y):
-                b.put((p[0], h + 1, p[2]), STONE)                   # the run: cut from the feed above
-        ring = [c for part in parts for c in part]
-        at = {}
-        for k, part_i in enumerate((1, 3, 5)):
-            first = sum(len(parts[j]) for j in range(part_i))
-            for q, dl in zip(pos, delays):
-                at[first + q] = dl
-        for i, (x, z) in enumerate(ring):
-            p = (x, h, z)
-            prev = ring[i - 1] if i else (feed[-1][0], feed[-1][2])
-            if i in at:
-                b.rep(p, facing_from(prev, (x, z)), at[i])
-            else:
-                b.wire(p)
-            if y < TOP:
-                b.put((x, h + 1, z), STONE)                         # cuts the step to the ring above
-        ends[y] = (feed[0], sum(reps.values()))
-    return ends
-
-
-def gates(b, ends):
-    """North of each feed's end E: an OR (a stone the two taps' lines point into) for the top courses; for the bottom
-    ones an AND: a stone the two taps' torches' lines point into, and a torch on it lighting E. {course: stone}"""
-    into = {}
-    for y in range(TOP + 1):
-        (x, h, z), _ = ends[y]
-        if y > TOP // 2:
-            g = (x, h, z - 1)
-            b.put(g, STONE)
-        else:
-            g = (x, h, z - 2)
-            b.put(g, STONE)
-            b.put((x, h, z - 1), "minecraft:redstone_wall_torch[facing=south]")
-        into[y] = g
-    return into
-
-
-def tap_x(j):
-    return -4 - 5 * j
-
-
-def delay_line(b):
-    """The lever's delay line west along z = -ZL at the gates' height: tap stones T0..T7 with four repeaters (COURSE
-    ticks) between; each tap's own signal goes out south (a repeater), its inverse north (a torch on the tap)."""
-    taps = {}
-    for j in range(TOP + 1):
-        t = (tap_x(j), GATE_Y, -ZL)
-        b.put(t, STONE)
-        taps[j] = t
-        b.put((t[0], GATE_Y, -ZL - 1), "minecraft:redstone_wall_torch[facing=north]")
-        # four repeaters to the next tap; after the last, four more, so that the lock opens a course after the last
-        # tap, once the bottom course has finished
-        for k in range(1, 5):
-            b.rep((t[0] - k, GATE_Y, -ZL), "east", COURSE // 4)
-    return taps
-
-
-def lock(b):
-    """The delay line's input I, locked while a move is under way (L0 and L7 differ), so that the lever is read again
-    only once the tower has finished moving: a flip during a move waits for its end, and a quick flick makes one whole
-    cycle. The lever's line powers P; I (3 redstone ticks, more than the lock takes to close) feeds S0 (L0), and
-    wire and a repeater on to T0. Two comparators in subtract mode point into I's sides: C1 = L0 - L7 (L0 behind it,
-    L7 at its side), C2 = L7 - L0. Returns (where the lever's line ends, where L7's lines end) as router ends."""
-    y, z = GATE_Y, -ZL
-    b.rep((4, y, z), "east", 1)                                               # the lever's line ends here
-    b.put((3, y, z), STONE)                                                   # P
-    b.rep((2, y, z), "east", 3)                                               # I
-    b.put((1, y, z), STONE)                                                   # S0: L0
-    for x in (0, -1, -2):
-        b.wire((x, y, z))
-    b.rep((-3, y, z), "east", 1)                                              # into T0
-    b.support((2, y, z - 1))
-    b.put((2, y, z - 1), "minecraft:comparator[facing=north,mode=subtract]")  # C1, into I's north side
-    b.rep((1, y, z - 1), "south", 1)                                          # L0 round to C1's back
-    b.wire((1, y, z - 2))
-    b.wire((2, y, z - 2))
-    b.support((2, y, z + 1))
-    b.put((2, y, z + 1), "minecraft:comparator[facing=south,mode=subtract]")  # C2, into I's south side
-    b.wire((1, y, z + 1))                                                     # L0 at C2's side
-    return (5, y, z), [((2, y, z + 2), "north"), ((3, y, z - 1), "west")]
-
-
-def layout(feed_delays=None):
-    b = Parts()
-    channels(b)
-    ends = rings(b, feed_delays)
-    into = gates(b, ends)
-    taps = delay_line(b)
-    lever_end, l7_ends = lock(b)
-    lx, ly, lz = LEVER
-    port = (lx, ly - 1, lz)
-    b.put(port, PORT)
-    return b, ends, into, taps, port, lever_end, l7_ends
-
-
-def channel_delay(y):
-    """Redstone ticks through course y's channel for column 0 (each column c adds c)."""
-    return sum(1 for d in range(1, depth(y) + 1) if (d + y) % 2)
-
-
-def torches(y):
-    """Torches on the way from a tap to course y: the tap's and the gate's for an AND, none for an OR."""
-    return 2 if y <= TOP // 2 else 0
-
-
-def nets(into, taps, port, lever_end, l7_ends, delays):
-    """Each tap to its two courses' gates (its own signal to the OR, its inverse to the AND), and the lever's port
-    to the first tap. [(course or None, Net)]"""
-    out = []
-    for j in range(TOP + 1):
-        for inverse in (False, True):
-            y = min(j, TOP - j) if inverse else max(j, TOP - j)
-            g = into[y]
-            side = "north" if j == min(j, TOP - j) else "west"
-            v = VEC[side]
-            end = (g[0] + v[0], g[1], g[2] + v[2])
-            t = taps[j]
-            start, start_from = ((t[0], t[1], -ZL - 2), "south") if inverse else ((t[0], t[1], -ZL + 1), "north")
-            out.append((y, router.Net(start, start_from, end, OPP[side], delay=delays.get(y),
-                                      name=f"{'not ' if inverse else ''}L{j} to course {y}")))
-    out.append((None, router.Net((port[0], port[1], port[2] - 1), "south", lever_end, "west", name="lever to the lock")))
-    t7 = taps[TOP]
-    out.append((None, router.TreeNet((t7[0] - 5, t7[1], t7[2]), "east", l7_ends, name="L7 to the lock")))
-    return out
-
-
-BOX = ((-48, -4, -34), (16, 14, 16))
-
-
-def route(b, into, taps, port, lever_end, l7_ends, delays):
-    scene = Scene()
-    for p, s in b.b.items():
-        scene.set("hidden", p, s)
-    pairs = nets(into, taps, port, lever_end, l7_ends, delays)
-    routes = router.route_all(scene, [n for _, n in pairs], BOX)
-    for r in routes:
-        for p, s in r.parts:
-            b.put(p, s)
-    return [(y, r) for (y, _), r in zip(pairs, routes)]
-
-
-def wire_up():
-    """Routes once with the fewest repeaters, to learn how many redstone ticks each course's lines need at least;
-    then sets every feed so that tap to block takes the same time for all, and routes again, exactly."""
-    b, ends, into, taps, port, lever_end, l7_ends = layout()
-    first = route(b, into, taps, port, lever_end, l7_ends, {})
-    need = {}
-    for y, r in first:
-        if y is not None:
-            need[y] = max(need.get(y, 0), r.delay)
-    feed_min = {y: d for y, (_, d) in ends.items()}
-    for _ in range(20):
-        total = max(need[y] + channel_delay(y) + torches(y) + feed_min[y] for y in need)
-        feeds = {y: total - need[y] - channel_delay(y) - torches(y) for y in need}
-        b, ends, into, taps, port, lever_end, l7_ends = layout(feeds)
-        try:
-            routes = route(b, into, taps, port, lever_end, l7_ends, need)
+            b.wire((x + 2 * ox, y, z + 2 * oz))
+            if (x, z) in wanted:
+                b.rep((x + ox, y, z + oz), DIR[out], c + 1)
+                b.put((x, y, z), STONE)
+        if f == len(FACES) - 1:
             break
-        except router.NoRoute as e:
-            text = str(e)
-            if "needs at least" not in text and "cannot make" not in text:
-                raise
-            y = int(text.split(" to course ")[1].split(":")[0])
-            need[y] += 1 if "needs at least" in text else -1
-    else:
-        raise router.NoRoute("no timing found for every line")
-    return b, port, total, routes
+        x, z = cols[-1][0] + 2 * ox, cols[-1][1] + 2 * oz          # the face's last wire
+        r = (x + along[0], z + along[1])
+        b.rep((r[0], y, r[1]), DIR[(-along[0], -along[1])], 4)
+        corner = [(r[0] + along[0], r[1] + along[1]), (r[0] + 2 * along[0], r[1] + 2 * along[1])]
+        corner.append((corner[-1][0] - ox, corner[-1][1] - oz))
+        for cx, cz in corner:
+            b.wire((cx, y, cz))
+    out, cols = FACES[0]
+    return (cols[0][0] + 2 * out[0], y, cols[0][1] + 2 * out[1])
+
+
+def layout():
+    b = Parts()
+    for k, col, _ in columns():
+        b.put(shifter_at(col), SHIFTER)
+    a_start = ring(b, A_Y, {col for _, col, _ in columns() if full(col)})
+    b_start = ring(b, B_Y, {col for _, col, _ in columns() if col != DOOR})
+    # the doorway: ring A's stone is under its shifter (in the doorway's floor); S_14 comes from the west face's
+    # middle column's ring A stone, through the tower's inside, onto the shifter
+    west_middle = FACES[3][1][2]
+    assert (west_middle, 14) == ((-HALF, 0), next(k for k, col, _ in columns() if col == west_middle))
+    for p in [(-1, 0, 0), (-1, 1, -1), (-1, 2, -2), (0, DOOR_LOW, -HALF)]:
+        b.wire(p)
+    # the lever's port: ring A through one repeater, ring B through two (5 redstone ticks)
+    px, py, pz = PORT
+    b.put(PORT, "phasecraft:phase_port")
+    b.rep((px, py, pz + 1), "north", 1)
+    b.put((px, py, pz + 2), STONE)
+    b.put((px, py + 1, pz + 2), WIRE)                                    # on the stone, onto ring A's north wire
+    assert (px, py + 1, pz + 3) == a_start
+    b.rep((px - 1, py, pz), "east", 4)
+    b.rep((px - 2, py, pz), "east", 1)
+    b.put((px - 3, py, pz), STONE)
+    for p in [(px - 3, B_Y, pz), (px - 3, B_Y, pz + 1), (px - 3, B_Y, pz + 2), (px - 3, B_Y, pz + 3),
+              (px - 2, B_Y, pz + 3), (px - 1, B_Y, pz + 3)]:
+        b.wire(p)
+    assert (px, B_Y, pz + 3) == b_start
+    return b
 
 
 def scene_of(b):
     scene = Scene()
     for p, state in b.b.items():
         scene.set("hidden", p, state)
-    for p, *_ in blocks():
-        scene.set("hidden", p, SHIFTER)
     return scene
 
 
-def history(b, port, phase):
-    """Settles the wiring (lever off), flips the lever on and off; every part's on/off history, each diode's and
-    torch's input history, and the settled state."""
+def history(b, phase):
+    """Settles the wiring (lever off), flips the lever on and off; every part's on/off history, each diode's input
+    history, and the settled state."""
     sim = Sim(scene_of(b))
     if sim.popped:
         sys.exit(f"parts with nothing to stand on: {sim.popped[:5]}")
     sim.run(300)
-    if sim.powered_shifters() or sim.queue:
-        sys.exit(f"not at rest: {sorted(sim.powered_shifters())[:5]}")
+    if sim.events or sim.queue:
+        sys.exit(f"not at rest: {sim.events[:5]}")
     settled = {p: (k, dict(props)) for p, (k, props) in sim.parts.items()}
     power = dict(sim.wire_power)
-    out, inp, side, port_on = {}, {}, {}, []
+    out, inp, port_on = {}, {}, []
     for flip in range(2):
-        sim.set_input(port, flip == 0)
+        sim.set_input(PORT, flip == 0)
         for _ in range(phase):
             sim.run(1)
             port_on.append(flip == 0)
             for p, (k, props) in sim.parts.items():
                 if k == "redstone_wire":
                     on = sim.wire_power[p] > 0
-                elif k in ("repeater", "phase_shifter"):
+                elif k in ("repeater", "line_shifter"):
                     on = props.get("powered") == "true"
                     if k == "repeater":
                         inp.setdefault(p, []).append(sim.repeater_input(p) > 0)
-                elif k in ("redstone_torch", "redstone_wall_torch"):
-                    on = props.get("lit", "true") == "true"
-                    inp.setdefault(p, []).append(not sim.torch_should_be_lit(p))
-                elif k == "comparator":
-                    on = props.get("powered") == "true"
-                    inp.setdefault(p, []).append(sim.comparator_input(p) > 0)
-                    side.setdefault(p, []).append(max(sim.control(add(p, d), d) for d in SIDES[props["facing"]]) > 0)
                 else:
                     continue
                 out.setdefault(p, []).append(on)
-    out[port] = port_on
-    for p, h in side.items():
-        out[("side",) + p] = h
+    out[PORT] = port_on
     return settled, power, {p: tuple(v) for p, v in out.items()}, {p: tuple(v) for p, v in inp.items()}
 
 
-def signals(port, out, inp, phase):
-    """Each part's signal, named by its history: L the lever; Y<y>K<k> a block's shifter (course y, k-th of the
-    course); any other a<on>c<off>: on a redstone ticks after the lever goes on, off c after it goes off (with an n in
-    front if it is on while the lever is off). A diode or torch is out<in."""
-    names = {out[port]: "L"}
-    for p, y, f, c in blocks():
-        names.setdefault(out[p], f"Y{y}K{FACE * f + c}")
+def signals(out, inp, phase):
+    """Each part's signal, named by its history: L the lever; C<k> column k's shifter; any other a<on>c<off>: on a
+    redstone ticks after the lever goes on, off c after it goes off. A diode is out<in."""
+    names = {out[PORT]: "L"}
+    for k, col, _ in columns():
+        names.setdefault(out[shifter_at(col)], f"C{k}")
 
     def name(h):
         if h not in names:
-            rest = h[-1]
             change = [i for i in range(1, len(h)) if h[i] != h[i - 1]]
-            if not change and h[0] == rest:
-                names[h] = "on" if rest else "off"
-            elif len(change) == 2 and change[0] < phase <= change[1] and h[0] == rest:
+            if not change and h[0] == h[-1]:
+                names[h] = "on" if h[-1] else "off"
+            elif len(change) == 2 and change[0] < phase <= change[1] and h[0] == h[-1]:
                 a, c = change[0], change[1] - phase
-                names[h] = f"{'n' if rest else ''}a{(a + 1) // 2}c{(c + 1) // 2}"
-            else:                                     # any other: its changes, in redstone ticks from the start
-                names[h] = f"{'n' if rest else ''}e{'x'.join(str((i + 1) // 2) for i in change)}g{len(names)}"
+                names[h] = f"{'n' if h[-1] else ''}a{(a + 1) // 2}c{(c + 1) // 2}"
+            else:
+                names[h] = f"{'n' if h[-1] else ''}e{'x'.join(str((i + 1) // 2) for i in change)}g{len(names)}"
         return names[h]
 
     tags = {p: name(h) for p, h in out.items()}
@@ -516,44 +251,30 @@ def signals(port, out, inp, phase):
     return tags
 
 
-def comparator_sides(tags):
-    """allow lines for the lock's comparators: each takes the other tap's signal at its side, on purpose."""
+def feeds(b, tags):
+    """allow lines for the shifters fed twice on purpose (a full column: rings A and B; the doorway: ring A and
+    S_14): each takes the signals of what feeds it."""
     allow = {}
-    for key, tag in tags.items():
-        if key[0] == "side":
-            allow.setdefault(tags[key[1:]].split("<")[0], set()).add(tag)
-    return allow
-
-
-def joins(b, settled, tags):
-    """allow lines for the gates, where two lines point into one stone on purpose: whatever reads the stone (an OR's
-    feed wire, an AND's torch) carries both lines' signals (the simulator checks what it makes of them)."""
-    allow = {}
-    for g, state in b.b.items():
-        if state != STONE:
-            continue
-        into = set()
-        for d in VEC.values():
-            q = (g[0] + d[0], g[1], g[2] + d[2])
-            k, props = settled.get(q, (None, {}))
-            if k == "repeater":
-                f = VEC[props["facing"]]
-                if (q[0] - f[0], q[1], q[2] - f[2]) == g:
-                    into.add(tags[q].split("<")[0])
-        if len(into) < 2:
-            continue
-        for d in list(VEC.values()) + [(0, 1, 0)]:
-            r = (g[0] + d[0], g[1] + d[1], g[2] + d[2])
-            k, props = settled.get(r, (None, {}))
-            if k == "redstone_wire":
-                allow.setdefault(tags[r].split("<")[0], set()).update(into)
-            elif k == "redstone_wall_torch" and VEC[props["facing"]] == d:
-                allow.setdefault(tags[r].split("<")[1], set()).update(into)
+    for k, col, _ in columns():
+        s = shifter_at(col)
+        got = set()
+        for d in ((0, 1, 0), (0, -1, 0)):
+            q = (s[0], s[1] + d[1], s[2])
+            if b.b.get(q) == STONE:                     # a ring's stone: the repeater pointing into it
+                for v, name in DIR.items():
+                    r = (q[0] + v[0], q[1], q[2] + v[1])
+                    if b.b.get(r, "").startswith("minecraft:repeater") and f"facing={name}" in b.b[r]:
+                        got.add(tags[r].split("<")[0])
+            elif b.b.get(q) == WIRE:
+                got.add(tags[q])
+        if len(got) > 1:
+            allow[f"C{k}"] = got
     return allow
 
 
 def visible(at):
-    """The ground, a path to the door, the lever, the tower (stone bricks, a few mossy and cracked)."""
+    """The ground, a path to the door, the lever, the tower (stone bricks, a few mossy and cracked; iron bars in the
+    windows)."""
     from mcb.shapes import Palette
     lines = []
     lo, hi = -9, 9
@@ -563,22 +284,25 @@ def visible(at):
     for z in range(lo, -HALF):
         lines.append(f"visible {at((0, -1, z))} minecraft:dirt_path")
     mix = Palette(WALL_MIX)
-    for p, *_ in blocks():
-        lines.append(f"visible {at(p)} {mix.at(p)}")
+    for p, y, _ in blocks():
+        if window(y, p[0], p[2]):                   # joined to the wall on both sides, as placed bars would be
+            sides = "east=true,west=true" if abs(p[2]) == HALF else "north=true,south=true"
+            lines.append(f"visible {at(p)} {BARS}[{sides}]")
+        else:
+            lines.append(f"visible {at(p)} {mix.at(p)}")
     lines.append(f"visible {at(LEVER)} minecraft:lever[face=floor,facing=north,powered=false]")
     return lines
 
 
 def write(b, settled, power, tags, allow, first):
     g = gen_door.Grid()
-    tower = [p for p, *_ in blocks()]
-    hidden = [p for p in b.b if p not in set(tower)]
+    hidden = list(b.b)
     plain = [p for p in hidden if b.b[p] in (STONE, GLASS)]                 # supports before what stands on them
-    order = plain + [p for p in hidden if b.b[p] not in (STONE, GLASS)] + tower
+    order = plain + [p for p in hidden if b.b[p] not in (STONE, GLASS)]
     for p in order:
         if p in settled:
             k, props = settled[p]
-            name = ("phasecraft:" if k in ("phase_port", "phase_shifter") else "minecraft:") + k
+            name = ("phasecraft:" if k in ("phase_port", "line_shifter") else "minecraft:") + k
             props = {key: v for key, v in props.items() if not key.startswith("_")}
         else:
             name, props = b.b[p], {}
@@ -588,8 +312,9 @@ def write(b, settled, power, tags, allow, first):
     for p, v in g.parts.items():
         if v[0] == WIRE and power.get(p):
             v[1]["power"] = str(power[p])
-    xs, ys, zs = ([p[i] for p in order] + [-9, 9] for i in range(3))
-    ys = [p[1] for p in order] + [-3]
+    xs = [p[0] for p in order] + [-9, 9]
+    ys = [p[1] for p in order] + [-3, TOP + 2]      # headroom: a GameTest's barrier ceiling would stop a column
+    zs = [p[2] for p in order] + [-9, 9]
     ox, oy, oz = -min(xs), -min(ys), -min(zs)
     size = (max(xs) + ox + 1, max(ys) + oy + 1, max(zs) + oz + 1)
 
@@ -598,11 +323,10 @@ def write(b, settled, power, tags, allow, first):
 
     header = [f"# {line}".rstrip() for line in __doc__.strip().splitlines()]
     header.insert(0, "# Written by tools/gen_tower.py; change the generator and run it again.")
-    header.append(f"# The tower's middle at {ox} {oy} {oz} (its lowest course); the first block moves {first} redstone "
+    header.append(f"# The tower's middle at {ox} {oy} {oz} (its lowest course); the first block moves {first} game "
                   "ticks after the lever.")
-    header.append("# Signals: L the lever; Y<y>K<k> course y's k-th block; a<n>c<m> on n redstone ticks after the "
-                  "lever goes on and off m after it goes off (n..: on while the lever is off); a diode or torch "
-                  "<out><<in>; named from a simulated run.")
+    header.append("# Signals: L the lever; C<k> column k's line shifter; a<n>c<m> on n redstone ticks after the lever "
+                  "goes on and off m after it goes off; a diode <out><<in>; named from a simulated run.")
     lines = header + [f"size {size[0]} {size[1]} {size[2]}", f"lever {at(LEVER)}"]
     lines += [f"allow {sig} {' '.join(sorted(also))}" for sig, also in sorted(allow.items())]
     lines += visible(at)
@@ -615,82 +339,77 @@ def write(b, settled, power, tags, allow, first):
     structure = ROOT / f"src/gametest/resources/data/phasecraft-test/gametest/structure/{NAME}.snbt"
     structure.write_text("{\n    DataVersion: 2730,\n    size: [%d, %d, %d],\n    data: [],\n    palette: []\n}\n" % size)
     print(f"wrote {out.relative_to(ROOT)}: area {size[0]}x{size[1]}x{size[2]}; "
-          + hidden_size([(p, g.parts[p][0]) for p in hidden])
-          + f"; first block {first} redstone ticks after the lever")
+          + hidden_size([(p, g.parts[p][0]) for p in hidden]))
     return out, (ox, oy, oz)
 
 
+def moves(on_at, off_at, line):
+    """{pos: game tick} a line shifter (delay STEP) moves each block of its line (bottom first): taking from the
+    top when powered at on_at, or putting back from the bottom when unpowered at off_at."""
+    if on_at is not None:
+        return {p: on_at + 2 * STEP * i for i, p in enumerate(reversed(line))}
+    return {p: off_at + 2 * STEP * i for i, p in enumerate(line)}
+
+
 def simulate(path, offset):
-    """The written layout in the simulator: standing at rest and while settling; coming down and going up again,
-    each block at its turn, twice."""
+    """The written layout in the simulator: still while settling; coming down and going up again, each column's
+    shifter switched once, so that each block moves at its turn; twice."""
     sim = Sim(Scene.from_layout(path))
     if sim.popped:
         sys.exit(f"parts with nothing to stand on: {sim.popped[:5]}")
     sim.run(60)
-    if sim.events or sim.powered_shifters():
+    if sim.events:
         sys.exit(f"moved while settling: {sim.events[:5]}")
     ox, oy, oz = offset
-    where = {(p[0] + ox, p[1] + oy, p[2] + oz): (y, f, c) for p, y, f, c in blocks()}
-    port = next(p for p, (k, _) in sim.parts.items() if k == "phase_port")
+
+    def moved(p):
+        return (p[0] + ox, p[1] + oy, p[2] + oz)
+
+    lines = {moved(shifter_at(col)): [moved(p) for p, _, kk in blocks() if kk == k] for k, col, _ in columns()}
+    where = {moved(p): (y, k) for p, y, k in blocks()}
+    port = moved(PORT)
     first = None
     for cycle in range(2):
         for on in (True, False):
             sim.events.clear()
             t0 = sim.tick
             sim.set_input(port, on)
-            sim.run(2 * (COURSE * (TOP + 1) + 60))
+            sim.run(2 * (STEP * (TOP + 1) + 60))
             times = {}
-            for t, p, _, v in sim.events:
-                if p not in where or v != on or p in times:
-                    sys.exit(f"shifter at {p} switched wrongly ({v} at {t - t0})")
+            for t, p, kind, v in sim.events:
+                if kind != "line_shifter" or p not in lines or v != on or p in times:
+                    sys.exit(f"{kind} at {p} switched wrongly ({v} at {t - t0})")
                 times[p] = t - t0
-            if set(times) != set(where):
-                sys.exit(f"{len(times)} of {len(where)} switched")
-            first = first or min(times.values())
-            wrong = {where[p]: t for p, t in times.items() if t != first + 2 * turn(*where[p], up=not on)}
+            if set(times) != set(lines):
+                sys.exit(f"{len(times)} of {len(lines)} line shifters switched")
+            at = {}
+            for s, t in times.items():
+                at.update(moves(t if on else None, None if on else t, lines[s]))
+            first = first if first is not None else min(at.values())
+            start = min(at.values()) if not on else first
+            if on and start != first:
+                sys.exit("the first block moved at another time")
+            base = first if on else min(at.values()) - 2 * STEP
+            wrong = {where[p]: t for p, t in at.items() if t != base + 2 * turn(*where[p], up=not on)}
             if wrong:
                 sys.exit(f"{'coming down' if on else 'going up'}: {len(wrong)} blocks off their turn, e.g. "
-                         f"{sorted(wrong.items())[:6]} (first {first})")
-    # the lock: flipped back during a move (or flicked), the tower finishes coming down at the same turns, then
-    # builds itself up again; nothing moves twice
-    for back in (120, 4):
-        sim.events.clear()
-        t0 = sim.tick
-        sim.set_input(port, True)
-        sim.run(back)
-        sim.set_input(port, False)
-        sim.run(4 * (COURSE * (TOP + 1) + 60))
-        down, up = {}, {}
-        for t, p, _, v in sim.events:
-            if p not in where or p in (down if v else up) or (not v and p not in down):
-                sys.exit(f"flipped back after {back} game ticks: shifter at {p} switched wrongly ({v} at {t - t0})")
-            (down if v else up)[p] = t - t0
-        if set(down) != set(where) or set(up) != set(where) or sim.powered_shifters():
-            sys.exit(f"flipped back after {back} game ticks: {len(down)} went, {len(up)} came back")
-        late = {where[p]: t for p, t in down.items() if t != first + 2 * turn(*where[p], up=False)}
-        start = min(up.values())
-        early = {where[p]: t for p, t in up.items() if t != start + 2 * turn(*where[p], up=True)}
-        if late or early or start <= max(down.values()):
-            sys.exit(f"flipped back after {back} game ticks: off their turns: {sorted(late.items())[:4]} "
-                     f"{sorted(early.items())[:4]}")
-    print(f"simulated: down from the top and up from the ground, a block every redstone tick, {len(where)} blocks, "
-          f"the first {first} game ticks after the lever; twice; flipped back during a move or flicked, it finishes "
-          "coming down, then goes up")
+                         f"{sorted(wrong.items())[:6]} (first {base})")
+            if not on and min(at.values()) - 2 * STEP != first:
+                sys.exit(f"going up starts at {min(at.values())} game ticks, not {first + 2 * STEP}")
+    print(f"simulated: down from the top in a helix and up again from the ground, {len(where)} blocks, the first "
+          f"{first} game ticks after the lever; twice")
     return first
 
 
 def main():
-    b, port, total, _ = wire_up()
-    phase = 2 * (COURSE * (TOP + 1) + 60)
-    settled, power, out, inp = history(b, port, phase)
-    tags = signals(port, out, inp, phase)
-    first_block = next(p for p, y, f, c in blocks() if y == TOP and f == 0 and c == 0)
-    first = (out[first_block].index(True) + 1) // 2
-    allow = joins(b, settled, tags)
-    for sig, also in comparator_sides(tags).items():
-        allow.setdefault(sig, set()).update(also)
-    path, offset = write(b, settled, power, tags, allow, first)
-    simulate(path, offset)
+    b = layout()
+    phase = 2 * (STEP * (TOP + 1) + 60)
+    settled, power, out, inp = history(b, phase)
+    tags = signals(out, inp, phase)
+    allow = feeds(b, tags)
+    path, offset = write(b, settled, power, tags, allow, "?")
+    first = simulate(path, offset)
+    write(b, settled, power, tags, allow, first)
 
 
 if __name__ == "__main__":

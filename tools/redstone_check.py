@@ -241,7 +241,8 @@ def check(path):
         elif "bulb" in k or k in ("phase_shifter", "line_shifter"):
             got = layout.into(p)
             bad = got - ok
-            if signal not in got:
+            # fed by its own signal, or only by signals it is made of (a shifter fed twice: an OR)
+            if signal not in got and not (got - {None} and got - {None} <= allow.get(signal, set())):
                 print(f"UNPOWERED  {k} at {p}: expects @{signal}, gets nothing of it")
                 problems += 1
             if bad:

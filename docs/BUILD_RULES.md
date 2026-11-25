@@ -88,7 +88,16 @@ Tools: `tools/redstone_check.py` (static: which signal reaches each part), `tool
   line's first repeater while its first and last taps differ (two comparators in subtract mode into its sides), and
   delay the last tap's signal to the lock until the move's last block is done: a flip during a move then waits for
   its end, and a flick makes one whole cycle. The first repeater's delay must be longer than the lock takes to
-  close. Lesson: the castle tower. Checked by: the generator's simulation, `CastleTowerGameTests`.
+  close. Lesson: the castle tower's first, all-redstone layout (PR #58, not merged; the tower now runs on line
+  shifters, which keep their own state, so a flip just turns each column around). Checked by: nothing now; no
+  build uses a tapped delay line.
+- **C15. A line shifter's line must end in air.** It takes a piston's line: an immovable block right after the
+  line's end (a GameTest's barrier ceiling, bedrock, an extended piston) refuses the whole line, as it would stop a
+  piston. Leave headroom over every column, in GameTest structures too. Lines of different lengths moved "from the
+  top down, from the ground up" start at different moments one way and together the other: feed a line shifter
+  twice for an OR (on at the earlier signal, off at the later), and delay every column's other move by the longest
+  shortfall, so no AND gate is needed. Lesson: the castle tower (its full columns never moved under the test's
+  barrier ceiling). Checked by: `CastleTowerGameTests`, the generator's simulation.
 
 ## 3. Size
 
