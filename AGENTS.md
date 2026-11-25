@@ -109,8 +109,8 @@ transparent layer, not a separate world.
       time from the far end, and puts it back from the near end. Done
       (`LineShifterGameTests`). The agent's defaults, open to change: a new
       block (the plain shifter unchanged), recipe Phase Shifter + piston,
-      speed 1 to 4 redstone ticks a block set by clicking. Next: rebuild the
-      castle tower (PR #58) on line shifters.
+      speed 1 to 4 redstone ticks a block set by clicking. The castle tower
+      (station 28) runs on line shifters: 226 hidden blocks instead of 3,483.
    b. The phase block (decided by the person, replacing dedicated
       plate/button blocks): a hidden block standing on a phase block, or
       hanging on its side, is phased: it reacts to the visible world at its
@@ -189,7 +189,10 @@ water beside running water never drains), a door into a mountain that opens in a
 a staircase (or bridge) that appears in front of the player (the bridge done, station 25:
 blocks there within 3 steps of someone, tools/gen_path.py; the staircase done, station 26,
 tools/gen_stairs.py), then a castle
-tower built and unbuilt block by block. Also on the list: a hole in the
+tower built and unbuilt block by block (done, station 28: it stands at rest, the agent's default,
+open to change; the lever takes
+it down from the top in a helix, on line shifters, tools/gen_tower.py; its arrow slits became
+barred windows, the agent's choice, open to change). Also on the list: a hole in the
 ocean (glass walls put back into the sea, the water inside replaced by
 filler blocks that are then taken: dry and repeatable, no sponges), a
 sorting machine (done, station 27: a hidden hopper sorter, tools/gen_sorter.py;
