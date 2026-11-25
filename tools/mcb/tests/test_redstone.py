@@ -98,6 +98,103 @@ class RedstoneTest(unittest.TestCase):
         sim.run(1)
         self.assertEqual(sim.wire_power[(4, 1, 0)], 0)
 
+    def test_a_copper_bulb_toggles_each_time_its_power_comes_on(self):
+        sim = Sim(line(LEVER, WIRE, "minecraft:copper_bulb"))
+        lit = []
+        for on in (True, False, True, False):
+            sim.set_input((0, 1, 0), on)
+            sim.run(2)
+            lit.append(sim.prop((2, 1, 0), "lit"))
+        self.assertEqual(lit, ["true", "true", "false", "false"])
+
+    def test_a_comparator_reads_a_bulb_behind_it_and_through_a_block(self):
+        for between in ([], ["minecraft:stone"]):
+            parts = ["minecraft:copper_bulb[lit=true]", *between, "minecraft:comparator[facing=west]", WIRE]
+            sim = Sim(line(*parts))
+            sim.run(4)
+            self.assertEqual(sim.wire_power[(len(parts) - 1, 1, 0)], 15, f"through {between}")
+            sim.parts[(0, 1, 0)][1]["lit"] = "false"
+            sim.react()
+            sim.run(4)
+            self.assertEqual(sim.wire_power[(len(parts) - 1, 1, 0)], 0, f"bulb off, through {between}")
+
+    def side(self, mode, back, side):
+        """A comparator (facing west) fed `back` from behind and `side` from a wire at its side: its output."""
+        scene = line("minecraft:redstone_block", *[WIRE] * (16 - back), "minecraft:comparator[facing=west,mode=" + mode + "]", WIRE)
+        c = (17 - back, 1, 0)
+        scene.set("hidden", (c[0], 0, 1), "minecraft:glass")
+        scene.set("hidden", (c[0], 1, 1), "minecraft:redstone_wire[north=side,south=side]")
+        if side:
+            for z in range(2, 2 + 15 - side):
+                scene.set("hidden", (c[0], 0, z), "minecraft:glass")
+                scene.set("hidden", (c[0], 1, z), "minecraft:redstone_wire[north=side,south=side]")
+            scene.set("hidden", (c[0], 1, 2 + 15 - side), "minecraft:redstone_block")
+        sim = Sim(scene)
+        sim.run(6)
+        return sim.wire_power[(c[0] + 1, 1, 0)]
+
+    def test_a_comparator_compares_or_subtracts_its_side(self):
+        self.assertEqual(self.side("compare", 12, 0), 12)
+        self.assertEqual(self.side("compare", 12, 12), 12, "as strong as the side: on")
+        self.assertEqual(self.side("compare", 12, 13), 0, "weaker than the side: off")
+        self.assertEqual(self.side("subtract", 12, 5), 7)
+        self.assertEqual(self.side("subtract", 12, 12), 0)
+
+    def test_dust_connects_to_a_comparator_from_any_side_and_a_repeater_along_its_axis(self):
+        # found by mcb.verify: a wire beside a comparator's side bends into it (vanilla: any signal source but a
+        # repeater), so it no longer points on into the block across
+        scene = Scene()
+        for x in range(3):
+            scene.set("hidden", (x, 0, 0), "minecraft:glass")
+        scene.set("hidden", (0, 1, 0), "minecraft:stone")
+        scene.set("hidden", (1, 1, 0), "minecraft:redstone_wire")
+        for diode, connects in (("comparator", True), ("repeater", False)):
+            scene.set("hidden", (2, 1, 0), f"minecraft:{diode}[facing=north]")
+            sim = Sim(scene)
+            self.assertEqual(sim.wire_connects((1, 1, 0), "east"), connects, diode)
+
+    def test_an_observer_pulses_two_ticks_two_ticks_after_a_change(self):
+        # a lever beside a wire the observer faces (the observer's back powers the wire behind it)
+        scene = line(LEVER, WIRE, "minecraft:observer[facing=west]", WIRE)
+        sim = Sim(scene)
+        sim.set_input((0, 1, 0), True)
+        seen = []
+        for _ in range(6):
+            sim.run(1)
+            seen.append(sim.wire_power[(3, 1, 0)])
+        self.assertEqual(seen, [0, 15, 15, 0, 0, 0])
+
+    def test_an_observer_sees_a_repeater_being_locked(self):
+        # found by mcb.verify: locking changes the repeater's state, which an observer facing it sees
+        scene = line(LEVER, WIRE, "minecraft:repeater[delay=1,facing=south]")
+        scene.set("hidden", (2, 1, 0), "minecraft:repeater[delay=1,facing=west]")      # into the side of (3, 1, 0)
+        scene.set("hidden", (3, 0, 0), "minecraft:glass")
+        scene.set("hidden", (3, 1, 0), "minecraft:repeater[delay=1,facing=north]")
+        scene.set("hidden", (3, 1, 1), "minecraft:observer[facing=north]")            # faces it, out to the south
+        scene.set("hidden", (3, 0, 2), "minecraft:glass")
+        scene.set("hidden", (3, 1, 2), "minecraft:redstone_wire[north=side,south=side]")
+        sim = Sim(scene)
+        sim.set_input((0, 1, 0), True)
+        seen = []
+        for _ in range(8):
+            sim.run(1)
+            seen.append(sim.wire_power[(3, 1, 2)])
+        self.assertEqual(sim.prop((3, 1, 0), "locked"), "true")
+        self.assertEqual(seen, [0, 0, 0, 15, 15, 0, 0, 0], "locked at 2, the observer on 2 later, for 2")
+
+    def test_a_comparator_misses_an_observers_pulse(self):
+        # found by mcb.verify: the observer schedules its off tick before its neighbours hear it is on, so a
+        # comparator woken by the pulse ticks after it ends (BUILD_RULES R6)
+        scene = line(LEVER, WIRE, "minecraft:observer[facing=west]", WIRE, "minecraft:comparator[facing=west]", WIRE)
+        sim = Sim(scene)
+        sim.set_input((0, 1, 0), True)
+        on = []
+        for _ in range(10):
+            sim.run(1)
+            on.append(sim.prop((4, 1, 0), "powered", "false"))
+        self.assertEqual(sim.wire_power[(3, 1, 0)], 0)
+        self.assertNotIn("true", on)
+
     def test_a_powered_repeater_from_the_side_locks(self):
         scene = line(LEVER, WIRE, "minecraft:repeater[delay=1,facing=west]", WIRE)
         scene.set("hidden", (2, 0, 1), "minecraft:glass")

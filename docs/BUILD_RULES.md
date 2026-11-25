@@ -136,7 +136,9 @@ wiki and the tools.
   burnout.
 - **R7. Never rely on the order in which dust updates its neighbours within one tick**: in Java it
   depends on position and direction, so a circuit can behave differently elsewhere. Timing goes through
-  diodes. [MC-11193; vanilla's experimental redstone changes this, unconfirmed for 26.3] By hand.
+  diodes. [MC-11193; vanilla's experimental redstone changes this, unconfirmed for 26.3] Nor on which of two
+  diodes due in the same game tick (same priority) ticks first: vanilla takes them in the order its block updates
+  reached them, the simulator in position order (mcb.verify found such a race between two comparators). By hand.
 - **R8. Vertical transport costs** (pick by cost): dust staircase (no delay, a block across per block up;
   repeater every 15), torch tower (up only, 1 redstone tick per 2 blocks), torch ladder (down, 1 redstone tick
   per block), transparent-block ladder (up only). [wiki: Transmission] Our doors' torch towers set most of

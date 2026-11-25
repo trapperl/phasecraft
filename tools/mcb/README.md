@@ -17,11 +17,16 @@ Run from `tools/`: `python3 -m mcb ...` (or import `mcb` in a script). Needs the
 ## Redstone simulator (`mcb.redstone`)
 
 Runs one layer of a scene tick by tick by vanilla's rules (read from the 26.3 sources): wire
-strength and connections, repeaters (delay, locking, vanilla's tick priorities), torches,
-levers, redstone blocks, phase ports and tripwire hooks (inputs; a hook powers like a lever on a
-wall: the strings are not simulated, set the hooks) and phase shifters (outputs, with the tick each
-was powered). Parts with nothing to stand on break off, as when a layout is placed. Not yet:
-comparators, observers, pistons, buttons, plates, copper bulbs, torch burnout.
+strength and connections, repeaters (delay, locking, vanilla's tick priorities), comparators
+(compare and subtract, side inputs, reading a copper bulb behind them or through a block), torches,
+observers (a 2-tick pulse 2 ticks after the block they face changes state), copper bulbs (toggling
+as their power comes on), levers, redstone blocks, phase ports and tripwire hooks (inputs; a hook
+powers like a lever on a wall: the strings are not simulated, set the hooks) and phase shifters
+(outputs, with the tick each was powered). Parts with nothing to stand on break off, as when a
+layout is placed. Not yet: pistons, buttons, plates, containers read by comparators, torch burnout.
+Ticks due in the same game tick with the same priority run in position order, not in the order
+vanilla's block updates reach them (BUILD_RULES R7: never rely on it). `python3 -m mcb.verify
+--random N --extra` checks random circuits with comparators, observers and bulbs against the game.
 
 ```python
 from mcb.scene import Scene
@@ -102,5 +107,5 @@ Tests: `python3 -B -m unittest discover -s tools/mcb/tests -t tools` (run by `./
 `-B`: a mutation restored within the same second, at the same size, otherwise runs from Python's
 stale bytecode cache.
 
-Next: pistons and comparators in the simulator, when a build needs them. No MCP
+Next: pistons in the simulator, when a build needs them. No MCP
 server (the person, 2026-11-24: "Let's drop MCP").
