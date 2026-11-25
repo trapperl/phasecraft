@@ -45,6 +45,8 @@ import org.jspecify.annotations.Nullable;
  *   <li>Putting back breaks a visible block in a held spot, and waits while a mob or player stands there, as a phase
  *       shifter does; the blocks behind it wait their turn.</li>
  *   <li>Removed, it puts back everything it holds, or drops what cannot go back: never lost, never doubled.</li>
+ *   <li>A comparator behind it reads how many blocks it holds (0 to 12), as it reads how full a chest is, so a
+ *       build can wait for a line to be all gone, or all back, before the next part moves.</li>
  *   <li>Passes no power on, as a piston does not. Silent in the visible world; placed in the visible layer it does
  *       nothing.</li>
  * </ul>
@@ -83,6 +85,17 @@ public class LineShifterBlock extends Block implements EntityBlock {
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new LineShifterBlockEntity(pos, state);
+    }
+
+    @Override
+    protected boolean hasAnalogOutputSignal(BlockState state) {
+        return true;
+    }
+
+    /** How many blocks it holds (a comparator hears of each change: the block entity's setChanged tells it). */
+    @Override
+    protected int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos, Direction direction) {
+        return level.getBlockEntity(pos) instanceof LineShifterBlockEntity entity ? entity.holding() : 0;
     }
 
     /** Clicking it sets its delay, as on a repeater. */

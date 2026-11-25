@@ -158,6 +158,14 @@ it, not on its own spot.
   stalled for thousands of ticks).
 - Removed, it puts back everything it holds, nearest first, or drops what
   cannot go back. Not a redstone conductor, like the phase shifter.
+- A comparator behind it reads how many blocks it holds (0 to 12), as it
+  reads a chest's fill level (the agent's proposal, 2026-11-25, the person:
+  "Let's do that"), so a build can wait for a line to be all gone or all
+  back before its next part moves: vanilla logic instead of timing
+  redstone. A comparator updates once per redstone tick, so at delay 1 it
+  can skip a count; from delay 2 it shows every one
+  (`aComparatorReadsHowManyBlocksItHolds`). `tools/redstone_check.py` takes
+  a comparator reading a line shifter as reading a container.
 - `LineShifterGameTests` (order and timing, delay by clicking, turning
   around, a piston's line, contents, waiting, removal), `RecipeGameTests`,
   and `PhaseLayerRestartPhases` (what a move under way saves: the blocks held and those still to take; put back after the restart).
