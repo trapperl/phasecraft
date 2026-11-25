@@ -77,6 +77,45 @@ public class PhaseShifterGameTests {
                 .thenSucceed();
     }
 
+    /**
+     * A shifter passes no power on, as a piston does not (the person, 2026-11-25: "Let's make the change, I think it
+     * opens up more building opportunities"): in a 3x3 wall of shifters, a repeater pointing into the middle one
+     * takes only the middle block, so any free side of a wall block can feed it.
+     */
+    @GameTest(maxTicks = 60)
+    public void aPoweredShifterPowersNoOtherShifter(GameTestHelper helper) {
+        floor(helper);
+        BlockPos middle = new BlockPos(3, 3, 3);
+        java.util.List<BlockPos> wall = new java.util.ArrayList<>();
+        for (int x = 2; x <= 4; x++) {
+            for (int y = 2; y <= 4; y++) {
+                BlockPos at = new BlockPos(x, y, 3);
+                wall.add(at);
+                helper.setBlock(at, Blocks.STONE_BRICKS);
+                shifter(helper, at);
+            }
+        }
+        BlockPos repeater = middle.south();
+        hidden(helper).setBlock(helper.absolutePos(repeater.below()), Blocks.GLASS.defaultBlockState());
+        helper.startSequence()
+                .thenIdle(3)
+                .thenExecute(() -> {
+                    hidden(helper).setBlock(helper.absolutePos(repeater), Blocks.REPEATER.defaultBlockState()
+                            .setValue(net.minecraft.world.level.block.RepeaterBlock.FACING, Direction.SOUTH));
+                    hidden(helper).setBlock(helper.absolutePos(repeater.south()), Blocks.REDSTONE_BLOCK.defaultBlockState());
+                })
+                .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.AIR, middle))
+                .thenIdle(10)
+                .thenExecute(() -> {
+                    for (BlockPos at : wall) {
+                        if (!at.equals(middle)) {
+                            helper.assertBlockPresent(Blocks.STONE_BRICKS, at);
+                        }
+                    }
+                })
+                .thenSucceed();
+    }
+
     /** What a piston cannot push, or would break, stays: obsidian, bedrock, a torch. Nothing to take (air) is fine. */
     @GameTest(maxTicks = 40)
     public void leavesWhatAPistonCannotMove(GameTestHelper helper) {

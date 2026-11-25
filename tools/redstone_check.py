@@ -88,7 +88,7 @@ class Layout:
     def is_conductor(self, p):
         k = self.kind(p)
         return k not in ("air", "redstone_wire", "repeater", "comparator", "redstone_torch", "redstone_wall_torch",
-                         "phase_port", "lever", "glass", "redstone_block", "observer", "hopper", "chest") and "piston" not in k and "button" not in k and "bulb" not in k \
+                         "phase_port", "lever", "glass", "redstone_block", "observer", "hopper", "chest", "phase_shifter") and "piston" not in k and "button" not in k and "bulb" not in k \
             and "pressure_plate" not in k and "tripwire" not in k
 
     def wire_connects(self, p, d):

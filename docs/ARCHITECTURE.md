@@ -90,6 +90,10 @@ the visible world and holds it (`PhaseShifterBlockEntity`, saved with the
 world); when the power goes, it puts that block back exactly as it was.
 Nothing shows and nothing is heard in the visible world: the block is held,
 not placed in the hidden layer, so it never collides with hidden machinery.
+- Power: like a piston, it is powered by any signal into its spot and passes
+  none on (not a redstone conductor; the person, 2026-11-25), so a repeater
+  into one shifter of a wall takes that block only. Until then it was a
+  conductor, and builds fed every shifter through a stone beside it.
 - It takes what a piston could push without breaking, and blocks with
   contents too (vanilla's `PistonBaseBlock.isPushable` without its last
   rule, "no block entities": pistons refuse those because they would carry
