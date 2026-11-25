@@ -17,7 +17,7 @@ reports every place a part or piston receives a signal other than its own:
 - a piston is powered from any side but its front, and also (quasi-
   connectivity) by anything powering the cell above it, from any side but
   below;
-- a phase shifter is powered from any side, like a copper bulb; a torch
+- a phase or line shifter is powered from any side, like a copper bulb; a torch
   goes out only when its block has a direct signal (a wire on or pointing
   into it, a repeater pointing into it, a torch under it);
 - a button, pressure plate or tripwire hook is a source like a lever, and
@@ -88,7 +88,7 @@ class Layout:
     def is_conductor(self, p):
         k = self.kind(p)
         return k not in ("air", "redstone_wire", "repeater", "comparator", "redstone_torch", "redstone_wall_torch",
-                         "phase_port", "lever", "glass", "redstone_block", "observer", "hopper", "chest", "phase_shifter") and "piston" not in k and "button" not in k and "bulb" not in k \
+                         "phase_port", "lever", "glass", "redstone_block", "observer", "hopper", "chest", "phase_shifter", "line_shifter") and "piston" not in k and "button" not in k and "bulb" not in k \
             and "pressure_plate" not in k and "tripwire" not in k
 
     def wire_connects(self, p, d):
@@ -238,7 +238,7 @@ def check(path):
             if bad:
                 print(f"LEAK       wire at {p} (@{signal}): picks up {sorted(bad)}")
                 problems += 1
-        elif "bulb" in k or k == "phase_shifter":
+        elif "bulb" in k or k in ("phase_shifter", "line_shifter"):
             got = layout.into(p)
             bad = got - ok
             if signal not in got:

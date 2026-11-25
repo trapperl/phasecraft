@@ -11,40 +11,40 @@ import org.jspecify.annotations.Nullable;
 
 /** The visible block a phase shifter is holding while it is out of the visible world, if any. */
 public class PhaseShifterBlockEntity extends BlockEntity {
-    private @Nullable BlockState held;
-    /** What the held block's own block entity held (a chest's items, its name...), if it has one. */
-    private @Nullable CompoundTag heldData;
+    private Shifting.@Nullable Held held;
 
     public PhaseShifterBlockEntity(BlockPos pos, BlockState state) {
         super(PhaseCraftBlocks.PHASE_SHIFTER_ENTITY, pos, state);
     }
 
+    /** The held block, if any. */
     public @Nullable BlockState held() {
+        return held == null ? null : held.state();
+    }
+
+    Shifting.@Nullable Held holding() {
         return held;
     }
 
-    public @Nullable CompoundTag heldData() {
-        return heldData;
-    }
-
-    void setHeld(@Nullable BlockState state, @Nullable CompoundTag data) {
-        held = state;
-        heldData = state == null ? null : data;
+    void setHeld(Shifting.@Nullable Held held) {
+        this.held = held;
         setChanged();
     }
 
     @Override
     protected void saveAdditional(ValueOutput output) {
         super.saveAdditional(output);
-        output.storeNullable("held", BlockState.CODEC, held);
-        output.storeNullable("held_data", CompoundTag.CODEC, heldData);
+        // The two fields as they were saved before the line shifter shared Shifting.Held.
+        output.storeNullable("held", BlockState.CODEC, held());
+        output.storeNullable("held_data", CompoundTag.CODEC, held == null ? null : held.data());
     }
 
     @Override
     protected void loadAdditional(ValueInput input) {
         super.loadAdditional(input);
-        held = input.read("held", BlockState.CODEC).orElse(null);
-        heldData = input.read("held_data", CompoundTag.CODEC).orElse(null);
+        held = input.read("held", BlockState.CODEC)
+                .map(state -> new Shifting.Held(state, input.read("held_data", CompoundTag.CODEC).orElse(null)))
+                .orElse(null);
     }
 
     @Override

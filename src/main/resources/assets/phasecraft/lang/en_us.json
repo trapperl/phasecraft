@@ -16,5 +16,6 @@
   "phasecraft.guard.no_respawn": "You cannot set your respawn point in the hidden layer",
   "block.phasecraft.phase_block": "Phase Block",
   "phasecraft.edit.not_allowed": "Editing the hidden layer needs Creative, or Survival with the game rule phasecraft:survival_access on",
-  "block.phasecraft.phase_shifter": "Phase Shifter"
+  "block.phasecraft.phase_shifter": "Phase Shifter",
+  "block.phasecraft.line_shifter": "Line Shifter"
 }

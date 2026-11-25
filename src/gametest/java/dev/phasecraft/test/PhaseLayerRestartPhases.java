@@ -6,10 +6,13 @@ import dev.phasecraft.layer.PhaseLayerData;
 import java.util.List;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import dev.phasecraft.PhaseCraftBlocks;
+import dev.phasecraft.shifter.LineShifterBlock;
+import dev.phasecraft.shifter.LineShifterBlockEntity;
 import dev.phasecraft.shifter.PhaseShifterBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
@@ -48,6 +51,12 @@ public class PhaseLayerRestartPhases {
     private static final BlockPos SHIFTED = new BlockPos(10, 70, 40);
     /** A phase shifter holding a visible chest with seven diamonds in it across the restart. */
     private static final BlockPos SHIFTED_CHEST = SHIFTED.east(2);
+    /**
+     * A line shifter (delay 4) facing east into four visible blocks, powered just before the restart: the first is
+     * taken at once, the other three are still to go and must go after it; then all four come back.
+     */
+    private static final BlockPos LINE = SHIFTED.south(3);
+    private static final Block[] LINE_BLOCKS = {Blocks.STONE, Blocks.GOLD_BLOCK, Blocks.BRICKS, Blocks.OAK_PLANKS};
 
     /** Same XYZ in every dimension, plus a cell far outside any loaded chunk. */
     private static final List<Expected> HIDDEN = List.of(
@@ -100,6 +109,14 @@ public class PhaseLayerRestartPhases {
         layer.setBlock(SHIFTED_CHEST, PhaseCraftBlocks.PHASE_SHIFTER.defaultBlockState());
         layer.setBlock(SHIFTED_CHEST.above(), Blocks.REDSTONE_BLOCK.defaultBlockState());
         helper.assertValueEqual(overworld.getBlockState(SHIFTED_CHEST).getBlock(), Blocks.AIR, "visible chest taken by the shifter before restart");
+        for (int d = 1; d <= LINE_BLOCKS.length; d++) {
+            overworld.setBlock(LINE.east(d), LINE_BLOCKS[d - 1].defaultBlockState(), Block.UPDATE_ALL);
+        }
+        layer.setBlock(LINE, PhaseCraftBlocks.LINE_SHIFTER.defaultBlockState()
+                .setValue(LineShifterBlock.FACING, Direction.EAST).setValue(LineShifterBlock.DELAY, 4));
+        layer.setBlock(LINE.west(), Blocks.REDSTONE_BLOCK.defaultBlockState());
+        helper.assertValueEqual(overworld.getBlockState(LINE.east(4)).getBlock(), Blocks.AIR, "the line's far end taken at once");
+        helper.assertValueEqual(overworld.getBlockState(LINE.east(3)).getBlock(), Blocks.BRICKS, "the line's next block not yet taken");
         helper.succeed();
     }
 
@@ -126,6 +143,12 @@ public class PhaseLayerRestartPhases {
         layer.removeBlock(SHIFTED.above());
         helper.assertValueEqual(overworld.getBlockState(SHIFTED_CHEST).getBlock(), Blocks.AIR, "visible spot of the shifted chest after restart");
         layer.removeBlock(SHIFTED_CHEST.above());
+        LineShifterBlockEntity line = (LineShifterBlockEntity) layer.level().getBlockEntity(LINE);
+        // Block ticks run only in ticking chunks (no player is near here): as for any redstone, a move under way
+        // waits while its chunk is merely loaded, and goes on once it ticks.
+        ChunkPos lineChunk = ChunkPos.containing(LINE);
+        layer.level().setChunkForced(lineChunk.x(), lineChunk.z(), true);
+        overworld.setChunkForced(lineChunk.x(), lineChunk.z(), true);
         // Light is computed on its own thread: wait for it (in real time; see PhasedLightGameTests).
         helper.startSequence()
                 .thenWaitUntil(() -> helper.assertValueEqual(overworld.getBlockState(SHIFTED).getBlock(), Blocks.GOLD_BLOCK,
@@ -133,6 +156,20 @@ public class PhaseLayerRestartPhases {
                 .thenWaitUntil(() -> helper.assertTrue(overworld.getBlockEntity(SHIFTED_CHEST) instanceof ChestBlockEntity chest
                         && chest.getItem(4).is(Items.DIAMOND) && chest.getItem(4).getCount() == 7,
                         "the chest put back after restart, with its seven diamonds"))
+                .thenWaitUntil(() -> helper.assertValueEqual(line.holding(), LINE_BLOCKS.length,
+                        "blocks the line shifter holds after restart (its move went on)"))
+                .thenExecute(() -> {
+                    for (int d = 1; d <= LINE_BLOCKS.length; d++) {
+                        helper.assertValueEqual(overworld.getBlockState(LINE.east(d)).getBlock(), Blocks.AIR, "the line's spot " + d);
+                    }
+                    layer.removeBlock(LINE.west());
+                })
+                .thenWaitUntil(() -> {
+                    for (int d = 1; d <= LINE_BLOCKS.length; d++) {
+                        helper.assertValueEqual(overworld.getBlockState(LINE.east(d)).getBlock(), LINE_BLOCKS[d - 1],
+                                "the line's block " + d + " put back after restart");
+                    }
+                })
                 .thenWaitUntil(() -> helper.assertValueEqual(
                         server.overworld().getBrightness(LightLayer.BLOCK, PHASED_LIGHT), 15,
                         "visible block light at the phased glowstone after restart"))
