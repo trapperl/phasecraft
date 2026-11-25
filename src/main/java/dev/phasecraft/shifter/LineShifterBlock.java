@@ -53,6 +53,7 @@ public class LineShifterBlock extends Block implements EntityBlock {
     public static final EnumProperty<Direction> FACING = BlockStateProperties.FACING;
     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
     public static final IntegerProperty DELAY = BlockStateProperties.DELAY;
+    private static final int DELAY_MAX = 4;
 
     public LineShifterBlock(Properties properties) {
         super(properties);
@@ -171,6 +172,9 @@ public class LineShifterBlock extends Block implements EntityBlock {
             return;
         }
         long time = hidden.getGameTime();
+        if (entity.nextStep() > time + 2 * DELAY_MAX) {
+            entity.setNextStep(time);                   // game time went back: never wait more than a step
+        }
         if (time < entity.nextStep()) {
             hidden.scheduleTick(pos, this, (int) (entity.nextStep() - time));
             return;

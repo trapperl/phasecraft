@@ -149,15 +149,18 @@ it, not on its own spot.
 - Turned around mid-move, it goes the other way: what it took comes back,
   nearest first; or it takes the line again from its new far end (the
   visible line up to the first spot it still holds). The next block moves one
-  step after the last one (`next_step`), so the rhythm holds.
-- `LineShifterBlockEntity` saves the held blocks by distance, the distance
-  still to take and the next step's game time; the step itself is a block
-  tick, saved with the chunk, so a move goes on after a restart.
+  step after the last one, so the rhythm holds (it never waits longer than
+  one step, whatever game time does).
+- `LineShifterBlockEntity` saves the held blocks by distance and the distance
+  still to take; the step itself is a block tick, saved with the chunk, so a
+  move goes on after a restart. The next step's game time is not saved: a
+  GameTest server's game time starts again after a restart (CI caught a move
+  stalled for thousands of ticks).
 - Removed, it puts back everything it holds, nearest first, or drops what
   cannot go back. Not a redstone conductor, like the phase shifter.
 - `LineShifterGameTests` (order and timing, delay by clicking, turning
   around, a piston's line, contents, waiting, removal), `RecipeGameTests`,
-  and `PhaseLayerRestartPhases` (a move under way across a restart).
+  and `PhaseLayerRestartPhases` (what a move under way saves: the blocks held and those still to take; put back after the restart).
 
 ## The overlay: seeing the hidden layer from the visible world
 
