@@ -186,3 +186,38 @@ class TreeTest(unittest.TestCase):
             sim.set_input(lever, True)
             sim.run(200)
             self.assertEqual(sim.powered_shifters(), targets, f"lever at {lever}")
+
+
+class FlankTest(unittest.TestCase):
+    def test_a_line_may_pass_a_repeaters_flank_without_touching_it(self):
+        s = Scene()
+        # another circuit: a lever at z = 0 driving a row of repeaters east to a shifter
+        s.set("hidden", (0, 0, 0), "minecraft:stone")
+        s.set("hidden", (0, 1, 0), LEVER)
+        for x in range(1, 9):
+            s.set("hidden", (x, 0, 0), "minecraft:glass")
+            s.set("hidden", (x, 1, 0), "minecraft:repeater[delay=1,facing=west]")
+        s.set("hidden", (9, 1, 0), "minecraft:glass")          # (a shifter there would power ours, beside it)
+        # ours: from a lever at z = 1, hemmed in to the row beside the repeaters' flanks
+        s.set("hidden", (0, 0, 1), "minecraft:stone")
+        s.set("hidden", (0, 1, 1), LEVER)
+        s.set("hidden", (9, 1, 1), "phasecraft:phase_shifter")
+        r = router.route(s, start=(1, 1, 1), start_from="west", end=(8, 1, 1), end_into="east",
+                         box=((0, 0, 1), (9, 2, 1))).apply(s)
+        self.assertTrue(all(c[2] == 1 for c in r.cells), "ran beside the repeaters")
+        for lever, theirs, ours in (((0, 1, 0), True, set()), ((0, 1, 1), False, {(9, 1, 1)})):
+            sim = Sim(s)
+            sim.run(20)
+            self.assertEqual(sim.popped, [])
+            sim.set_input(lever, True)
+            sim.run(100)
+            self.assertEqual(sim.is_on((8, 1, 0), "powered"), theirs, f"lever {lever}: their last repeater")
+            self.assertEqual(sim.powered_shifters(), ours, f"lever {lever}: our shifter")
+
+    def test_but_never_its_ends(self):
+        s = Scene()
+        s.set("hidden", (5, 1, 5), "minecraft:repeater[delay=1,facing=west]")     # input west, output east
+        space = router._Space(s, "hidden", ((0, 0, 0), (10, 5, 10)))
+        self.assertTrue(router._clear_around(space, (5, 1, 6), ()), "beside its flank")
+        self.assertFalse(router._clear_around(space, (6, 1, 5), ()), "at its output")
+        self.assertFalse(router._clear_around(space, (4, 1, 5), ()), "at its input")
