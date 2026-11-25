@@ -933,11 +933,12 @@ def falls_lever(on):
 
 
 # Station 24: the mountain door, built from its layout file (shared with MountainDoorGameTests; written by
-# tools/gen_mountain.py). Its wiring reaches 18 blocks under the gorge's floor, so the mountain stands on foothills
-# 14 high (the world's bottom is -64), with steps up into the gorge from the north.
+# tools/gen_mountain.py). Its wiring reaches 3 blocks under the gorge's floor, so the mountain stands on the world's
+# grass (the world's bottom is -64). (Its old wiring went 18 deep, on foothills 14 high: clearing still covers them.)
 MOUNTAIN_LAYOUT = pathlib.Path(__file__).resolve().parent.parent / "src/gametest/resources/contraptions/mountain_door.txt"
 MOUNTAIN_ORIGIN = (300, -64, -5)   # layout (0, 0, 0)
-MOUNTAIN_HILLS = 14                # the foothills: from the ground up to the gorge's floor
+MOUNTAIN_CLEAR = 17                # how far round the mountain's footprint a rebuild clears
+MOUNTAIN_CLEAR_TOP = -5            # and up to what height (world y)
 
 
 def mountain_offset():
@@ -962,52 +963,23 @@ def mountain_commands():
     import gen_mountain as gm
     ox, oy, oz = MOUNTAIN_ORIGIN
     size = next(tuple(int(v) for v in line.split()[1:4]) for line in open(MOUNTAIN_LAYOUT) if line.startswith("size "))
-    floor = -1                       # the gorge's floor, generator y
-    ground = floor - MOUNTAIN_HILLS  # the world's grass, generator y
-    pad = MOUNTAIN_HILLS + 2         # how far the foothills reach out
-    rough_at = gm._noise(11)
-    lo = mountain_pos(gm.X0 - pad, ground + 1, gm.Z0 - pad, gen=True)
-    hi = mountain_pos(gm.X1 + pad, 40, gm.Z1 + pad, gen=True)
+    lo = mountain_pos(gm.X0 - MOUNTAIN_CLEAR, 0, gm.Z0 - MOUNTAIN_CLEAR, gen=True)
+    hi = mountain_pos(gm.X1 + MOUNTAIN_CLEAR, 0, gm.Z1 + MOUNTAIN_CLEAR, gen=True)
+    hi = (hi[0], MOUNTAIN_CLEAR_TOP, hi[2])
     x0, z0 = min(lo[0], ox), min(lo[2], oz)
     x1, z1 = max(hi[0], ox + size[0] - 1), max(hi[2], oz + size[2] - 1)
     out = []
     # hidden first, so blocks the shifters still hold are put back, then cleared; in slices (a fill's limit)
-    per = max(1, 32768 // ((size[0]) * (size[2])))
-    for y in range(oy, oy + size[1], per):
-        out.append(in_dimension(HIDDEN_OVERWORLD, f"fill {ox} {y} {oz} {ox + size[0] - 1} {min(y + per, oy + size[1]) - 1} "
-                                                  f"{oz + size[2] - 1} minecraft:air"))
     per = max(1, 32768 // ((x1 - x0 + 1) * (z1 - z0 + 1)))
+    for y in range(-64, hi[1] + 1, per):
+        out.append(in_dimension(HIDDEN_OVERWORLD, f"fill {x0} {y} {z0} {x1} {min(y + per - 1, hi[1])} {z1} minecraft:air"))
     for y in range(-60, hi[1] + 1, per):
         out.append(f"fill {x0} {y} {z0} {x1} {min(y + per - 1, hi[1])} {z1} minecraft:air")
     out.append(f"fill {x0} -61 {z0} {x1} -61 {z1} minecraft:grass_block")
-    # the foothills: up from the ground to the mountain's footprint, one block per block out; solid under it
-    out.append(f"fill {coords(mountain_pos(gm.X0, ground + 1, gm.Z0, gen=True))} "
-               f"{coords(mountain_pos(gm.X1, floor - 1, gm.Z1, gen=True))} minecraft:dirt")
-    for x in range(gm.X0 - pad, gm.X1 + pad + 1):
-        run = None
-        for z in range(gm.Z0 - pad, gm.Z1 + pad + 2):
-            dx = max(gm.X0 - x, 0, x - gm.X1)
-            dz = max(gm.Z0 - z, 0, z - gm.Z1)
-            # roughened, but for the steps' columns and next to them
-            rough = 0 if abs(x) <= 2 and z < gm.Z0 else 4 * (rough_at(x, z, 5) - 0.5)
-            top = floor - round((dx * dx + dz * dz) ** 0.5 + rough) if z <= gm.Z1 + pad and (dx or dz) else None
-            if top is not None:
-                top = min(top, floor)
-            if top is not None and top <= ground:
-                top = None
-            if run and run[1] == top:
-                continue
-            if run and run[1] is not None:
-                out.append(f"fill {coords(mountain_pos(x, ground + 1, run[0], gen=True))} "
-                           f"{coords(mountain_pos(x, run[1], z - 1, gen=True))} minecraft:grass_block")
-            run = (z, top)
-    # steps up into the gorge, cut into the foothills
-    for i in range(MOUNTAIN_HILLS):
-        out.append(f"fill {coords(mountain_pos(-1, floor - 1 - i, gm.Z0 - 1 - i, gen=True))} "
-                   f"{coords(mountain_pos(1, floor - 1 - i, gm.Z0 - 1 - i, gen=True))} "
-                   "minecraft:stone_brick_stairs[facing=south]")
     placements, _ = read_layout(MOUNTAIN_LAYOUT)
     for layer, a, b, block in placements:
+        if layer == "visible" and a == b and block == "minecraft:grass_block" and mountain_pos(*a)[1] == -61:
+            continue                     # the ground is grass already (a setblock that changes nothing fails)
         command = (f"fill {coords(mountain_pos(*a))} {coords(mountain_pos(*b))} {block}" if a != b
                    else f"setblock {coords(mountain_pos(*a))} {block}")
         out.append(in_dimension(HIDDEN_OVERWORLD, command) if layer == "hidden" else command)

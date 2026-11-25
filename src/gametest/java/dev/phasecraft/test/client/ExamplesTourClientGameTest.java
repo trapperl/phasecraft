@@ -25,7 +25,7 @@ public class ExamplesTourClientGameTest implements FabricClientGameTest {
     }
 
     /** The mountain door's lever (station 24), flipped on. */
-    private static final String MOUNTAIN_LEVER = "setblock 326 -46 9 minecraft:lever[face=floor,facing=north,powered=true]";
+    private static final String MOUNTAIN_LEVER = "setblock 326 -60 10 minecraft:lever[face=floor,facing=north,powered=true]";
 
     private static final List<View> VIEWS = List.of(
             new View("overview", "24.5 -52 -14 0 30"),
@@ -50,11 +50,11 @@ public class ExamplesTourClientGameTest implements FabricClientGameTest {
             new View("iris", "228.5 -54 -9.5 0 0"),
             new View("iris_side", "240.5 -50 -12.5 40 20"),
             new View("waterfall", "262.5 -56 -13.5 0 -5"),
-            new View("mountain", "321.5 -38 -16.5 0 5"),
-            new View("mountain_door", "321.5 -45 2.5 0 -10"),
+            new View("mountain", "321.5 -52 -15.5 0 5"),
+            new View("mountain_door", "321.5 -59 3.5 0 -10"),
             // the door goes an eighth every 4 game ticks from 48 after the lever: about half of it at 62
-            new View("mountain_sweep", "321.5 -45 2.5 0 -10", MOUNTAIN_LEVER, 62),
-            new View("mountain_open", "321.5 -45 2.5 0 -10", null, 60),
+            new View("mountain_sweep", "321.5 -59 3.5 0 -10", MOUNTAIN_LEVER, 30),
+            new View("mountain_open", "321.5 -59 3.5 0 -10", null, 60),
             new View("bridge", "380.5 -50 14.5 180 15"),
             // someone over step 5: the steps within 3 of them appear (a villager that cannot move or fall)
             new View("bridge_walker", "380.5 -50 14.5 180 15", "summon minecraft:villager 379.5 -54 0.5 "
