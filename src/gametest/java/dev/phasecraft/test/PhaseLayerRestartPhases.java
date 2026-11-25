@@ -144,6 +144,7 @@ public class PhaseLayerRestartPhases {
         helper.assertValueEqual(overworld.getBlockState(SHIFTED_CHEST).getBlock(), Blocks.AIR, "visible spot of the shifted chest after restart");
         layer.removeBlock(SHIFTED_CHEST.above());
         LineShifterBlockEntity line = (LineShifterBlockEntity) layer.level().getBlockEntity(LINE);
+        long[] lineStart = {0};
         // Block ticks run only in ticking chunks (no player is near here): as for any redstone, a move under way
         // waits while its chunk is merely loaded, and goes on once it ticks.
         ChunkPos lineChunk = ChunkPos.containing(LINE);
@@ -156,8 +157,14 @@ public class PhaseLayerRestartPhases {
                 .thenWaitUntil(() -> helper.assertTrue(overworld.getBlockEntity(SHIFTED_CHEST) instanceof ChestBlockEntity chest
                         && chest.getItem(4).is(Items.DIAMOND) && chest.getItem(4).getCount() == 7,
                         "the chest put back after restart, with its seven diamonds"))
-                .thenWaitUntil(() -> helper.assertValueEqual(line.holding(), LINE_BLOCKS.length,
-                        "blocks the line shifter holds after restart (its move went on)"))
+                .thenExecute(() -> lineStart[0] = helper.getTick())
+                // Three steps of 8 game ticks were left: well within 40, whatever the game time after the restart.
+                .thenWaitUntil(() -> {
+                    helper.assertTrue(line.holding() == LINE_BLOCKS.length || helper.getTick() - lineStart[0] < 40,
+                            "the line shifter's move did not go on in time after restart: holds " + line.holding());
+                    helper.assertValueEqual(line.holding(), LINE_BLOCKS.length,
+                            "blocks the line shifter holds after restart (its move went on)");
+                })
                 .thenExecute(() -> {
                     for (int d = 1; d <= LINE_BLOCKS.length; d++) {
                         helper.assertValueEqual(overworld.getBlockState(LINE.east(d)).getBlock(), Blocks.AIR, "the line's spot " + d);

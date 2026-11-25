@@ -21,7 +21,11 @@ public class LineShifterBlockEntity extends BlockEntity {
     private final Shifting.@Nullable Held[] held = new Shifting.Held[MAX + 1];
     /** While taking: the farthest distance still to take (it takes from there towards itself); 0 when not taking. */
     private int todo;
-    /** The game time before which the next block may not move, so a turn around keeps the rhythm. */
+    /**
+     * The game time before which the next block may not move, so a turn around keeps the rhythm. Not saved: game
+     * time need not go on where it was after a restart (a GameTest server's starts again), and an old value from a
+     * later time would stall the move.
+     */
     private long nextStep;
 
     public LineShifterBlockEntity(BlockPos pos, BlockState state) {
@@ -101,7 +105,6 @@ public class LineShifterBlockEntity extends BlockEntity {
         }
         output.store("held", Slot.CODEC.listOf(), slots);
         output.putInt("todo", todo);
-        output.putLong("next_step", nextStep);
     }
 
     @Override
@@ -114,7 +117,7 @@ public class LineShifterBlockEntity extends BlockEntity {
             }
         }
         todo = input.getIntOr("todo", 0);
-        nextStep = input.getLongOr("next_step", 0L);
+        nextStep = 0L;
     }
 
     @Override

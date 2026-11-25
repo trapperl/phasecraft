@@ -392,6 +392,41 @@ public class LineShifterGameTests {
                 .thenSucceed();
     }
 
+    /**
+     * Loaded mid-move from data saved at a later game time (a world whose game time went back, as a GameTest
+     * server's does after a restart: CI caught a move stalled for thousands of ticks), it goes on at its rhythm.
+     */
+    @GameTest(structure = STRUCTURE, maxTicks = 200)
+    public void aMoveGoesOnWhateverTheGameTime(GameTestHelper helper) {
+        BlockPos at = new BlockPos(3, 1, 3);
+        List<BlockPos> line = line(at, Direction.UP, 4);
+        for (BlockPos p : line) {
+            helper.setBlock(p, Blocks.OAK_PLANKS);
+        }
+        lineShifter(helper, at, Direction.UP, 4);
+        long[] loaded = {0};
+        helper.startSequence()
+                .thenIdle(3)
+                .thenExecute(() -> {
+                    power(helper, at, Direction.UP, true);
+                    LineShifterBlockEntity entity = entity(helper, at);
+                    var registries = helper.getLevel().registryAccess();
+                    net.minecraft.nbt.CompoundTag saved = entity.saveWithoutMetadata(registries);
+                    saved.putLong("next_step", hidden(helper).level().getGameTime() + 100_000L);
+                    entity.loadWithComponents(net.minecraft.world.level.storage.TagValueInput.create(
+                            net.minecraft.util.ProblemReporter.DISCARDING, registries, saved));
+                    loaded[0] = helper.getTick();
+                    helper.assertValueEqual(entity.holding(), 1, "blocks held once powered");
+                })
+                // three steps of 8 game ticks left
+                .thenWaitUntil(() -> {
+                    helper.assertTrue(entity(helper, at).holding() == 4 || helper.getTick() - loaded[0] < 40,
+                            "the move stalled: holds " + entity(helper, at).holding());
+                    helper.assertValueEqual(entity(helper, at).holding(), 4, "blocks held");
+                })
+                .thenSucceed();
+    }
+
     /** Removed while it holds blocks, it puts them back; one that cannot go back (bedrock in its spot) drops. */
     @GameTest(structure = STRUCTURE, maxTicks = 100)
     public void removedItPutsBackWhatItHolds(GameTestHelper helper) {
