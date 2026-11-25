@@ -78,16 +78,21 @@ Tools: `tools/redstone_check.py` (static: which signal reaches each part), `tool
 - **S2. Parts stand on blocks that are there anyway** (stone of the logic, the build's own rock) before
   new glass. About 40% of the doors' hidden blocks are glass supports today.
 - **S3. Levels are shared where signals can be routed past each other**, rather than one level per signal
-  (the mountain door's 8 rings take 18 blocks of depth today).
+  (gen_door.py's 8 rings took 18 blocks of depth; the hand-built mountain door shares levels by giving
+  neighbouring runs wire at different depths: 3 below the floor).
 - **S4. The hidden parts stay within the build's visible footprint where they can**, so a station fits
-  its surroundings (the mountain door needed foothills for its depth).
+  its surroundings (the mountain door's old wiring needed foothills; the new one stays within its width).
+- **S5. Compute a timing once and share it, rather than per block**: a door's eighths pair up because
+  opening plus closing delay is constant, so one small plane makes two eighths' signals (the mountain door:
+  2837 blocks to 1234). Look for such sums and symmetries before laying out.
 
 ## 4. Speed
 
 - **P1. Every generator reports the delay from input to first motion**, in redstone ticks, and the
   simulator checks it. A torch or repeater costs 1 redstone tick (0.1 s) each; wire costs nothing.
 - **P2. Doors respond within about 2.5 s; things players walk into within 0.5 s** (today: iris 2.2 s,
-  mountain 2.4 s, waterfall 1.3 s, bridge 0.4 s). Tall torch towers are the main cost.
+  mountain 0.8 s, waterfall 1.3 s, bridge 0.4 s). Tall torch towers are the main cost (the mountain's
+  went from 2.4 s to 0.8 s without them).
 - **P3. Timing a sequence relies on counted delays, checked in the simulator and measured in a GameTest**
   (the iris's rings, 44/52/60/68 game ticks, match the simulator to the tick).
 
@@ -109,7 +114,8 @@ wiki and the tools.
 
 - **R1. Dust weakly powers the block it sits on and the blocks it points at; a weakly powered block drives
   the repeaters, comparators and mechanisms next to it, not dust.** Check every block a wire sits on or
-  points at (C2). [wiki: Redstone Dust] Checked by: the checker, the simulator.
+  points at (C2). [wiki: Redstone Dust] Checked by: the checker (since 2026-11-24: it used to let dust pick
+  up such a block), the simulator.
 - **R2. Pistons update from as far as 2 blocks (taxicab) away**: dust and torches update blocks up to 2 away,
   so quasi-connectivity (C9) can fire from a powered part 2 blocks off. Keep powered parts 2 blocks from a
   piston's upper cell unless meant. [wiki: Redstone mechanics, Quasi-connectivity] By hand.

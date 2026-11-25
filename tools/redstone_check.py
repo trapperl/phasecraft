@@ -142,8 +142,9 @@ class Layout:
             return self.strong(src)
         return set()
 
-    def strong(self, block):
-        """Signals strongly powering a conductor."""
+    def strong(self, block, wires=True):
+        """Signals strongly powering a conductor. wires=False: as a wire sees it (vanilla turns wires' signals off
+        while a wire works out its strength, so a block powered by wire alone gives a wire nothing; R1)."""
         out = set()
         for d in DIRS:
             src = add(block, d)
@@ -152,7 +153,7 @@ class Layout:
                 continue
             k, props, signal = part
             toward = OPPOSITE[d]  # direction from src to block
-            if k == "redstone_wire" and (toward == "down" or toward in self.wire_points(src)):
+            if k == "redstone_wire" and wires and (toward == "down" or toward in self.wire_points(src)):
                 out.add(signal)
             elif k in ("repeater", "comparator") and props.get("facing") == d:
                 out.add(signal)
@@ -183,12 +184,20 @@ class Layout:
             q = add(p, d)
             if self.kind(q) == "redstone_wire":
                 continue
-            out |= self.emits(q, d) if not self.is_conductor(q) else self.strong(q)
+            out |= self.emits(q, d) if not self.is_conductor(q) else self.strong(q, wires=False)
+        # what vanilla's RedstoneWireEvaluator reads: the wire beside it, the wire on top of a conductor beside
+        # it (if nothing conductive is above itself), the wire below a non-conductor beside it. So a step whose
+        # upper wire stands on glass carries a signal up only.
         for d in HORIZONTAL:
-            if self.wire_connects(p, d):
-                for q in (add(p, d), add(add(p, d), "up"), add(add(p, d), "down")):
-                    if self.kind(q) == "redstone_wire":
-                        out.add(self.parts[q][2])
+            q = add(p, d)
+            reads = [q]
+            if self.is_conductor(q) and not self.is_conductor(add(p, "up")):
+                reads.append(add(q, "up"))
+            elif not self.is_conductor(q):
+                reads.append(add(q, "down"))
+            for r in reads:
+                if self.kind(r) == "redstone_wire":
+                    out.add(self.parts[r][2])
         return out
 
     def piston_inputs(self, p):

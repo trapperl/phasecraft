@@ -616,21 +616,39 @@ has such cells.
    eighth every 2 redstone ticks, and winds it shut the other way. Behind it
    a tunnel leads to a vault (the person, 2026-11-24: "Door into a mountain
    that opens/closes with a pattern"; `MountainDoorGameTests`, examples
-   station 24). The first eighth goes 2.4 s after the lever.
+   station 24). The first eighth goes 0.8 s after the lever.
    - The pattern is the door's rings: eight sectors round the door's middle
      (`tools/gen_mountain.py`, in whole numbers so the GameTest computes the
-     same). Eight rings need eight levels of wiring, 18 blocks deep.
-   - What the deeper door taught `gen_door.py`: the lever's wire staircase
+     same).
+   - The wiring is hand-built (a Fable 5.2 agent's design, 2026-11-24), no
+     longer `gen_door.py`'s: 1234 hidden blocks in a 9 x 13 x 37 box, within
+     the door's width and 3 blocks under the gorge's floor (gen_door.py's took
+     2837 blocks in 36 x 27 x 38 and 2.4 s). How: each door block is a stone and
+     repeaters behind it (rows alternate, even rows fed from behind, odd from in
+     front); the runs of one eighth in a row share a wire, at depth 3 for even
+     eighths and 5 for odd ones, so neighbouring runs never have wire side by
+     side (what defeated routing); lanes on the free levels between rows feed
+     the runs, read through glass steps (dust climbs a glass step but never
+     comes down it). Opening delay plus closing delay is the same for every
+     eighth, so eighths pair up (j with 7 - j): from L delayed 2j and L delayed
+     14 - 2j, one small plane makes the OR (on early, off late) for j and the
+     AND (on late, off early) for 7 - j. Four planes behind the door, four in
+     front, fed by two glass ladders (L, and L delayed 8).
+   - The layout's signal names come from a simulated run (`a<on>c<off>`, in
+     redstone ticks after the lever), and its `allow` lines only where the run
+     shows an input is never on while the wire it joins is off (the ORs, the
+     NORs of two torches).
+   - Lessons: the simulator had wire steps over glass backwards (#52), and the
+     checker let a wire pick up a block powered only by wire (vanilla turns
+     wires' signals off while a wire works out its strength).
+   - The earlier gen_door.py version taught it: the lever's wire staircase
      needs a repeater every 12 steps (a landing), and so does any long run of
      flexible spots turned to wire (ring 0's line to its bus ran 20 blocks of
      dust and faded out; the simulator caught it, the checker did not). The
      lever's line is now wire but for its two end repeaters (one redstone
      tick off every door).
-   - Speed: a ring's delay is set by its tallest torch tower, so the deepest
-     levels go to the rings reaching least high (28 redstone ticks to the
-     first eighth became 24 by also ordering rings of the same height).
-   - In the examples world the wiring needs the door 18 blocks above the
-     world's bottom, so the mountain stands on foothills with steps up.
+   - In the examples world the mountain stands on the world's grass (the
+     earlier wiring went 18 blocks deep, on foothills).
 10. **Appearing bridge: done.** A bridge of 14 blocks across a chasm whose
    blocks are there only within 3 steps of someone: it appears ahead as you
    walk and vanishes behind you (the person, 2026-11-24: "Staircase
