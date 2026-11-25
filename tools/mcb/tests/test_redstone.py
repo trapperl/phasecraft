@@ -230,6 +230,15 @@ class RedstoneTest(unittest.TestCase):
         sim.run(60)
         self.assertTrue({ring(p) for p in sim.powered_shifters()} >= {3})
 
+    def test_a_line_shifter_is_powered_like_a_shifter_and_conducts_nothing(self):
+        # lever, repeater into a line shifter, wire: the shifter is powered (event "line_shifter"); a conductor there
+        # would power the wire past it
+        sim = Sim(line(LEVER, "minecraft:repeater[facing=west,delay=1]", "phasecraft:line_shifter[facing=up,delay=1,powered=false]", WIRE))
+        sim.set_input((0, 1, 0), True)
+        sim.run(4)
+        self.assertEqual([(k, on) for _, _, k, on in sim.events], [("line_shifter", True)])
+        self.assertEqual(sim.wire_power[(3, 1, 0)], 0)
+
 
 if __name__ == "__main__":
     unittest.main()
