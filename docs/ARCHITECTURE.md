@@ -160,7 +160,7 @@ it, not on its own spot.
   cannot go back. Not a redstone conductor, like the phase shifter.
 - `LineShifterGameTests` (order and timing, delay by clicking, turning
   around, a piston's line, contents, waiting, removal), `RecipeGameTests`,
-  and `PhaseLayerRestartPhases` (a move under way across a restart).
+  and `PhaseLayerRestartPhases` (what a move under way saves: the blocks held and those still to take; put back after the restart).
 
 ## The overlay: seeing the hidden layer from the visible world
 
