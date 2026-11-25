@@ -810,7 +810,59 @@ has such cells.
    - The checker now knows hoppers, chests and redstone blocks; it reads a
      comparator's side as vanilla does (a redstone block, a wire or a
      source; a powered stone gives nothing).
-12. **Mob farm:** not a target yet; the person lists one among the showcase
+12. **Castle tower: done** (`CastleTowerGameTests`, examples station 28,
+   `tools/gen_tower.py`; on the person's showcase list). A 5 x 5 stone tower,
+   eight courses with battlements, a doorway and barred windows (118
+   blocks). It stands at rest; its lever takes it down block by block from
+   the top and, flipped back, it builds itself up from the ground. A line
+   shifter under each of its 16 columns does it: 226 hidden blocks (91
+   glass) in a 10 x 6 x 12 box.
+   - The first build (PR #58, not merged) was all redstone and phase
+     shifters: every block needed its own timed wire through its only free
+     side, outwards, so 112 blocks took 3,483 hidden blocks in 58 x 13 x 43
+     (channels, eight rings, a tapped delay line with gates, a lock). The
+     person asked whether something was missing; "pushing" a row or column,
+     as a piston does, became the line shifter, and the tower was rebuilt on
+     it.
+   - Order: a helix. Column k (clockwise from the north-west corner, face by
+     face, each corner the first of its face) starts a redstone tick after
+     column k - 1, and a column moves a block every 4 redstone ticks (the
+     line shifters' delay). Coming down, the block at course y goes
+     k + 4 (7 - y) redstone ticks after the first, 4 game ticks after the
+     lever; going up, k + 4 y + 4: the top comes off in a spiral, a course
+     lower every face, and comes back the same way. 4.3 s each way.
+   - Columns of different heights: a battlement gap (crenel) makes a column
+     a block shorter at the top, so coming down it starts 4 redstone ticks
+     later than a full column, and going up at the same moment. Its line
+     shifter takes when its power comes and puts back when it goes, so a
+     full column's shifter is fed twice, ring A (signal at k) and ring B (at
+     k + 4): an OR, on at the earlier and off at the later; a crenel's only
+     by ring B. Every column so starts going up 4 redstone ticks after its
+     turn (the + 4 above), and no AND gate is needed (BUILD_RULES C15).
+   - Rings: square rings of wire four blocks out, a repeater three blocks
+     out (delay c + 1, c the column along its face) into a stone at each
+     column: above the shifter (ring A, at the tower's lowest course, inside
+     its walls) or under it (ring B). 4 redstone ticks between faces. The
+     lever's port feeds ring A through one repeater and ring B through two
+     (5 redstone ticks).
+   - The doorway's column starts at its lintel; its shifter stands in the
+     doorway, just under it, ring A's stone under it in the doorway's
+     floor. It must put back at k + 12, the signal of the west face's
+     middle column: a wire from that column's ring A stone runs through the
+     tower's inside onto the doorway's shifter.
+   - The arrow slits became barred windows (iron bars, the agent's choice,
+     open to change): a slit splits its column in two, and its parts would
+     need their own timing.
+   - Flipped back during a move, every column turns around (no lock: a line
+     shifter keeps its own state), and no block ever hangs over a gap; the
+     tower stands again as it was (`flippedBackMidwayItTurnsAround`).
+   - Lesson: the GameTest's barrier ceiling sat on the full columns, and a
+     piston's line with an immovable block in it is refused: the full
+     columns never moved while the crenels (ending in air) did. The test
+     structure now has headroom (BUILD_RULES C15).
+   - The checker now accepts a shifter fed by signals it is made of (an OR,
+     allowed), as it does a gate's torch.
+13. **Mob farm:** not a target yet; the person lists one among the showcase
    builds (AGENTS.md).
 
 ## Validation status
