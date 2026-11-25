@@ -26,6 +26,7 @@ public class ExamplesTourClientGameTest implements FabricClientGameTest {
 
     /** The mountain door's lever (station 24), flipped on. */
     private static final String MOUNTAIN_LEVER = "setblock 326 -60 10 minecraft:lever[face=floor,facing=north,powered=true]";
+    private static final String TOWER_LEVER = "setblock 548 -60 3 minecraft:lever[face=floor,facing=north,powered=true]";
 
     private static final List<View> VIEWS = List.of(
             new View("overview", "24.5 -52 -14 0 30"),
@@ -63,7 +64,10 @@ public class ExamplesTourClientGameTest implements FabricClientGameTest {
             // someone on step 6: the steps within 3 of them appear
             new View("stairs_walker", "428.5 -50 17.5 180 10", "summon minecraft:villager 428.5 -53 0.5 "
                     + "{NoAI:1b,NoGravity:1b,Silent:1b,Invulnerable:1b}", 40),
-            new View("sorter", "463.5 -56.5 4.5 180 20"));
+            new View("sorter", "463.5 -56.5 4.5 180 20"),
+            new View("tower", "545.5 -57 -9.5 0 -12"),
+            // the first block goes 42 game ticks after the lever, then one every 2: at 130, courses 7 and 6 and most of 5 gone
+            new View("tower_coming_down", "545.5 -57 -9.5 0 -12", TOWER_LEVER, 130));
 
     @Override
     public void runTest(ClientGameTestContext context) {

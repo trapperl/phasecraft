@@ -179,7 +179,9 @@ water beside running water never drains), a door into a mountain that opens in a
 a staircase (or bridge) that appears in front of the player (the bridge done, station 25:
 blocks there within 3 steps of someone, tools/gen_path.py; the staircase done, station 26,
 tools/gen_stairs.py), then a castle
-tower built and unbuilt block by block. Also on the list: a hole in the
+tower built and unbuilt block by block (done, station 28: it stands at rest, the agent's default,
+open to change; the lever takes
+it down from the top, tools/gen_tower.py). Also on the list: a hole in the
 ocean (glass walls put back into the sea, the water inside replaced by
 filler blocks that are then taken: dry and repeatable, no sponges), a
 sorting machine (done, station 27: a hidden hopper sorter, tools/gen_sorter.py;

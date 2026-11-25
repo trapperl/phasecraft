@@ -726,7 +726,45 @@ has such cells.
    - The checker now knows hoppers, chests and redstone blocks; it reads a
      comparator's side as vanilla does (a redstone block, a wire or a
      source; a powered stone gives nothing).
-12. **Mob farm:** not a target yet; the person lists one among the showcase
+12. **Castle tower: done** (`CastleTowerGameTests`, examples station 28,
+   `tools/gen_tower.py`; on the person's showcase list). A 5 x 5 stone tower,
+   eight courses with battlements, a doorway and arrow slits (112 blocks).
+   It stands at rest; its lever takes it down block by block from the top
+   and, flipped back, it builds itself up from the ground: a block a redstone
+   tick, each course clockwise from its north-west corner, the first block
+   2.1 s after the lever, 12.7 s from first to last. 3483 hidden blocks in
+   58 x 13 x 43 (998 glass). Standing at rest means nothing visible moves
+   while the wiring settles (BUILD_RULES B5), as with the mountain door.
+   - Feeding: every block is fed from outside, the faces as a pinwheel (each
+     corner belongs to one face). Each block has a straight channel out from
+     its face at its own height, alternating stone and repeater along it and
+     from course to course, so each repeater stands on the stone of the
+     channel below. Each course's channels are a block shorter than the
+     course below's: a staircase, whose steps hold each course's input
+     stones.
+   - Rings: each course has a wire ring over its input stones, a square
+     round the tower, with repeaters adding 4 redstone ticks per face and
+     each channel's outer repeater adding its column. A stone above each
+     ring cuts it from the ring one block in and up.
+   - Timing (S5): one delay line from the lever, with eight taps 16 redstone
+     ticks apart. Going down, course y goes at tap 7 - y; going up, at tap
+     y. So the top four courses follow an OR of their two taps (two lines
+     into one stone), and the bottom four an AND (a torch on a stone the
+     two taps' torches' lines power): two courses per tap pair.
+   - Feeds and lines: each course's feed climbs from its gate (all gates at
+     one height) to its ring on glass steps (one-way, up). `mcb.router`
+     lays the 16 lines from taps to gates, then the lever's and the lock's
+     lines. It routes twice: once to learn each line's fewest repeaters,
+     then again with every line's delay set so that tap to block takes the
+     same 13 redstone ticks for every course, the rest put in the feeds.
+   - The lock (BUILD_RULES C14): a tapped delay line replays a lever
+     flipped mid-move as a second wave (53 blocks blinked after a quick
+     flick). The line's first repeater is locked while its first tap and
+     its last tap (a course later) differ, so a flip during a move waits
+     for the tower to finish, and a flick makes one whole cycle.
+   - The checker now accepts a gate's torch whose block gets only the
+     signals it is made of (allowed).
+13. **Mob farm:** not a target yet; the person lists one among the showcase
    builds (AGENTS.md).
 
 ## Validation status

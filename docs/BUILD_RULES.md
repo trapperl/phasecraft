@@ -7,7 +7,7 @@ from (a lesson in this project, or an established practice of the redstone commu
 
 Tools: `tools/redstone_check.py` (static: which signal reaches each part), `tools/mcb` (the simulator
 `mcb.redstone`, checked tick by tick against the real game; the router; shapes), the generators
-(`tools/gen_door.py` and its configs, `tools/gen_path.py`, `tools/gen_sorter.py`), GameTests, `tools/examples.py`.
+(`tools/gen_door.py` and its configs, `tools/gen_path.py`, `tools/gen_sorter.py`, `tools/gen_tower.py`), GameTests, `tools/examples.py`.
 
 ## 1. What a build must do
 
@@ -82,6 +82,13 @@ Tools: `tools/redstone_check.py` (static: which signal reaches each part), `tool
 - **C13. Sensors see visible entities only when phased**: a hidden plate stands on a phase block, a string
   line ends at a hook on a phase block; a string at head height stays pressed through a jump. Lessons:
   stations 13, 19, 25.
+- **C14. A sequence timed by a tapped delay line locks its input while it runs.** Each tap sees the lever's
+  whole history, so a lever flipped back during a move sends a second wave through the line: blocks long done
+  blink out and back seconds later (the castle tower's first build: 53 blocks after a 7-game-tick flick). Lock the
+  line's first repeater while its first and last taps differ (two comparators in subtract mode into its sides), and
+  delay the last tap's signal to the lock until the move's last block is done: a flip during a move then waits for
+  its end, and a flick makes one whole cycle. The first repeater's delay must be longer than the lock takes to
+  close. Lesson: the castle tower. Checked by: the generator's simulation, `CastleTowerGameTests`.
 
 ## 3. Size
 

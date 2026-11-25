@@ -283,7 +283,9 @@ def check(path):
             got = layout.strong(held) if layout.is_conductor(held) else set()
             want = inputs.get(p)
             bad = got - {want, None} - allow.get(want, set())
-            if bad or want not in got:
+            # a gate's torch (an AND of torches) gets only the signals its own is made of, allowed
+            fed = want in got or (got - {None} and got - {None} <= allow.get(want, set()))
+            if bad or not fed:
                 print(f"TORCH      at {p} (@{signal}<{want}): its block gets {sorted(got - {None})}")
                 problems += 1
     print(f"{len(parts)} hidden parts, {problems} problem(s)")

@@ -265,6 +265,11 @@ into the chests below, one kind per chest (the frames show which: cobblestone,
 dirt, oak logs, iron ingots), everything else in the last one. Nothing but the
 wall and the chests is there: the sorter is in the hidden layer.
 
+Station 28 is a castle tower (x = 543 to 547): flip the lever beside the path
+to its door. The tower comes down block by block from the battlements, round
+and round; flip the lever back and it builds itself up again from the ground.
+A flip while it is moving waits until it has finished.
+
 ![A dark stone room lit by a glowstone hidden in its far wall](images/phased-light-room.png)
 
 Save and exit your test world, reopen it, and run `/phasecraft get` again to

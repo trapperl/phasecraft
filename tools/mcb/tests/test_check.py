@@ -81,5 +81,21 @@ class CheckTest(unittest.TestCase):
         self.assertTrue(any("side input" in line and "'t'" in line for line in loud), loud)
 
 
+    def gate(self, allowed):
+        """An AND of two torches' signals (the castle tower's): repeaters @a and @b point into a stone with a torch
+        on its side (@q<ab, lit unless the stone is powered); `allowed` the allow line's signals."""
+        return self.report([
+            f"allow ab {allowed}",
+            "hidden 1 0 0 minecraft:glass", "hidden 1 1 0 minecraft:repeater[facing=west] @a<off",
+            "hidden 2 0 1 minecraft:glass", "hidden 2 1 1 minecraft:repeater[facing=south] @b<off",
+            "hidden 2 1 0 minecraft:stone", "hidden 3 1 0 minecraft:redstone_wall_torch[facing=east] @q<ab"])
+
+    def test_a_gate_torch_takes_the_signals_it_is_made_of(self):
+        self.assertEqual([line for line in self.gate("a b") if line.startswith("TORCH")], [])
+
+    def test_a_gate_torch_takes_no_other_signal(self):
+        self.assertEqual(len([line for line in self.gate("a") if line.startswith("TORCH")]), 1)
+
+
 if __name__ == "__main__":
     unittest.main()
