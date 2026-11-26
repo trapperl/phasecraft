@@ -320,6 +320,12 @@ like the rest of the wall) onto a small vault with a chest; any other setting
 shuts it. (The answer: on, off, on, on, from west to east.) All the logic and
 the door's machinery are hidden.
 
+Station 33 is a pixel wall (x = 652 to 661, south of the path): a lime wall on a
+platform. Go up the steps and flip the lever: a creeper's face appears on it,
+eyes first; flip it back and the face goes. A hidden phase shifter behind each
+of the face's 20 pixels takes the lime block, and the black behind shows
+through.
+
 ![A dark stone room lit by a glowstone hidden in its far wall](images/phased-light-room.png)
 
 Save and exit your test world, reopen it, and run `/phasecraft get` again to

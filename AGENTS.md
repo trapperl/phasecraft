@@ -216,7 +216,8 @@ of a one-block wall or tower can be fed on its own; a shifter still needs a free
 neighbour (the person: "Free neighbor is what a piston needs too"), so the
 ocean hole is at most two blocks across, or hollowed another way (it was:
 line shifters powered by wire on top of them). Liked (the person: "I like your suggestions
-too"): a shifter display (pixel wall), a track built ahead of a minecart,
+too"): a shifter display (pixel wall; done, station 33: a creeper's face drawn
+on a lime wall, tools/gen_pixels.py), a track built ahead of a minecart,
 a shifting maze, a light-up dance floor (done, station 31: hidden plates on
 phase blocks, ports under the lamps), a treasure reveal, a combination
 lock (done, station 32: on, off, on, on opens a door that looks like the wall;

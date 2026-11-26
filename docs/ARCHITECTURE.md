@@ -959,7 +959,25 @@ has such cells.
      it is declared to be made of power (an OR), as it did a shifter or a
      gate's torch.
    - Broken on purpose: without lever 1's torch, off, off, on, on opens it.
-17. **Mob farm:** not a target yet; the person lists one among the showcase
+17. **Pixel wall: done** (`PixelWallGameTests`, examples station 33,
+   `tools/gen_pixels.py`; the person's "shifter display (pixel wall)"). A
+   lime wall 10 x 10 with black behind it; its lever draws a creeper's face:
+   the eyes, then the nose, the mouth and the mouth's corners, 4 redstone
+   ticks apart (36 to 60 game ticks after the lever); the lever back wipes it
+   in the opposite order. A hidden phase shifter at each of the face's 20
+   pixels takes the lime block there and the black shows through. The
+   wiring is gen_door's (the iris door's): a picture is a door whose cells
+   switch in rings. 726 hidden blocks.
+   - gen_door grouped a row's cells of one ring into one run whenever they
+     came one after the other, even across a gap: the two eyes shared one
+     wire, which fed only the first, and the right eye and a mouth corner
+     never moved (the GameTest found it). A run now ends at a gap, and the
+     generator's simulation checks that every cell's shifter switches, not
+     only each ring's first (shown to catch the old grouping). The iris door
+     and the waterfall come out the same.
+   - On the dev server it stands on a platform like the iris (its wiring
+     goes 9 blocks under its floor), south of the path and facing it.
+18. **Mob farm:** not a target yet; the person lists one among the showcase
    builds (AGENTS.md).
 
 ## Validation status

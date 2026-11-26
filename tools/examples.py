@@ -1498,6 +1498,51 @@ def lock_check():
     return seen
 
 
+# Station 33: the pixel wall, built from its layout file (written by tools/gen_pixels.py; shared with
+# PixelWallGameTests). A lime wall on a platform south of the path, facing it, black behind; its lever (on the
+# platform) draws a creeper's face, step by step. Raised like the iris, so its hidden wiring stays above the world's
+# bottom.
+PIXELS_LAYOUT = pathlib.Path(__file__).resolve().parent.parent / "src/gametest/resources/contraptions/pixel_wall.txt"
+PIXELS_ORIGIN = (650, -64, 5)        # layout (0, 0, 0); its floor (layout y = 9) at -55, the wall at z = 12
+
+
+def pixels_pos(x, y, z):
+    ox, oy, oz = PIXELS_ORIGIN
+    return (ox + x, oy + y, oz + z)
+
+
+def pixels_commands():
+    ox, oy, oz = PIXELS_ORIGIN
+    out = [in_dimension(HIDDEN_OVERWORLD, f"fill {ox} {oy} {oz} {ox + 29} {oy + 21} {oz + 15} minecraft:air"),
+           f"fill {ox} -60 {oz - 5} {ox + 29} {oy + 21} {oz + 15} minecraft:air",
+           f"fill {coords(pixels_pos(0, 4, 0))} {coords(pixels_pos(14, 8, 14))} minecraft:stone"]   # the platform
+    for i in range(5):                   # steps up from the path
+        out.append(f"fill {ox + 6} {-60 + i} {oz - 5 + i} {ox + 8} {-60 + i} {oz - 5 + i} "
+                   "minecraft:stone_brick_stairs[facing=south]")
+    placements, _ = read_layout(PIXELS_LAYOUT)
+    for layer, a, b, block in placements:
+        command = (f"fill {coords(pixels_pos(*a))} {coords(pixels_pos(*b))} {block}" if a != b
+                   else f"setblock {coords(pixels_pos(*a))} {block}")
+        out.append(in_dimension(HIDDEN_OVERWORLD, command) if layer == "hidden" else command)
+    out.append(sign((ox + 4, Y, 1), ["33. Pixel wall", "Up the steps,", "flip the lever:", "a face appears"]))
+    return out
+
+
+def pixels_drawn():
+    """How many of the face's pixels show the black (the lime taken), of 20."""
+    placements, _ = read_layout(PIXELS_LAYOUT)
+    cells = [a for layer, a, b, block in placements if layer == "hidden" and "phase_shifter" in block]
+    replies = rcon.send_commands([f"phasecraft get {coords(pixels_pos(*c))}" for c in cells])
+    return sum(1 for r in replies if "visible: minecraft:air" in r), len(cells)
+
+
+def pixels_lever(on):
+    placements, info = read_layout(PIXELS_LAYOUT)
+    state = next(block for layer, a, b, block in placements if layer == "visible" and a == info["lever"])
+    rcon.send_commands([f"setblock {coords(pixels_pos(*info['lever']))} "
+                        + state.replace("powered=false", f"powered={str(on).lower()}")])
+
+
 def flying_observer_commands():
     """The engine's two observers, sent a second after flying_commands(): placed in the same
     batch, the engine starts on its own. They are placed "strict" because a plain setblock
@@ -1542,6 +1587,8 @@ def build_commands():
         in_dimension(HIDDEN_OVERWORLD, "forceload add 608 -4 626 12"),
         "forceload add 622 -16 644 4",       # station 32, the combination lock
         in_dimension(HIDDEN_OVERWORLD, "forceload add 622 -16 644 4"),
+        "forceload add 646 -2 682 24",       # station 33, the pixel wall
+        in_dimension(HIDDEN_OVERWORLD, "forceload add 646 -2 682 24"),
         "gamerule phasecraft:area_shifters true",   # station 29 (off by default)
         # Clear the area (visible) and lay a path of andesite under the stations.
         "fill -4 -60 -8 54 -55 4 minecraft:air",
@@ -1590,6 +1637,7 @@ def build_commands():
     commands += ocean_commands()
     commands += dance_commands()
     commands += lock_commands()
+    commands += pixels_commands()
     for station in STATIONS:
         for dimension, pos, *_ in station["hidden"]:
             commands.append(in_dimension(dimension, f"phasecraft clear {coords(pos)}"))
@@ -1859,6 +1907,17 @@ def main():
     lock_ok = [state for _, state in lock_seen] == ["shut", "open", "shut", "shut"]
     ok &= lock_ok
     print(f"{'ok ' if lock_ok else 'BAD'} combination lock: " + ", ".join(f"{name}: {state}" for name, state in lock_seen))
+    try:
+        pixels_seen = [("before", pixels_drawn())]
+        pixels_lever(True); time.sleep(5); pixels_seen.append(("lever on", pixels_drawn()))
+        pixels_lever(False); time.sleep(5); pixels_seen.append(("lever off", pixels_drawn()))
+    except rcon.RconError as error:
+        print(error, file=sys.stderr)
+        return 1
+    pixels_ok = [s for _, s in pixels_seen] == [(0, 20), (20, 20), (0, 20)]
+    ok &= pixels_ok
+    print(f"{'ok ' if pixels_ok else 'BAD'} pixel wall (pixels showing black): "
+          + ", ".join(f"{name}: {a} of {n}" for name, (a, n) in pixels_seen))
     print("Examples built and verified." if ok else "Some examples did not build as expected.")
     return 0 if ok else 1
 
