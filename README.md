@@ -90,3 +90,7 @@ synchronisation all need investigating. Polished graphics come after it works.
 >
 > Do not implement rendering overlays or phase pistons yet. Document technical risks. Run tests after each
 > implementation step. Do not claim success without passing tests.
+
+## License
+
+MIT: see [LICENSE](LICENSE).
