@@ -408,6 +408,68 @@ public class AreaShifterGameTests {
                 .thenSucceed();
     }
 
+    /** Takes the hut (both corners powered) and waits until all of it is held. */
+    private static GameTestSequence takeAll(GameTestHelper helper, Map<BlockPos, BlockState> built) {
+        corner(helper, LOW, 1);
+        corner(helper, HIGH, 1);
+        return helper.startSequence().thenIdle(3)
+                .thenExecute(() -> {
+                    power(helper, LOW, true);
+                    power(helper, HIGH, true);
+                })
+                .thenWaitUntil(() -> helper.assertValueEqual(entity(helper, LOW).holding(), built.size(), "blocks held"));
+    }
+
+    /**
+     * The leader (LOW, which sorts first) is removed while it holds the hut and bedrock stands in one of its spots:
+     * the rest comes back at once and the block that cannot drops as an item there. Nothing is lost or doubled.
+     */
+    @GameTest(structure = STRUCTURE, environment = RULE_ON, maxTicks = 200)
+    public void removingTheLeaderDropsWhatCannotGoBack(GameTestHelper helper) {
+        Map<BlockPos, BlockState> built = hut(helper);
+        BlockPos blocked = new BlockPos(1, 2, 2);                  // a plank in the west wall
+        helper.assertValueEqual(built.get(blocked), Blocks.OAK_PLANKS.defaultBlockState(), "the hut's west wall");
+        takeAll(helper, built)
+                .thenExecute(() -> {
+                    helper.setBlock(blocked, Blocks.BEDROCK);
+                    hidden(helper).setBlock(helper.absolutePos(LOW), Blocks.AIR.defaultBlockState());
+                })
+                .thenIdle(1)
+                .thenExecute(() -> {
+                    for (Map.Entry<BlockPos, BlockState> e : built.entrySet()) {
+                        BlockState want = e.getKey().equals(blocked) ? Blocks.BEDROCK.defaultBlockState() : e.getValue();
+                        helper.assertValueEqual(helper.getBlockState(e.getKey()), want, "at " + e.getKey().toShortString());
+                    }
+                    var items = helper.getLevel().getEntitiesOfClass(ItemEntity.class, area(helper));
+                    helper.assertValueEqual(items.stream().map(i -> i.getItem().getItem() + " x" + i.getItem().getCount()).toList(),
+                            List.of(Items.OAK_PLANKS + " x1"), "what dropped");
+                    helper.assertTrue(helper.getBlockEntity(new BlockPos(3, 2, 3), ChestBlockEntity.class).getItem(4)
+                            .is(Items.DIAMOND), "the chest's diamonds");
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * Taking the hut and putting it back is silent in the visible world, a block broken in a held spot too (the
+     * dirt put in the doorway's floor spot while the hut is away).
+     */
+    @GameTest(structure = STRUCTURE, environment = RULE_ON, maxTicks = 200)
+    public void silentInTheVisibleWorld(GameTestHelper helper) {
+        Map<BlockPos, BlockState> built = hut(helper);
+        BlockPos spot = new BlockPos(3, 1, 1);
+        takeAll(helper, built)
+                .thenExecute(() -> {
+                    helper.setBlock(spot, Blocks.DIRT);
+                    power(helper, LOW, false);
+                })
+                .thenWaitUntil(() -> assertAll(helper, built))
+                .thenExecute(() -> {
+                    var heard = SoundRecorder.in(helper.getLevel().dimension(), area(helper));
+                    helper.assertTrue(heard.isEmpty(), "heard in the visible world: " + heard);
+                })
+                .thenSucceed();
+    }
+
     /**
      * A pig stands in a floor spot, under the chest, when the hut comes back: the floor lifts it, then the chest
      * coming back lifts it again, to stand on the chest; the hut comes back whole around it.
@@ -420,14 +482,7 @@ public class AreaShifterGameTests {
         Map<BlockPos, BlockState> built = hut(helper);
         BlockPos spot = new BlockPos(3, 1, 3);
         Pig[] pig = new Pig[1];
-        corner(helper, LOW, 1);
-        corner(helper, HIGH, 1);
-        helper.startSequence().thenIdle(3)
-                .thenExecute(() -> {
-                    power(helper, LOW, true);
-                    power(helper, HIGH, true);
-                })
-                .thenWaitUntil(() -> helper.assertValueEqual(entity(helper, LOW).holding(), built.size(), "blocks held"))
+        takeAll(helper, built)
                 .thenExecute(() -> {
                     pig[0] = helper.spawnWithNoFreeWill(EntityTypes.PIG, spot);
                     power(helper, LOW, false);

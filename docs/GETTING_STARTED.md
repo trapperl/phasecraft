@@ -323,7 +323,7 @@ the door's machinery are hidden.
 
 Station 33 is a pixel wall (x = 652 to 661, south of the path): a lime wall on a
 platform. Go up the steps and flip the lever: a creeper's face appears on it,
-eyes first; flip it back and the face goes. A hidden phase shifter behind each
+eyes first; flip it back and the face goes. A hidden phase shifter at each
 of the face's 20 pixels takes the lime block, and the black behind shows
 through.
 

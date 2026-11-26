@@ -7,7 +7,8 @@ from (a lesson in this project, or an established practice of the redstone commu
 
 Tools: `tools/redstone_check.py` (static: which signal reaches each part), `tools/mcb` (the simulator
 `mcb.redstone`, checked tick by tick against the real game; the router; shapes), the generators
-(`tools/gen_door.py` and its configs, `tools/gen_path.py`, `tools/gen_sorter.py`, `tools/gen_tower.py`), GameTests, `tools/examples.py`.
+(`tools/gen_door.py` and its configs, `tools/gen_path.py`, `tools/gen_sorter.py`, `tools/gen_tower.py`,
+`tools/gen_ocean.py`, `tools/gen_lock.py`, `tools/gen_pixels.py`, `tools/gen_treasure.py`), GameTests, `tools/examples.py`.
 
 ## 1. What a build must do
 
@@ -102,17 +103,17 @@ Tools: `tools/redstone_check.py` (static: which signal reaches each part), `tool
   a grid of wire laid on a grid of line shifters (or any shifters) powers every one, the middle ones included;
   shifters pass nothing on, so the grid powers nothing else. Lesson: the hole in the ocean (the middle of its 3 x 3
   line shifters). Checked by: `OceanHoleGameTests`, `redstone_check.py`.
-- **C18. On the dev server, place what a controller drives after the controller has settled.** RCON builds over
-  many ticks, and torches flicker while the circuit is half placed (a GameTest builds in one tick): the hole in the
-  ocean's line shifters put filler back while its area shifters were already taking the box. `tools/examples.py`
-  places such parts a second later (the ocean's corners, the flying machine's observers). Checked by: the examples
-  script's checks.
 - **C17. Area shifters pair with the nearest corner within 15: keep other corners further away**, other builds'
   and other GameTests' too. The GameTest server lays every test on one grid, batch after batch: 5 blocks between
   tests in a row, 6 between rows. So a test with area shifters gets an area large enough that its corners, plus
   the gap, plus a neighbour's, make 16 or more: the area shifter tests use 24 x 24 areas, the hole in the ocean
   24 x 32 (its high corner was 15 blocks from the next row's corners, and an area shifter test there failed).
   Lesson: the area shifter's own tests paired with each other's huts. Checked by: `AreaShifterGameTests`.
+- **C18. On the dev server, place what a controller drives after the controller has settled.** RCON builds over
+  many ticks, and torches flicker while the circuit is half placed (a GameTest builds in one tick): the hole in the
+  ocean's line shifters put filler back while its area shifters were already taking the box. `tools/examples.py`
+  places such parts a second later (the ocean's corners, the flying machine's observers). Checked by: the examples
+  script's checks.
 
 ## 3. Size
 
