@@ -862,7 +862,25 @@ has such cells.
      structure now has headroom (BUILD_RULES C15).
    - The checker now accepts a shifter fed by signals it is made of (an OR,
      allowed), as it does a gate's torch.
-13. **Mob farm:** not a target yet; the person lists one among the showcase
+13. **Vanishing cottage: done** (`VanishingCottageGameTests`, examples
+   station 29, `contraptions/vanishing_cottage.txt`; a showcase for the area
+   shifter). A 7 x 5 x 7 plank cottage with log corners, glass windows, a
+   spruce roof and a chest, crafting table and furnace inside, on a
+   stone-brick foundation. Its lever takes the whole cottage out of the
+   visible world, roof first, a layer every 3 redstone ticks (1.5 s), and
+   flipped back builds it again from the floor, the chest's contents kept.
+   - Two area shifters at the cottage's opposite corners; the lever's port
+     feeds the low one through a wire and the high one up a hidden wire
+     stair east of the cottage (a repeater halfway): 29 hidden blocks. The
+     game rule must be on; `tools/examples.py` turns it on in the dev world.
+   - The foundation: grass under the cottage turns to dirt, and showed as a
+     patch once it was gone.
+   - Timing seen from a test: a move the lever starts begins as its power
+     crosses into the hidden layer, at another point of the game tick than
+     the scheduled steps that follow, so coming back the first gap looks a
+     tick short. Flipped again right after a move ends, the next waits a
+     layer's time: the rhythm holds (`AreaShifterGameTests`).
+14. **Mob farm:** not a target yet; the person lists one among the showcase
    builds (AGENTS.md).
 
 ## Validation status

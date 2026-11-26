@@ -32,7 +32,7 @@ OPPOSITE = {"north": "south", "south": "north", "west": "east", "east": "west", 
 HORIZONTAL = ("north", "south", "west", "east")
 MAX_EXPAND = 250000       # search states one route may look at before it gives up
 REDSTONE = ("redstone_wire", "repeater", "comparator", "torch", "lever", "button", "pressure_plate", "observer",
-            "piston", "phase_port", "phase_shifter", "line_shifter", "redstone_block", "target", "daylight", "bulb", "lamp", "hopper",
+            "piston", "phase_port", "phase_shifter", "line_shifter", "area_shifter", "redstone_block", "target", "daylight", "bulb", "lamp", "hopper",
             "dropper", "dispenser", "note_block", "tripwire")
 
 

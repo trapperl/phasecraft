@@ -121,7 +121,8 @@ transparent layer, not a separate world.
       layer from the top, back from the bottom, speed by clicking; piston
       rules per block, contents kept; a game rule, off by default; a size
       cap of 16; recipe Line Shifter + diamond block makes 2 (the agent's
-      defaults, open to change). Done (`AreaShifterGameTests`).
+      defaults, open to change). Done (`AreaShifterGameTests`); shown off by
+      the vanishing cottage (station 29).
    b. The phase block (decided by the person, replacing dedicated
       plate/button blocks): a hidden block standing on a phase block, or
       hanging on its side, is phased: it reacts to the visible world at its

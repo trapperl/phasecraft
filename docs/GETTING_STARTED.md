@@ -296,6 +296,13 @@ again from the ground the same way. Flip it back while it is moving and it
 turns around. A line shifter under each column of the tower does it, all
 hidden.
 
+Station 29 is a vanishing cottage (x = 569 to 575): flip the lever in front of
+its doorway and the whole cottage goes, roof first, layer by layer, leaving
+its foundation; flip it back and it builds itself again from the floor, with
+the bread, apples and iron still in its chest. Two hidden area shifters at its
+corners do it. Area shifters only work with the game rule on
+(`/gamerule phasecraft:area_shifters true`); the examples script turns it on.
+
 ![A dark stone room lit by a glowstone hidden in its far wall](images/phased-light-room.png)
 
 Save and exit your test world, reopen it, and run `/phasecraft get` again to

@@ -36,7 +36,7 @@ NOT_CONDUCTORS = ("air", "glass", "pane", "redstone_wire", "repeater", "comparat
                   "lantern", "chain", "water", "lava", "phase_port", "redstone_block", "glowstone", "sea_lantern",
                   "observer", "hopper", "carpet", "rail", "sign", "ladder", "bars", "scaffolding", "barrier", "light",
                   "tripwire", "flower", "sapling", "grass", "fern", "snow", "cactus", "bulb", "daylight_detector",
-                  "phase_shifter", "line_shifter")
+                  "phase_shifter", "line_shifter", "area_shifter")
 
 
 def add(p, d):
@@ -99,7 +99,7 @@ class Sim:
         """Whether the block at p can hold a wire, repeater, torch or lever (a full block)."""
         k = self.kind(p)
         return self.is_conductor(p) or k in ("glass", "tinted_glass", "redstone_block", "glowstone", "sea_lantern",
-                                             "observer", "phase_port", "barrier", "phase_shifter", "line_shifter") or k.endswith("_glass") and "pane" not in k \
+                                             "observer", "phase_port", "barrier", "phase_shifter", "line_shifter", "area_shifter") or k.endswith("_glass") and "pane" not in k \
             or k.endswith("copper_bulb")
 
     def support(self, p):
@@ -363,7 +363,7 @@ class Sim:
                     self.notify(w)
                 changed = True
             for p, (k, props) in self.parts.items():
-                if k in ("phase_shifter", "line_shifter"):
+                if k in ("phase_shifter", "line_shifter", "area_shifter"):
                     on = self.neighbor_signal(p) > 0
                     if on != (props.get("powered") == "true"):
                         props["powered"] = "true" if on else "false"
