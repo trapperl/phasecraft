@@ -202,9 +202,10 @@ default).
   pair, the 16-block cap at its edge, turned around, removing either corner)
   run in a test environment with the rule on
   (`phasecraft-test:area_shifters_on`), apart from `offByDefault`. Their
-  structure is 24 x 17 x 24 though only 8 x 17 x 8 is used: tests in a batch
-  stand about 5 blocks apart, and a corner looks 15 blocks around, so in a
-  smaller structure corners paired with the next test's hut;
+  structure is 24 x 17 x 24 though only 8 x 17 x 8 is used: the GameTest
+  server lays tests 5 blocks apart in a row and rows 6 apart, batch after
+  batch on one grid, and a corner looks 15 blocks around, so in a smaller
+  structure corners paired with the next test's hut (BUILD_RULES C17);
   `RecipeGameTests`; `PhaseLayerRestartPhases` (a box held across a restart,
   put back after it).
 
