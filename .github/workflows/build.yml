@@ -24,8 +24,10 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
       - name: Install a virtual display and software graphics (client GameTests), and Pillow (tools/mcb pictures)
+        # A broken third-party source on the runner (packages.microsoft.com answered 403 on 2026-11-26) fails
+        # `apt-get update` though Ubuntu's own lists were fetched: warn and go on; a missing package still fails below.
         run: |
-          sudo apt-get update
+          sudo apt-get update || echo "::warning::apt-get update reported errors (a third-party source?); installing from the lists fetched"
           sudo apt-get install -y --no-install-recommends xvfb libegl1 libgl1-mesa-dri mesa-vulkan-drivers libvulkan1 python3-pil
       - name: Build and run all tests (JUnit, GameTests, restart test, client GameTests)
         run: ./gradlew --no-daemon clean build
