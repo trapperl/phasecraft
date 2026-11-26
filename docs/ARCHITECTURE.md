@@ -113,9 +113,14 @@ not placed in the hidden layer, so it never collides with hidden machinery.
 - Putting back breaks a visible block that has taken the spot meanwhile
   (the person, 2026-11-24: "I think it should break the main world block"):
   `destroyBlock` with drops, as if broken with no tool, contents spilled,
-  silenced like a phased dispenser (`PhasedItems.silently`). It waits,
-  retrying every tick, while a mob or player stands there or while the
-  block there is unbreakable (destroy speed -1: bedrock, a moving piston...).
+  silenced like a phased dispenser (`PhasedItems.silently`). A mob or player
+  in the spot is lifted to stand on the block, as a piston pushing up would
+  move them (the person, 2026-11-26, chose this over waiting: the hole in the
+  ocean left a filler pillar in the sea when someone was in the shaft as it
+  closed). It waits, retrying every tick, while one of them has no room above
+  (a ceiling), or stands below the block with only its head in the spot
+  (never lifted through it), or while the block there is unbreakable
+  (destroy speed -1: bedrock, a moving piston...).
 - Removed while holding a block, it puts it back the same way, or, if it
   cannot, drops it there as an item, with its contents: never lost, never
   doubled.
@@ -135,7 +140,8 @@ it, not on its own spot.
   it puts it back one block at a time from the near end, so the line grows
   back out of it. Each block is taken and put back as a phase shifter would
   (`Shifting`, shared by both blocks: contents go along, putting back breaks
-  a block in the way, waits for mobs and unbreakable blocks).
+  a block in the way, lifts a mob or player in the spot, waits for
+  unbreakable blocks).
 - The line is the one a piston in its place could push
   (`PistonStructureResolver`, straight line only): up to the first air, or
   the first block a piston would break (a torch, a cobweb, water), which
@@ -191,7 +197,9 @@ default).
   piston rules, blocks with contents too; air, fragile blocks (torches,
   flowers) and immovable ones (obsidian) stay. A torch on a block that goes
   pops, as it would off a pushed block. Putting back breaks what is in the
-  way and waits for a mob in a spot; the layers above wait for it.
+  way and lifts a mob in a spot onto the block (a pig under the hut's chest
+  ends up standing on the chest); where it must wait, the layers above wait
+  for it.
 - The leader (the corner whose position sorts first) holds the blocks
   (`AreaShifterBlockEntity`, saved by offset) and runs the move; the other
   corner only remembers its leader. Removing the leader puts everything back

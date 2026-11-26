@@ -7,6 +7,8 @@ import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.GameTestSequence;
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.animal.pig.Pig;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Blocks;
@@ -118,5 +120,44 @@ public class OceanHoleGameTests {
                     .thenWaitUntil(() -> helper.assertTrue(lightWrong(helper) == null, "" + lightWrong(helper)));
         }
         sequence.thenSucceed();
+    }
+
+    /**
+     * A pig stands on the seabed in the shaft when the lever closes it (BUILD_RULES B3, leaving halfway): the filler
+     * coming back lifts it up its column to the surface, and the sea closes as ever, with no filler left standing
+     * in it and nothing dropped; the shaft opens and closes as before.
+     */
+    @GameTest(structure = STRUCTURE, environment = AreaShifterGameTests.RULE_ON, maxTicks = 1200)
+    public void someoneInTheShaftWhenItClosesIsLiftedOut(GameTestHelper helper) {
+        layout().build(helper);
+        BlockPos lever = layout().lever();
+        Pig[] pig = new Pig[1];
+        double[] highest = {Double.NEGATIVE_INFINITY};
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(closedWrong(helper) == null, "not yet sea: " + closedWrong(helper)))
+                .thenIdle(20)
+                .thenExecute(() -> helper.pullLever(lever))
+                .thenWaitUntil(() -> helper.assertTrue(openWrong(helper) == null, "not yet open: " + openWrong(helper)))
+                .thenExecute(() -> {
+                    pig[0] = helper.spawnWithNoFreeWill(EntityTypes.PIG, new BlockPos(9, 1, 18));
+                    helper.pullLever(lever);
+                })
+                .thenWaitUntil(() -> {
+                    highest[0] = Math.max(highest[0], pig[0].getY() - helper.absolutePos(BlockPos.ZERO).getY());
+                    helper.assertTrue(closedWrong(helper) == null, "not yet sea: " + closedWrong(helper));
+                })
+                .thenIdle(60)
+                .thenExecute(() -> {
+                    helper.assertTrue(closedWrong(helper) == null, "the sea changed: " + closedWrong(helper));
+                    helper.assertValueEqual(highest[0], (double) HIGH.getY() + 1, "the highest the pig was lifted");
+                    assertNothingDropped(helper);
+                    pig[0].discard();
+                    helper.pullLever(lever);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(openWrong(helper) == null, "not yet open again: " + openWrong(helper)))
+                .thenExecute(() -> helper.pullLever(lever))
+                .thenWaitUntil(() -> helper.assertTrue(closedWrong(helper) == null, "not yet sea again: " + closedWrong(helper)))
+                .thenExecute(() -> assertNothingDropped(helper))
+                .thenSucceed();
     }
 }

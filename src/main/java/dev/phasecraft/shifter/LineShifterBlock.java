@@ -42,8 +42,8 @@ import org.jspecify.annotations.Nullable;
  *   <li>Turned around mid-move (the power goes while it is taking, or comes while it is putting back), it stops and
  *       goes the other way at the same speed: putting back what it took, nearest first, or taking the line again
  *       from its new far end. The rhythm holds: the next block moves one step after the last one.</li>
- *   <li>Putting back breaks a visible block in a held spot, and waits while a mob or player stands there, as a phase
- *       shifter does; the blocks behind it wait their turn.</li>
+ *   <li>Putting back breaks a visible block in a held spot, and lifts a mob or player standing there onto the block,
+ *       as a phase shifter does; where it must wait (no room above them), the blocks behind it wait their turn.</li>
  *   <li>Removed, it puts back everything it holds, or drops what cannot go back: never lost, never doubled.</li>
  *   <li>A comparator behind it reads how many blocks it holds (0 to 12), as it reads how full a chest is, so a
  *       build can wait for a line to be all gone, or all back, before the next part moves.</li>

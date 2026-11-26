@@ -13,6 +13,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.GameTestSequence;
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.animal.pig.Pig;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -402,6 +404,38 @@ public class AreaShifterGameTests {
                     hidden(helper).setBlock(helper.absolutePos(LOW), Blocks.AIR.defaultBlockState());
                     assertAll(helper, built);
                     helper.assertTrue(helper.getLevel().getEntitiesOfClass(ItemEntity.class, area(helper)).isEmpty(), "something dropped");
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * A pig stands in a floor spot, under the chest, when the hut comes back: the floor lifts it, then the chest
+     * coming back lifts it again, to stand on the chest; the hut comes back whole around it.
+     */
+    @GameTest(structure = STRUCTURE, environment = RULE_ON, maxTicks = 200)
+    public void puttingBackLiftsAMobOntoTheFloor(GameTestHelper helper) {
+        for (BlockPos p : BlockPos.betweenClosed(LOW.below(), new BlockPos(HIGH.getX(), 0, HIGH.getZ()))) {
+            helper.setBlock(p.immutable(), Blocks.STONE);         // under the box: the pig stands on it
+        }
+        Map<BlockPos, BlockState> built = hut(helper);
+        BlockPos spot = new BlockPos(3, 1, 3);
+        Pig[] pig = new Pig[1];
+        corner(helper, LOW, 1);
+        corner(helper, HIGH, 1);
+        helper.startSequence().thenIdle(3)
+                .thenExecute(() -> {
+                    power(helper, LOW, true);
+                    power(helper, HIGH, true);
+                })
+                .thenWaitUntil(() -> helper.assertValueEqual(entity(helper, LOW).holding(), built.size(), "blocks held"))
+                .thenExecute(() -> {
+                    pig[0] = helper.spawnWithNoFreeWill(EntityTypes.PIG, spot);
+                    power(helper, LOW, false);
+                })
+                .thenWaitUntil(() -> assertAll(helper, built))
+                .thenExecute(() -> {
+                    helper.assertValueEqual(pig[0].getY(), helper.absolutePos(spot).getY() + 1.875, "the pig's feet, on the chest");
+                    helper.assertTrue(pig[0].isAlive(), "the pig died");
                 })
                 .thenSucceed();
     }

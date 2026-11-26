@@ -7,6 +7,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.animal.golem.IronGolem;
 import net.minecraft.world.entity.animal.pig.Pig;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Items;
@@ -214,9 +215,12 @@ public class PhaseShifterGameTests {
                 .thenSucceed();
     }
 
-    /** A pig standing in the spot: the block waits for it to leave rather than trapping it. */
+    /**
+     * A pig standing in the spot when the block comes back is lifted to stand on it, as a piston pushing up would
+     * move it (the person, 2026-11-26, choosing this over waiting).
+     */
     @GameTest(maxTicks = 100)
-    public void waitsForAMobInTheSpot(GameTestHelper helper) {
+    public void liftsAMobInTheSpotOntoTheBlock(GameTestHelper helper) {
         floor(helper);
         helper.setBlock(SPOT, Blocks.GOLD_BLOCK);
         shifter(helper, SPOT);
@@ -226,10 +230,66 @@ public class PhaseShifterGameTests {
                 .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.AIR, SPOT))
                 .thenExecute(() -> pig[0] = helper.spawnWithNoFreeWill(EntityTypes.PIG, SPOT))
                 .thenExecute(() -> power(helper, SPOT, false))
-                .thenIdle(20)
-                .thenExecute(() -> helper.assertBlockPresent(Blocks.AIR, SPOT))
-                .thenExecute(() -> pig[0].discard())
                 .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.GOLD_BLOCK, SPOT))
+                .thenExecute(() -> {
+                    helper.assertValueEqual(pig[0].getY(), (double) helper.absolutePos(SPOT).getY() + 1, "the pig's feet");
+                    helper.assertTrue(pig[0].isAlive(), "the pig died");
+                })
+                .thenSucceed();
+    }
+
+    /** No room above the pig (a ceiling right over it): the block waits, and comes back once there is room. */
+    @GameTest(maxTicks = 100)
+    public void waitsForAMobWithNoRoomAbove(GameTestHelper helper) {
+        floor(helper);
+        helper.setBlock(SPOT, Blocks.GOLD_BLOCK);
+        shifter(helper, SPOT);
+        Pig[] pig = new Pig[1];
+        helper.startSequence()
+                .thenExecute(() -> power(helper, SPOT, true))
+                .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.AIR, SPOT))
+                .thenExecute(() -> {
+                    helper.setBlock(SPOT.above(), Blocks.STONE);
+                    pig[0] = helper.spawnWithNoFreeWill(EntityTypes.PIG, SPOT);
+                    power(helper, SPOT, false);
+                })
+                .thenIdle(20)
+                .thenExecute(() -> {
+                    helper.assertBlockPresent(Blocks.AIR, SPOT);
+                    helper.assertValueEqual(pig[0].getY(), (double) helper.absolutePos(SPOT).getY(), "the pig's feet");
+                    helper.setBlock(SPOT.above(), Blocks.AIR);
+                })
+                .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.GOLD_BLOCK, SPOT))
+                .thenExecute(() -> helper.assertValueEqual(pig[0].getY(), (double) helper.absolutePos(SPOT).getY() + 1,
+                        "the pig's feet"))
+                .thenSucceed();
+    }
+
+    /**
+     * An iron golem standing below the spot, its head in it: it is not lifted through the block; the block waits
+     * until it has gone.
+     */
+    @GameTest(maxTicks = 100)
+    public void neverLiftsAMobThroughTheBlock(GameTestHelper helper) {
+        floor(helper);
+        BlockPos high = SPOT.above();
+        helper.setBlock(high, Blocks.GOLD_BLOCK);
+        shifter(helper, high);
+        IronGolem[] golem = new IronGolem[1];
+        helper.startSequence()
+                .thenExecute(() -> power(helper, high, true))
+                .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.AIR, high))
+                .thenExecute(() -> {
+                    golem[0] = helper.spawnWithNoFreeWill(EntityTypes.IRON_GOLEM, SPOT);
+                    power(helper, high, false);
+                })
+                .thenIdle(20)
+                .thenExecute(() -> {
+                    helper.assertBlockPresent(Blocks.AIR, high);
+                    helper.assertValueEqual(golem[0].getY(), (double) helper.absolutePos(SPOT).getY(), "the golem's feet");
+                    golem[0].discard();
+                })
+                .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.GOLD_BLOCK, high))
                 .thenSucceed();
     }
 

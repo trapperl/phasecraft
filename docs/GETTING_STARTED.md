@@ -307,7 +307,8 @@ Station 30 is a hole in the ocean (a pool at x = 587 to 599): flip the lever at
 the pool's north edge and a glass-walled shaft opens down to the sand, dry;
 flip it back and the sea closes over it. Two hidden area shifters bring the
 walls (and a filler) back into the water, and hidden line shifters under the
-sand take the filler out; closing, the same in reverse.
+sand take the filler out; closing, the same in reverse. Stand in the shaft as
+it closes and the filler coming back lifts you up to the surface.
 
 Station 31 is a light-up dance floor (x = 614 to 619): walk on it and the lamps
 light under your feet, going out a second after you step off. Under each lamp

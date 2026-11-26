@@ -31,8 +31,10 @@ import org.jspecify.annotations.Nullable;
  *       at its own spot.</li>
  *   <li>It takes only when the power arrives, so a block placed in the gap
  *       while it is powered stays.</li>
- *   <li>Putting back waits, retrying every tick, while the spot is taken by a
- *       block or by a mob or player standing there.</li>
+ *   <li>Putting back breaks a block that has taken the spot, and lifts a mob
+ *       or player standing there onto the block; it waits, retrying every
+ *       tick, while the block there is unbreakable or the mob has no room
+ *       above.</li>
  *   <li>Removed while holding a block, it puts the block back if the spot is
  *       free, or drops it there as an item, with its contents: never lost,
  *       never doubled.</li>

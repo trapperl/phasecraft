@@ -44,7 +44,8 @@ import org.jspecify.annotations.Nullable;
  *       blocks with contents too; air, fragile blocks (torches...) and immovable ones (obsidian...) stay.</li>
  *   <li>Speed: a layer every 1 to 4 redstone ticks, or all at once at 0 (its delay, set by clicking it; the
  *       leader's counts). A layer with nothing to take costs no time. Turned around mid-move it goes the other
- *       way; putting back waits while a mob stands in a spot, and the layers above wait for it.</li>
+ *       way; putting back lifts a mob in a spot onto the block, and where it must wait (no room above the mob),
+ *       the layers above wait for it.</li>
  *   <li>The leader (the corner whose position sorts first) holds the blocks; removing it puts them all back at
  *       once, or drops what cannot go back; removing the other corner makes the leader put them back.</li>
  *   <li>Passes no power on; silent in the visible world; placed in the visible layer it does nothing.</li>
