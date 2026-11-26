@@ -39,6 +39,7 @@
       "dev.phasecraft.test.OceanHoleGameTests",
       "dev.phasecraft.test.DanceFloorGameTests",
       "dev.phasecraft.test.HiddenTestSpaceGameTests",
+      "dev.phasecraft.test.CombinationLockGameTests",
       "dev.phasecraft.test.PhasedWatcherGameTests",
       "dev.phasecraft.test.PhasedItemGameTests",
       "dev.phasecraft.test.HiddenEditingGameTests",

@@ -111,6 +111,22 @@ class CheckTest(unittest.TestCase):
     def test_a_shifter_fed_twice_takes_no_other_signal(self):
         self.assertEqual(len([line for line in self.fed_twice("a") if "line_shifter" in line]), 2)
 
+    def joined(self, allowed):
+        """Repeaters @a (from the west) and @b (from the north) power a stone, and a repeater @j reads it (an OR
+        on its way on, as the combination lock's J); `allowed` the allow line's signals."""
+        return self.report([
+            f"allow j {allowed}",
+            "hidden 0 0 1 minecraft:glass", "hidden 0 1 1 minecraft:repeater[facing=west] @a<off",
+            "hidden 1 0 0 minecraft:glass", "hidden 1 1 0 minecraft:repeater[facing=north] @b<off",
+            "hidden 1 0 1 minecraft:glass", "hidden 1 1 1 minecraft:stone",
+            "hidden 1 0 2 minecraft:glass", "hidden 1 1 2 minecraft:repeater[facing=north] @j<j"])
+
+    def test_a_repeater_reading_an_or_takes_the_signals_it_is_made_of(self):
+        self.assertEqual([line for line in self.joined("a b") if "repeater at (1, 1, 2)" in line], [])
+
+    def test_a_repeater_reading_an_or_takes_no_other_signal(self):
+        self.assertEqual(len([line for line in self.joined("a") if "repeater at (1, 1, 2)" in line]), 2)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -274,7 +274,8 @@ def check(path):
             if bad:
                 print(f"LEAK       repeater at {p} (@{signal}<{want}): input carries {sorted(bad)}")
                 problems += 1
-            if want not in got:
+            # its own signal, or only signals it is made of (a block two lines power: an OR, as a gate's torch)
+            if want not in got and not (got - {None} and got - {None} <= allow.get(want, set())):
                 print(f"UNPOWERED  repeater at {p} (@{signal}): nothing at its input {src}")
                 problems += 1
         elif k in ("redstone_torch", "redstone_wall_torch"):

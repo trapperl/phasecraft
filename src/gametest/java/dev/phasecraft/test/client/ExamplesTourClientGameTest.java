@@ -84,7 +84,15 @@ public class ExamplesTourClientGameTest implements FabricClientGameTest {
             new View("dance", "616.5 -56 -1.5 0 40"),
             // chickens that stay put (small: the lamp under each shows): the lamps under them light
             new View("dance_one", "616.5 -56 -1.5 0 40", "summon minecraft:chicken 615.5 -60 3.5 {NoAI:1b,Silent:1b}", 20),
-            new View("dance_two", "616.5 -56 -1.5 0 40", "summon minecraft:chicken 618.5 -60 5.5 {NoAI:1b,Silent:1b}", 20));
+            new View("dance_two", "616.5 -56 -1.5 0 40", "summon minecraft:chicken 618.5 -60 5.5 {NoAI:1b,Silent:1b}", 20),
+            new View("lock", "634.5 -57.5 7.5 180 10"),
+            // on, off, on, on: the first three levers flipped, the door still shut; the fourth opens it
+            new View("lock_two_set", "634.5 -57.5 7.5 180 10",
+                    "setblock 637 -59 0 minecraft:lever[face=wall,facing=south,powered=true]", 10),
+            new View("lock_three_set", "634.5 -57.5 7.5 180 10",
+                    "setblock 627 -59 0 minecraft:lever[face=wall,facing=south,powered=true]", 40),
+            new View("lock_open", "634.5 -57.5 7.5 180 10",
+                    "setblock 640 -59 0 minecraft:lever[face=wall,facing=south,powered=true]", 50));
 
     @Override
     public void runTest(ClientGameTestContext context) {
