@@ -112,7 +112,7 @@ def build():
 
 
 def setting_opens(scene, setting):
-    """Whether the door's six shifters are all powered, and nothing else, with the levers so (from all off)."""
+    """Whether the door's two shifters are all powered, and nothing else, with the levers so (from all off)."""
     sim = Sim(scene)
     sim.run(40)
     for i, on in enumerate(setting):

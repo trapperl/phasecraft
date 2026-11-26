@@ -32,6 +32,13 @@ class CheckTest(unittest.TestCase):
     def test_a_stone_step_carries_both_ways(self):
         self.assertEqual(self.step("minecraft:stone"), {(1, 1, 0): {"up"}, (2, 2, 0): {"low"}})
 
+    def test_a_hidden_fill_is_read(self):
+        # the stone step laid by a fill: the wires read each other through it, as through a single stone line
+        got = problems([
+            "hidden 1 0 0 minecraft:glass", "hidden 1 1 0 minecraft:redstone_wire @low",
+            "fill hidden 2 1 0 2 1 0 minecraft:stone", "hidden 2 2 0 minecraft:redstone_wire @up"])
+        self.assertEqual(got, {(1, 1, 0): {"up"}, (2, 2, 0): {"low"}})
+
     def test_a_wire_does_not_pick_up_a_block_powered_by_wire_alone(self):
         # wire @a points into the stone; wire @b beside the stone: vanilla turns wires' signals off while a wire
         # works out its strength, so the stone gives @b nothing

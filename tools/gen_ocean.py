@@ -139,7 +139,6 @@ def check(scene, port):
             s = {p: t - t0 for t, p, k, v in sim.events if p in shifters}
             if set(a) != corners or set(s) != shifters:
                 sys.exit(f"lever {'on' if on else 'off'}: corners {a}, line shifters {len(s)} of 9 switched")
-            ta, ts = max(a.values()), (min(s.values()) if on else max(s.values()))
             if on and not max(a.values()) + move < min(s.values()):
                 sys.exit(f"opening: the area shifters lose power at {a}, the line shifters take at {min(s.values())}")
             if not on and not max(s.values()) + move < min(a.values()):

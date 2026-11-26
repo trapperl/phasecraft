@@ -55,7 +55,8 @@ def parse_state(text):
 
 
 def load(path):
-    """Hidden parts by position, plus allowed signal pairs. Visible lines and fills are skipped."""
+    """Hidden parts by position, plus allowed signal pairs. Visible lines are skipped; a hidden fill gives a part at
+    every block of its box, with no signal (a fill line carries no tag)."""
     parts, allow, inputs = {}, defaultdict(set), {}
     for raw in open(path):
         line = raw.split("#", 1)[0].strip()
@@ -64,6 +65,14 @@ def load(path):
         words = line.split()
         if words[0] == "allow":
             allow[words[1]].update(words[2:])
+            continue
+        if words[:2] == ["fill", "hidden"]:
+            a, b = [int(v) for v in words[2:5]], [int(v) for v in words[5:8]]
+            name, props = parse_state(words[8])
+            for x in range(min(a[0], b[0]), max(a[0], b[0]) + 1):
+                for y in range(min(a[1], b[1]), max(a[1], b[1]) + 1):
+                    for z in range(min(a[2], b[2]), max(a[2], b[2]) + 1):
+                        parts[(x, y, z)] = (name.split(":")[-1], props, None)
             continue
         if words[0] != "hidden":
             continue
