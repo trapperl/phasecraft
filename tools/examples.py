@@ -1697,8 +1697,6 @@ def skeleton_chest_bones():
     return sum(int(re.search(r"count: (\d+)", i).group(1)) for i in items if '"minecraft:bone"' in i)
 
 
-
-
 def flying_observer_commands():
     """The engine's two observers, sent a second after flying_commands(): placed in the same
     batch, the engine starts on its own. They are placed "strict" because a plain setblock

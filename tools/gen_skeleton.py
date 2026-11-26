@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The skeleton farm: a dark tower with a skeleton spawner in a room at its top. Press the button in the gallery
 outside the room and the room's floor is gone for a second: every skeleton in it falls down the tower to the lit
-floor at its foot and dies of the fall, and their bones and arrows turn up in a chest by the tower's door. No water,
+floor at its foot and dies of the fall, and their bones and arrows turn up in a chest at the tower's foot. No water,
 no visible redstone, nothing in the shaft: the floor's machinery and the loot's way to the chest are hidden.
 
 Writes src/gametest/resources/contraptions/skeleton_farm.txt and its GameTest area, and checks the floor's wiring in

@@ -114,8 +114,8 @@ not placed in the hidden layer, so it never collides with hidden machinery.
   (the person, 2026-11-24: "I think it should break the main world block"):
   `destroyBlock` with drops, as if broken with no tool, contents spilled,
   silenced like a phased dispenser (`PhasedItems.silently`). A mob or player
-  in the spot is lifted to stand on the block, as a piston pushing up would
-  move them (the person, 2026-11-26, chose this over waiting: the hole in the
+  in the spot (not a spectator; a rider goes up with its vehicle) is lifted
+  to stand on the block, as a piston pushing up would move them (the person, 2026-11-26, chose this over waiting: the hole in the
   ocean left a filler pillar in the sea when someone was in the shaft as it
   closed). It waits, retrying every tick, while one of them has no room above
   (a ceiling), or stands below the block with only its head in the spot
