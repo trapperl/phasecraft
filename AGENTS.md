@@ -232,7 +232,11 @@ offering in a barrel brings it out; tools/gen_treasure.py), a combination
 lock (done, station 32: on, off, on, on opens a door that looks like the wall;
 tools/gen_lock.py). No movable shifters (the person, 2026-11-24: "Nah"), so no tunneling
 flying machine. Once something is cool: a trailer (the person; look up how
-others make them first).
+others make them first). First cut done (2026-11-26; most mod trailers use the
+Replay Mod, the person chose a camera scripted by the agent instead):
+tools/trailer.py scripts a camera through the stations, TrailerClientGameTest
+renders it frame by frame with the world frozen and stepped a tick a frame,
+and the tool titles, captions and encodes it to build/trailer/*.mp4. No sound.
 
 ## Building tools (tools/mcb)
 The person (2026-11-24): "build whatever harness and tools you want for

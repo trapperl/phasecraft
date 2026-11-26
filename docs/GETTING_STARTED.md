@@ -447,3 +447,10 @@ server:
 python3 tools/examples.py --print-commands > build/examples-commands.txt
 PHASECRAFT_EXAMPLES_COMMANDS=$PWD/build/examples-commands.txt ./gradlew runClientGameTest
 ```
+
+The trailer is made the same way: `python3 tools/trailer.py` (about 10 minutes;
+needs ffmpeg and Pillow) flies a scripted camera through the stations, the game
+renders it a frame per game tick with the world frozen in between (`/tick
+freeze`, `/tick step 1`), and the tool adds the title, captions and fades and
+writes `build/trailer/phasecraft-trailer.mp4`. `--edit` re-edits the frames
+already rendered. Change the shots in `shots()` in the tool.
