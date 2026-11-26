@@ -80,7 +80,11 @@ public class ExamplesTourClientGameTest implements FabricClientGameTest {
             new View("ocean_opening", "593.5 -48 -1.5 0 50", OCEAN_LEVER, 26),
             new View("ocean_open", "593.5 -48 -1.5 0 50", null, 80),
             new View("ocean_closed_again", "593.5 -48 -1.5 0 50",
-                    "setblock 589 -60 0 minecraft:lever[face=floor,facing=south,powered=false]", 200));
+                    "setblock 589 -60 0 minecraft:lever[face=floor,facing=south,powered=false]", 200),
+            new View("dance", "616.5 -56 -1.5 0 40"),
+            // chickens that stay put (small: the lamp under each shows): the lamps under them light
+            new View("dance_one", "616.5 -56 -1.5 0 40", "summon minecraft:chicken 615.5 -60 3.5 {NoAI:1b,Silent:1b}", 20),
+            new View("dance_two", "616.5 -56 -1.5 0 40", "summon minecraft:chicken 618.5 -60 5.5 {NoAI:1b,Silent:1b}", 20));
 
     @Override
     public void runTest(ClientGameTestContext context) {

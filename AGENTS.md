@@ -217,7 +217,8 @@ neighbour (the person: "Free neighbor is what a piston needs too"), so the
 ocean hole is at most two blocks across, or hollowed another way (it was:
 line shifters powered by wire on top of them). Liked (the person: "I like your suggestions
 too"): a shifter display (pixel wall), a track built ahead of a minecart,
-a shifting maze, a light-up dance floor, a treasure reveal, a combination
+a shifting maze, a light-up dance floor (done, station 31: hidden plates on
+phase blocks, ports under the lamps), a treasure reveal, a combination
 lock. No movable shifters (the person, 2026-11-24: "Nah"), so no tunneling
 flying machine. Once something is cool: a trailer (the person; look up how
 others make them first).
