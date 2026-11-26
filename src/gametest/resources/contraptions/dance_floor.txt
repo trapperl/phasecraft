@@ -1,4 +1,4 @@
-# The light-up dance floor (DanceFloorGameTests, examples station 31). Check with: python3 tools/redstone_check.py <this file>
+# The light-up dance floor (DanceFloorGameTests, examples station 31). Check with: python3 tools/redstone_check.py <this file> (it reads the fill lines)
 #
 # A 6 x 6 floor of redstone lamps (x 2..7, z 2..7, y = 1) in a blackstone border: each lamp lights while someone
 # stands on it, and goes out when they step off. No plate, wire or anything else shows: under each tile, in the

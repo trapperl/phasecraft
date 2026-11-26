@@ -1290,7 +1290,8 @@ def cottage_pos(x, y, z):
 
 def cottage_commands():
     a, b = cottage_pos(0, 0, -3), cottage_pos(12, 6, 11)    # from the sign's row
-    # hidden first: removing a corner puts back what the pair holds, then it is cleared
+    # hidden first. Note: /fill over a corner discards the box its pair holds, contents and all (it skips the block
+    # entity's removal side effects); harmless here, as the visible area is cleared and built again just after
     out = [in_dimension(HIDDEN_OVERWORLD, f"fill {coords(a)} {coords(b)} minecraft:air"),
            f"fill {a[0]} {a[1] + 1} {a[2]} {coords(b)} minecraft:air"]
     placements, _ = read_layout(COTTAGE_LAYOUT)
@@ -1348,7 +1349,8 @@ def ocean_pos(x, y, z):
 
 def ocean_commands():
     a, b = ocean_pos(0, 0, 0), ocean_pos(23, 12, 27)
-    # hidden first: removing a corner puts back what the pair holds, then it is cleared
+    # hidden first. Note: /fill over a corner discards the box its pair holds, contents and all (it skips the block
+    # entity's removal side effects); harmless here, as the visible area is cleared and built again just after
     out = [in_dimension(HIDDEN_OVERWORLD, f"fill {coords(a)} {coords(b)} minecraft:air"),
            f"fill {a[0]} {a[1] + 1} {a[2]} {coords(b)} minecraft:air"]
     placements, _ = read_layout(OCEAN_LAYOUT)
@@ -1376,7 +1378,7 @@ def drop_cleanup_commands():
     (lanterns at the staircase's foot, whose sensors then felt them and stood the steps up with nobody there; over
     a thousand hidden redstone parts falling through the hidden layer's void). Sent with the late batch, once the
     build has settled, before the checks."""
-    box = "x=-20,y=-130,z=-40,dx=680,dy=200,dz=260"     # falling items may be far below
+    box = "x=-20,y=-130,z=-40,dx=740,dy=200,dz=260"     # falling items may be far below
     return [f"kill @e[type=minecraft:item,{box}]",
             in_dimension(HIDDEN_OVERWORLD, f"kill @e[type=minecraft:item,{box}]")]
 
@@ -1520,10 +1522,10 @@ def pixels_pos(x, y, z):
 def pixels_commands():
     ox, oy, oz = PIXELS_ORIGIN
     out = [in_dimension(HIDDEN_OVERWORLD, f"fill {ox} {oy} {oz} {ox + 29} {oy + 21} {oz + 15} minecraft:air"),
-           f"fill {ox} -60 {oz - 5} {ox + 29} {oy + 21} {oz + 15} minecraft:air",
+           f"fill {ox} -60 {oz - 6} {ox + 29} {oy + 21} {oz + 15} minecraft:air",
            f"fill {coords(pixels_pos(0, 4, 0))} {coords(pixels_pos(14, 8, 14))} minecraft:stone"]   # the platform
-    for i in range(5):                   # steps up from the path
-        out.append(f"fill {ox + 6} {-60 + i} {oz - 5 + i} {ox + 8} {-60 + i} {oz - 5 + i} "
+    for i in range(6):                   # steps up from the path, the last flush with the floor (layout y = 9)
+        out.append(f"fill {ox + 6} {-60 + i} {oz - 6 + i} {ox + 8} {-60 + i} {oz - 6 + i} "
                    "minecraft:stone_brick_stairs[facing=south]")
     placements, _ = read_layout(PIXELS_LAYOUT)
     for layer, a, b, block in placements:
@@ -1777,7 +1779,7 @@ def main():
         after = flying_cargo_x()
         rcon.send_commands(flying_commands())  # ready for another flight
         time.sleep(1)
-        rcon.send_commands(flying_observer_commands() + sorter_fill_commands() + ocean_corner_commands() + drop_cleanup_commands())
+        rcon.send_commands(flying_observer_commands() + sorter_fill_commands() + drop_cleanup_commands())
         time.sleep(1)
         reset = flying_cargo_x()
     except rcon.RconError as error:

@@ -70,7 +70,8 @@ def build():
 
 
 def check(scene):
-    """At rest (the barrel empty) every treasure shifter is powered; with something in the barrel none is."""
+    """At rest (the barrel empty) every treasure shifter is powered. (The simulator has no phased comparator reading
+    a visible container, so the other half, something in the barrel and none powered, is left to the GameTest.)"""
     sim = Sim(scene)
     if sim.popped:
         sys.exit(f"parts with nothing to stand on: {sim.popped[:5]}")
