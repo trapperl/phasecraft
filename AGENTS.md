@@ -28,10 +28,6 @@ blocks, with future vanilla-compatible cross-layer redstone and pistons.
     `phasecraft-test:*_game_tests_*`) and list every test class under the
     `fabric-gametest` entrypoint in src/gametest/resources/fabric.mod.json,
     or it is silently not run.
-  - Test batches reuse the same places, and vanilla clears only the visible
-    blocks there; a test mixin clears the hidden layer with them
-    (`HiddenTestSpaceGameTests`), so a test's hidden blocks never reach the
-    next test built at that place.
   - Behaviour that must survive a restart goes in `PhaseLayerRestartPhases`
     (write phase, then verify phase in a new server process).
   - Client behaviour (rendering, keys, syncing) goes in client GameTests

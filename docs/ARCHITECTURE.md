@@ -202,9 +202,10 @@ default).
   pair, the 16-block cap at its edge, turned around, removing either corner)
   run in a test environment with the rule on
   (`phasecraft-test:area_shifters_on`), apart from `offByDefault`. Their
-  structure is 24 x 17 x 24 though only 8 x 17 x 8 is used: tests in a batch
-  stand about 5 blocks apart, and a corner looks 15 blocks around, so in a
-  smaller structure corners paired with the next test's hut;
+  structure is 24 x 17 x 24 though only 8 x 17 x 8 is used: the GameTest
+  server lays tests 5 blocks apart in a row and rows 6 apart, batch after
+  batch on one grid, and a corner looks 15 blocks around, so in a smaller
+  structure corners paired with the next test's hut (BUILD_RULES C17);
   `RecipeGameTests`; `PhaseLayerRestartPhases` (a box held across a restart,
   put back after it).
 
@@ -944,11 +945,7 @@ All of these run on every `./gradlew build`, locally and in CI:
 
 - **JUnit** (`src/test`): `LayerCellStore` invariants (used by the old list).
 - **GameTests** (`src/gametest`, headless 26.3 server; a test-only mixin adds
-  data-pack dimensions, which vanilla's test server leaves out; another clears
-  the hidden layer with each test's box, as vanilla clears only the visible
-  blocks before a test and between batches, which reuse the same places: an
-  earlier batch's hidden redstone once stopped an area shifter test's corners
-  (`HiddenTestSpaceGameTests`)):
+  data-pack dimensions, which vanilla's test server leaves out):
   - a hidden block and a visible block coexist at the same XYZ;
   - breaking the visible block leaves the hidden block intact;
   - full block states are kept; vanilla rules apply (floating wire breaks);

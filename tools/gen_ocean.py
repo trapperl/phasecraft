@@ -32,7 +32,7 @@ from mcb.report import hidden_size  # noqa: E402
 from mcb.scene import Scene  # noqa: E402
 
 NAME = "ocean_hole"
-SIZE = (24, 13, 28)
+SIZE = (24, 13, 32)             # the GameTest area: its corners 16 blocks or more from any other test's (C17)
 DELAY = 16                      # redstone ticks between the lever and Ld: more than a move of 8 layers or blocks
 LAYERS = 8                      # the pool's depth, the shaft's height
 POOL = ((3, 12), (15, 24))      # its walls' x and z, from (x0, z0) to (x1, z1); its rim one above the water
@@ -41,7 +41,7 @@ INSIDE = [(x, z) for x in range(8, 11) for z in range(17, 20)]
 PORT = (5, 0, 11)               # under the lever, before the pool
 STONE = "minecraft:stone"
 WIRE = "minecraft:redstone_wire"
-BOX = ((0, 0, 0), (SIZE[0] - 1, SIZE[1] - 1, SIZE[2] - 1))
+BOX = ((0, 0, 0), (23, 12, 27))       # where the router may lay lines
 
 # The gates: a block, a torch on its south face; (block, torch, signal out, signal in).
 GATES = {
