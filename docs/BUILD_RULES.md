@@ -8,7 +8,8 @@ from (a lesson in this project, or an established practice of the redstone commu
 Tools: `tools/redstone_check.py` (static: which signal reaches each part), `tools/mcb` (the simulator
 `mcb.redstone`, checked tick by tick against the real game; the router; shapes), the generators
 (`tools/gen_door.py` and its configs, `tools/gen_path.py`, `tools/gen_sorter.py`, `tools/gen_tower.py`,
-`tools/gen_ocean.py`, `tools/gen_lock.py`, `tools/gen_pixels.py`, `tools/gen_treasure.py`), GameTests, `tools/examples.py`.
+`tools/gen_ocean.py`, `tools/gen_lock.py`, `tools/gen_pixels.py`, `tools/gen_treasure.py`,
+`tools/gen_track.py`), GameTests, `tools/examples.py`.
 
 ## 1. What a build must do
 
@@ -114,6 +115,10 @@ Tools: `tools/redstone_check.py` (static: which signal reaches each part), `tool
   ocean's line shifters put filler back while its area shifters were already taking the box. `tools/examples.py`
   places such parts a second later (the ocean's corners, the flying machine's observers). Checked by: the examples
   script's checks.
+- **C19. Keep a rail that must rest unpowered (a start or brake rail) a plain rail away from powered rails.** A
+  powered rail passes its power on to the powered rails next to it, up to 8 along: a start rail next to the boosters
+  would always be on, and send a cart that has just arrived straight back. Lesson: the minecart track's start rails.
+  Checked by: `MinecartTrackGameTests` (the cart stops on the far start rail).
 
 ## 3. Size
 

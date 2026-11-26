@@ -332,6 +332,13 @@ anything in the barrel on the altar and the treasure appears on the pedestals
 behind it; take the offering back out and it goes. A hidden comparator reads
 the barrel, and hidden phase shifters hold the treasure.
 
+Station 35 is a minecart track (x = 714 to 759, south of the path, up the
+steps): a chasm with rails on both cliffs and nothing between them. Put a
+minecart on the powered rail by either wall, get in and press the button
+beside it: the track is laid across the chasm ahead of you and taken up
+behind you. Hidden line shifters hold each piece of the track; hidden strings
+at rail height sense the cart.
+
 ![A dark stone room lit by a glowstone hidden in its far wall](images/phased-light-room.png)
 
 Save and exit your test world, reopen it, and run `/phasecraft get` again to

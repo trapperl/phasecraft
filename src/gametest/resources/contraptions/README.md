@@ -37,7 +37,7 @@ builds everything in one tick, with no time to settle.
 A layout too big to write by hand can come from a generator: `iris_door.txt` and `waterfall.txt` are written
 by `tools/gen_iris.py` and `tools/gen_waterfall.py` (with their GameTest areas, `<name>.snbt`), both through
 `tools/gen_door.py` (doors of phase shifters switching in rings); `mountain_door.txt` by `tools/gen_mountain.py`
-(hand-built wiring, signal names from a simulated run); `appearing_bridge.txt` by `tools/gen_path.py`; `appearing_staircase.txt` by `tools/gen_stairs.py`; `sorting_machine.txt` by `tools/gen_sorter.py`; `castle_tower.txt` by `tools/gen_tower.py` (its lines laid by `mcb.router`); `ocean_hole.txt` by `tools/gen_ocean.py` (every line laid by `mcb.router.route_all`); `combination_lock.txt` by `tools/gen_lock.py` (likewise); `pixel_wall.txt` by `tools/gen_pixels.py` (through `tools/gen_door.py`); `treasure_reveal.txt` by `tools/gen_treasure.py`. Change
+(hand-built wiring, signal names from a simulated run); `appearing_bridge.txt` by `tools/gen_path.py`; `appearing_staircase.txt` by `tools/gen_stairs.py`; `sorting_machine.txt` by `tools/gen_sorter.py`; `castle_tower.txt` by `tools/gen_tower.py` (its lines laid by `mcb.router`); `ocean_hole.txt` by `tools/gen_ocean.py` (every line laid by `mcb.router.route_all`); `combination_lock.txt` by `tools/gen_lock.py` (likewise); `pixel_wall.txt` by `tools/gen_pixels.py` (through `tools/gen_door.py`); `treasure_reveal.txt` by `tools/gen_treasure.py`; `minecart_track.txt` by `tools/gen_track.py` (through `tools/gen_path.py`). Change
 the generator and run it again.
 
 `python3 tools/redstone_check.py <file>` reports every part or piston that
