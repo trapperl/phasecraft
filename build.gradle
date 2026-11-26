@@ -259,6 +259,13 @@ processResources {
     }
 }
 
+// The license goes in the jar, as MIT asks ("included in all copies").
+jar {
+    from('LICENSE') {
+        rename { "${it}_${project.base.archivesName.get()}" }
+    }
+}
+
 tasks.withType(JavaCompile).configureEach {
     options.release = 25
 }
