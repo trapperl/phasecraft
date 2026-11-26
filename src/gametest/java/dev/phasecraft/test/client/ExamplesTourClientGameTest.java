@@ -101,7 +101,11 @@ public class ExamplesTourClientGameTest implements FabricClientGameTest {
             // from the path, facing the altar; a gold nugget in the barrel brings the treasure out
             new View("treasure", "693.5 -56 -1.5 0 20"),
             new View("treasure_offered", "693.5 -56 -1.5 0 20",
-                    "item replace block 693 -60 6 container.13 with minecraft:gold_nugget", 20));
+                    "item replace block 693 -60 6 container.13 with minecraft:gold_nugget", 20),
+            // from above the north cliff, looking along the chasm: empty; a cart (held at rail height) over the
+            // middle brings out the track around it
+            new View("track", "736.5 -46 8.5 0 35"),
+            new View("track_cart", "736.5 -46 8.5 0 35", "summon minecraft:minecart 737.5 -54 20.5 {NoGravity:1b}", 20));
 
     @Override
     public void runTest(ClientGameTestContext context) {

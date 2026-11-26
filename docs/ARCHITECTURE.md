@@ -998,7 +998,27 @@ has such cells.
      the visible block behind it, an input of the layout.
    - Broken on purpose: on plain stone instead of a phase block the
      comparator reads nothing hidden and the treasure never comes.
-19. **Mob farm:** not a target yet; the person lists one among the showcase
+19. **Minecart track: done** (`MinecartTrackGameTests`, examples station 35,
+   `tools/gen_track.py`; on the person's liked list). A chasm with a track
+   across it that is there only around a minecart: each of its 20 columns,
+   a spruce deck block and the rail on it, is there only while a cart is
+   within 5 columns, so the track is laid ahead of the cart and taken up
+   behind it. A button by the wall on each cliff starts a cart; boosters (a
+   hidden phase port under each) bring it to a cart's top speed, 0.4 blocks
+   a game tick. 1,256 hidden blocks.
+   - The appearing bridge's machinery (`tools/gen_path.py`), one block lower:
+     a line shifter facing up under each column holds deck and rail (it puts
+     the deck back first, which the rail needs, and takes the rail first),
+     and the phased strings sit at rail height, where a cart trips them.
+   - Rails were thought fragile to pistons; they are not (pistons push them),
+     so shifters take them as any block: checked on the dev server.
+   - A reach of 5: a column's shifter lets go within 4 game ticks (simulated)
+     and the deck and rail take 2 more, while a cart at top speed covers 2.4
+     blocks; the GameTest rides at top speed and checks every tick that the
+     cart's column and the next are there and nothing more than 6 ahead.
+   - Broken on purpose: slower line shifters (delay 4) leave the column ahead
+     of the cart missing; a reach of 8 shows columns too far ahead.
+20. **Mob farm:** not a target yet; the person lists one among the showcase
    builds (AGENTS.md).
 
 ## Validation status

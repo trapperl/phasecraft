@@ -1378,7 +1378,7 @@ def drop_cleanup_commands():
     (lanterns at the staircase's foot, whose sensors then felt them and stood the steps up with nobody there; over
     a thousand hidden redstone parts falling through the hidden layer's void). Sent with the late batch, once the
     build has settled, before the checks."""
-    box = "x=-20,y=-130,z=-40,dx=740,dy=200,dz=260"     # falling items may be far below
+    box = "x=-20,y=-130,z=-40,dx=800,dy=200,dz=260"     # falling items may be far below
     return [f"kill @e[type=minecraft:item,{box}]",
             in_dimension(HIDDEN_OVERWORLD, f"kill @e[type=minecraft:item,{box}]")]
 
@@ -1587,6 +1587,64 @@ def treasure_state():
 def treasure_offer(item):
     rcon.send_commands([f"item replace block {coords(treasure_pos(*TREASURE_BARREL))} container.13 with {item}"])
 
+# Station 35: the minecart track, built from its layout file (written by tools/gen_track.py; shared with
+# MinecartTrackGameTests). South of the path, up steps: two cliffs 6 above the world's grass, a chasm between, and a
+# track across it that is there only around a minecart (hidden line shifters hold each column's deck and rail;
+# hidden strings at rail height sense the cart). A button by each cliff's wall starts a cart.
+TRACK_LAYOUT = pathlib.Path(__file__).resolve().parent.parent / "src/gametest/resources/contraptions/minecart_track.txt"
+TRACK_ORIGIN = (712, -64, 8)       # layout (0, 0, 0); the generator's (0, 0, 0), the first column's deck, at (15, 9, 12)
+TRACK_GEN = (15, 9, 12)
+TRACK_COLUMNS = 20
+
+
+def track_pos(x, y, z, gen=False):
+    """A world position from layout space, or from generator space with gen=True."""
+    if gen:
+        x, y, z = x + TRACK_GEN[0], y + TRACK_GEN[1], z + TRACK_GEN[2]
+    return (TRACK_ORIGIN[0] + x, TRACK_ORIGIN[1] + y, TRACK_ORIGIN[2] + z)
+
+
+def track_commands():
+    ox, oy, oz = TRACK_ORIGIN
+    size = next(tuple(int(v) for v in line.split()[1:4]) for line in open(TRACK_LAYOUT) if line.startswith("size "))
+    far = (ox + size[0] - 1, oy + size[1] - 1, oz + size[2] - 1)
+    out = ["kill @e[type=minecraft:minecart,tag=pc_track]",
+           in_dimension(HIDDEN_OVERWORLD, f"fill {ox} {oy} {oz} {coords(far)} minecraft:air"),   # hidden first
+           f"fill {ox} {oy} {oz} {coords(far)} minecraft:air",
+           f"fill {ox} {oy} {oz - 6} {far[0]} {oy + size[1] - 1} {oz - 1} minecraft:air",       # the steps' side
+           f"fill {ox} {oy} {oz - 6} {far[0]} -62 {oz - 1} minecraft:dirt",
+           f"fill {ox} -61 {oz - 6} {far[0]} -61 {oz - 1} minecraft:grass_block",
+           clear_sign((ox + 4, Y, 1))]
+    placements, _ = read_layout(TRACK_LAYOUT)
+    for layer, a, b, block in placements:
+        command = (f"fill {coords(track_pos(*a))} {coords(track_pos(*b))} {block}" if a != b
+                   else f"setblock {coords(track_pos(*a))} {block}")
+        out.append(in_dimension(HIDDEN_OVERWORLD, command) if layer == "hidden" else command)
+    for i in range(6):                   # steps up from the path to the west cliff's top, the last flush with it
+        out.append(f"fill {ox + 3} {-60 + i} {oz - 6 + i} {ox + 5} {-60 + i} {oz - 6 + i} "
+                   "minecraft:stone_brick_stairs[facing=south]")
+        if i:
+            out.append(f"fill {ox + 3} -60 {oz - 6 + i} {ox + 5} {-61 + i} {oz - 6 + i} minecraft:stone")
+    out.append(sign((ox + 4, Y, 1), ["35. Minecart", "track: ride a", "cart, the track", "appears ahead"]))
+    return out
+
+
+def track_state():
+    """The columns there, as a picture: # there, . not."""
+    replies = rcon.send_commands([f"phasecraft get {coords(track_pos(k, 1, 0, gen=True))}" for k in range(TRACK_COLUMNS)])
+    return "".join("." if "visible: minecraft:air" in r else "#" for r in replies)
+
+
+def track_cart(column):
+    """A minecart over a column at rail height, held there (no gravity: over the chasm the rail comes only once it
+    is sensed); None: gone."""
+    commands = ["kill @e[type=minecraft:minecart,tag=pc_track]"]
+    if column is not None:
+        x, y, z = track_pos(column, 1, 0, gen=True)
+        commands.append(f"summon minecraft:minecart {x + 0.5} {y} {z + 0.5} {{NoGravity:1b,Tags:[\"pc_track\"]}}")
+    rcon.send_commands(commands)
+
+
 
 def flying_observer_commands():
     """The engine's two observers, sent a second after flying_commands(): placed in the same
@@ -1636,6 +1694,8 @@ def build_commands():
         in_dimension(HIDDEN_OVERWORLD, "forceload add 646 -2 682 24"),
         "forceload add 682 0 704 22",        # station 34, the treasure reveal
         in_dimension(HIDDEN_OVERWORLD, "forceload add 682 0 704 22"),
+        "forceload add 710 0 764 34",        # station 35, the minecart track
+        in_dimension(HIDDEN_OVERWORLD, "forceload add 710 0 764 34"),
         "gamerule phasecraft:area_shifters true",   # station 29 (off by default)
         # Clear the area (visible) and lay a path of andesite under the stations.
         "fill -4 -60 -8 54 -55 4 minecraft:air",
@@ -1686,6 +1746,7 @@ def build_commands():
     commands += lock_commands()
     commands += pixels_commands()
     commands += treasure_commands()
+    commands += track_commands()
     for station in STATIONS:
         for dimension, pos, *_ in station["hidden"]:
             commands.append(in_dimension(dimension, f"phasecraft clear {coords(pos)}"))
@@ -1977,6 +2038,20 @@ def main():
     ok &= treasure_ok
     print(f"{'ok ' if treasure_ok else 'BAD'} treasure reveal (blocks there, of 5): "
           + ", ".join(f"{name}: {n}" for name, n in treasure_seen))
+    try:
+        track_cart(None); time.sleep(2)
+        track_seen = [("no cart", track_state())]
+        track_cart(-2); time.sleep(2); track_seen.append(("a cart 2 before the chasm", track_state()))
+        track_cart(10); time.sleep(2); track_seen.append(("over column 10", track_state()))
+        track_cart(None); time.sleep(3); track_seen.append(("gone", track_state()))
+    except rcon.RconError as error:
+        print(error, file=sys.stderr)
+        return 1
+    want = ["." * 20, "#" * 4 + "." * 16, "." * 5 + "#" * 11 + "." * 4, "." * 20]
+    track_ok = [t for _, t in track_seen] == want
+    ok &= track_ok
+    print(f"{'ok ' if track_ok else 'BAD'} minecart track (columns there): "
+          + ", ".join(f"{name}: {t}" for name, t in track_seen))
     print("Examples built and verified." if ok else "Some examples did not build as expected.")
     return 0 if ok else 1
 

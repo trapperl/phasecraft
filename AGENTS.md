@@ -221,7 +221,8 @@ neighbour (the person: "Free neighbor is what a piston needs too"), so the
 ocean hole is at most two blocks across, or hollowed another way (it was:
 line shifters powered by wire on top of them). Liked (the person: "I like your suggestions
 too"): a shifter display (pixel wall; done, station 33: a creeper's face drawn
-on a lime wall, tools/gen_pixels.py), a track built ahead of a minecart,
+on a lime wall, tools/gen_pixels.py), a track built ahead of a minecart (done, station 35: a
+chasm crossed on rails there only around the cart; tools/gen_track.py),
 a shifting maze, a light-up dance floor (done, station 31: hidden plates on
 phase blocks, ports under the lamps), a treasure reveal (done, station 34: an
 offering in a barrel brings it out; tools/gen_treasure.py), a combination
