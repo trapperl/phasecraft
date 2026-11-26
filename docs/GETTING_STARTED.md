@@ -303,6 +303,12 @@ the bread, apples and iron still in its chest. Two hidden area shifters at its
 corners do it. Area shifters only work with the game rule on
 (`/gamerule phasecraft:area_shifters true`); the examples script turns it on.
 
+Station 30 is a hole in the ocean (a pool at x = 587 to 599): flip the lever at
+the pool's north edge and a glass-walled shaft opens down to the sand, dry;
+flip it back and the sea closes over it. Two hidden area shifters bring the
+walls (and a filler) back into the water, and hidden line shifters under the
+sand take the filler out; closing, the same in reverse.
+
 ![A dark stone room lit by a glowstone hidden in its far wall](images/phased-light-room.png)
 
 Save and exit your test world, reopen it, and run `/phasecraft get` again to

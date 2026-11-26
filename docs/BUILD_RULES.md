@@ -98,6 +98,13 @@ Tools: `tools/redstone_check.py` (static: which signal reaches each part), `tool
   twice for an OR (on at the earlier signal, off at the later), and delay every column's other move by the longest
   shortfall, so no AND gate is needed. Lesson: the castle tower (its full columns never moved under the test's
   barrier ceiling). Checked by: `CastleTowerGameTests`, the generator's simulation.
+- **C16. Power a shifter with no free side through wire on top of it.** A wire powers the block it stands on, so
+  a grid of wire laid on a grid of line shifters (or any shifters) powers every one, the middle ones included;
+  shifters pass nothing on, so the grid powers nothing else. Lesson: the hole in the ocean (the middle of its 3 x 3
+  line shifters). Checked by: `OceanHoleGameTests`, `redstone_check.py`.
+- **C17. Area shifters pair with the nearest corner within 15: keep other corners further away**, other builds'
+  and other GameTests' too (tests in a batch stand about 5 blocks apart: area shifter tests use 24-wide areas).
+  Lesson: the area shifter's own tests paired with each other's huts. Checked by: `AreaShifterGameTests`.
 
 ## 3. Size
 

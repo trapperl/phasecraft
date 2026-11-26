@@ -36,6 +36,7 @@
       "dev.phasecraft.test.LineShifterGameTests",
       "dev.phasecraft.test.AreaShifterGameTests",
       "dev.phasecraft.test.VanishingCottageGameTests",
+      "dev.phasecraft.test.OceanHoleGameTests",
       "dev.phasecraft.test.PhasedWatcherGameTests",
       "dev.phasecraft.test.PhasedItemGameTests",
       "dev.phasecraft.test.HiddenEditingGameTests",
