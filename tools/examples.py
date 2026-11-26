@@ -1328,6 +1328,53 @@ def cottage_lever(on):
                         f"minecraft:lever[face=floor,facing=north,powered={str(on).lower()}]"])
 
 
+# Station 30: the hole in the ocean, built from its layout file (written by tools/gen_ocean.py; shared with
+# OceanHoleGameTests). A pool 8 deep; its lever, at the pool's north edge, opens a dry glass-walled shaft to the
+# bottom, and closes it again. Area shifters: needs phasecraft:area_shifters, which station 29 turns on.
+OCEAN_LAYOUT = pathlib.Path(__file__).resolve().parent.parent / "src/gametest/resources/contraptions/ocean_hole.txt"
+OCEAN_ORIGIN = (584, Y - 1, -11)     # the layout's (0, 0, 0): its ground is the world's grass; its lever at z = 0
+OCEAN_BOX = ((7, 1, 16), (11, 8, 20))
+
+
+def ocean_pos(x, y, z):
+    return (OCEAN_ORIGIN[0] + x, OCEAN_ORIGIN[1] + y, OCEAN_ORIGIN[2] + z)
+
+
+def ocean_commands():
+    a, b = ocean_pos(0, 0, 0), ocean_pos(23, 12, 27)
+    # hidden first: removing a corner puts back what the pair holds, then it is cleared
+    out = [in_dimension(HIDDEN_OVERWORLD, f"fill {coords(a)} {coords(b)} minecraft:air"),
+           f"fill {a[0]} {a[1] + 1} {a[2]} {coords(b)} minecraft:air"]
+    placements, _ = read_layout(OCEAN_LAYOUT)
+    for layer, p, q, block in placements:
+        command = (f"fill {coords(ocean_pos(*p))} {coords(ocean_pos(*q))} {block}" if p != q
+                   else f"setblock {coords(ocean_pos(*p))} {block}")
+        out.append(in_dimension(HIDDEN_OVERWORLD, command) if layer == "hidden" else command)
+    out.append(sign((OCEAN_ORIGIN[0] + 8, Y, SIGN_Z), ["30. A hole in", "the ocean: flip", "the lever: a", "dry shaft opens"]))
+    return out
+
+
+def ocean_state():
+    """'closed' (the box all still water), 'open' (its ring glass, its inside air), or what is off."""
+    (x0, y0, z0), (x1, y1, z1) = OCEAN_BOX
+    cells = [(x, y, z) for x in range(x0, x1 + 1) for y in range(y0, y1 + 1) for z in range(z0, z1 + 1)]
+    replies = rcon.send_commands([f"phasecraft get {coords(ocean_pos(*c))}" for c in cells])
+    seen = {c: r.split("visible: ", 1)[1].split(" |")[0].strip() for c, r in zip(cells, replies)}
+    if all(v.startswith("minecraft:water") and "level=0" in v for v in seen.values()):
+        return "closed"
+    inside = lambda c: x0 < c[0] < x1 and z0 < c[2] < z1      # noqa: E731
+    if all((v == "minecraft:air") if inside(c) else (v == "minecraft:glass") for c, v in seen.items()):
+        return "open"
+    off = [(c, v) for c, v in seen.items() if not (v.startswith("minecraft:water") or v in ("minecraft:air", "minecraft:glass"))]
+    return f"mixed, e.g. {off[:2] or list(seen.items())[:2]}"
+
+
+def ocean_lever(on):
+    _, info = read_layout(OCEAN_LAYOUT)
+    rcon.send_commands([f"setblock {coords(ocean_pos(*info['lever']))} "
+                        f"minecraft:lever[face=floor,facing=south,powered={str(on).lower()}]"])
+
+
 def flying_observer_commands():
     """The engine's two observers, sent a second after flying_commands(): placed in the same
     batch, the engine starts on its own. They are placed "strict" because a plain setblock
@@ -1366,6 +1413,8 @@ def build_commands():
         in_dimension(HIDDEN_OVERWORLD, "forceload add 494 -27 558 21"),
         "forceload add 560 -4 590 20",       # station 29, the vanishing cottage
         in_dimension(HIDDEN_OVERWORLD, "forceload add 560 -4 590 20"),
+        "forceload add 580 -14 610 20",      # station 30, the hole in the ocean
+        in_dimension(HIDDEN_OVERWORLD, "forceload add 580 -14 610 20"),
         "gamerule phasecraft:area_shifters true",   # station 29 (off by default)
         # Clear the area (visible) and lay a path of andesite under the stations.
         "fill -4 -60 -8 54 -55 4 minecraft:air",
@@ -1411,6 +1460,7 @@ def build_commands():
     commands += sorter_commands()
     commands += tower_commands()
     commands += cottage_commands()
+    commands += ocean_commands()
     for station in STATIONS:
         for dimension, pos, *_ in station["hidden"]:
             commands.append(in_dimension(dimension, f"phasecraft clear {coords(pos)}"))
@@ -1653,6 +1703,17 @@ def main():
     cottage_ok = [s for _, s in cottage_seen] == ["standing", "gone", "standing"]
     ok &= cottage_ok
     print(f"{'ok ' if cottage_ok else 'BAD'} vanishing cottage: " + ", ".join(f"{name}: {state}" for name, state in cottage_seen))
+    try:
+        time.sleep(6)                    # the sea fills the shaft's box after it is built
+        ocean_seen = [("before", ocean_state())]
+        ocean_lever(True); time.sleep(6); ocean_seen.append(("lever on", ocean_state()))
+        ocean_lever(False); time.sleep(8); ocean_seen.append(("lever off", ocean_state()))
+    except rcon.RconError as error:
+        print(error, file=sys.stderr)
+        return 1
+    ocean_ok = [s for _, s in ocean_seen] == ["closed", "open", "closed"]
+    ok &= ocean_ok
+    print(f"{'ok ' if ocean_ok else 'BAD'} hole in the ocean: " + ", ".join(f"{name}: {state}" for name, state in ocean_seen))
     print("Examples built and verified." if ok else "Some examples did not build as expected.")
     return 0 if ok else 1
 

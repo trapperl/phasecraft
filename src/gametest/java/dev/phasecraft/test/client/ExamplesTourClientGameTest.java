@@ -28,6 +28,7 @@ public class ExamplesTourClientGameTest implements FabricClientGameTest {
     private static final String MOUNTAIN_LEVER = "setblock 326 -60 10 minecraft:lever[face=floor,facing=north,powered=true]";
     private static final String TOWER_LEVER = "setblock 543 -60 1 minecraft:lever[face=floor,facing=north,powered=true]";
     private static final String COTTAGE_LEVER = "setblock 572 -60 0 minecraft:lever[face=floor,facing=north,powered=true]";
+    private static final String OCEAN_LEVER = "setblock 589 -60 0 minecraft:lever[face=floor,facing=south,powered=true]";
 
     private static final List<View> VIEWS = List.of(
             new View("overview", "24.5 -52 -14 0 30"),
@@ -72,7 +73,14 @@ public class ExamplesTourClientGameTest implements FabricClientGameTest {
             new View("cottage", "572.5 -55 -8.5 0 18"),
             // the roof goes about 2 game ticks after the lever, then a layer every 6: at 11, the roof and the top of the walls gone
             new View("cottage_going", "572.5 -55 -8.5 0 18", COTTAGE_LEVER, 11),
-            new View("cottage_gone", "572.5 -55 -8.5 0 18", null, 40));
+            new View("cottage_gone", "572.5 -55 -8.5 0 18", null, 40),
+            // from above the pool's north rim, looking down into it (the sea fills the shaft's box once built)
+            new View("ocean", "593.5 -48 -1.5 0 50", null, 120),
+            // the walls and filler come back from the seabed (16 game ticks), then the filler goes from the top
+            new View("ocean_opening", "593.5 -48 -1.5 0 50", OCEAN_LEVER, 26),
+            new View("ocean_open", "593.5 -48 -1.5 0 50", null, 80),
+            new View("ocean_closed_again", "593.5 -48 -1.5 0 50",
+                    "setblock 589 -60 0 minecraft:lever[face=floor,facing=south,powered=false]", 200));
 
     @Override
     public void runTest(ClientGameTestContext context) {

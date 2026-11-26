@@ -880,7 +880,45 @@ has such cells.
      the scheduled steps that follow, so coming back the first gap looks a
      tick short. Flipped again right after a move ends, the next waits a
      layer's time: the rhythm holds (`AreaShifterGameTests`).
-14. **Mob farm:** not a target yet; the person lists one among the showcase
+14. **Hole in the ocean: done** (`OceanHoleGameTests`, examples station 30,
+   `tools/gen_ocean.py`; on the person's showcase list). A pool 8 deep; its
+   lever opens a dry 3 x 3 shaft with glass walls down to the sand, and
+   flipped back the sea closes over it as still water. No sponges, as often
+   as you like, and nothing shows while it is closed.
+   - Two area shifters at opposite corners of the shaft's box (its 5 x 5
+     glass ring and 3 x 3 inside, 8 high) hold the glass and a filler (light
+     blue glass) while it is closed; the sea fills the box. Under the sand a
+     line shifter faces up under each of the 9 inside columns. Opening, the
+     area shifters put the glass and filler back from the sand up, each block
+     in place of the water; then the line shifters take the filler, from the
+     top: dry. Closing, the line shifters put the filler back first; then the
+     area shifters take everything from the top, and each layer of sea comes
+     in over solid filler, so it settles as still water.
+   - The order is the controller's: A (the area shifters) = NOT (L OR Ld), S
+     (the line shifters) = L AND Ld, Ld the lever's L delayed 16 redstone
+     ticks: A falls at once and rises late, S rises late and falls at once.
+     Four torches; every line laid by `mcb.router` (`route_all`), checked in
+     the simulator (opening: A at 16 game ticks, S at 44; closing: S at 18,
+     A at 40, each after the other's 16-tick move). 320 hidden blocks.
+   - The line shifters are powered by hidden wire on top of them (a wire
+     powers the block it stands on): the middle one has no free side.
+   - A line shifter's line starts in front of it: placed at the sand's spot
+     (in the hidden layer), it takes from the first water layer up, and the
+     line ends at the air above the pool (8 blocks, under the 12 cap).
+   - Router lessons: a line's start may not have other redstone a step below
+     it (the port under the lever), so a short hand-laid wire leaves the port
+     first; and a line's end may not either (the line shifters under the
+     inside), so one hand wire joins the line to the wire on top of them.
+   - The test also checks, after each close, that the sky light in the box
+     is the same as beside it in the pool. A lighter patch over the shaft in
+     the tour's screenshots looking down into the pool is how the game draws
+     sand through deep water from there: an untouched copy of the pool
+     (cloned, no hidden parts) shows it too, and the client's blocks and
+     light in the box match the pool's.
+   - Broken on purpose: with the delayed lines' repeaters at 1 tick the
+     filler goes before the walls are back and stays; without the wire into
+     the line shifters the shaft never empties. Both fail the test.
+15. **Mob farm:** not a target yet; the person lists one among the showcase
    builds (AGENTS.md).
 
 ## Validation status

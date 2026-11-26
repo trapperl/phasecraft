@@ -1,0 +1,353 @@
+# Written by tools/gen_ocean.py; change the generator and run it again.
+# The hole in the ocean: a lever opens a dry, glass-walled 3 x 3 shaft down to the seabed of a pool 8 deep, and
+# closes it again; repeatable, no sponges, nothing showing while it is closed.
+#
+# Writes src/gametest/resources/contraptions/ocean_hole.txt and its GameTest area, and checks the controller's timing
+# in tools/mcb's redstone simulator. Needs the game rule phasecraft:area_shifters (off by default).
+#
+# How: two hidden area shifters at opposite corners of the shaft's box (its 5 x 5 glass ring and 3 x 3 inside, 8
+# high) hold its glass walls and a filler while it is closed: the sea fills the box. Under the seabed, a hidden line
+# shifter faces up under each of the 9 inside columns, powered through hidden wire on top of it (a wire powers the
+# block it stands on, which is the only way into the middle one).
+# - Opening: the area shifters lose their power (A falls) and put back the walls and the filler, layer by layer from
+#   the seabed, each block in place of the water; then the line shifters are powered (S rises) and take the filler,
+#   from the top: the shaft is dry.
+# - Closing: S falls first and the line shifters put the filler back, from the seabed up; then A rises and the area
+#   shifters take everything, from the top: the sea flows in, a layer at a time, each layer over solid filler, so it
+#   becomes still water again.
+# So A = NOT (L OR Ld) and S = L AND Ld, Ld the lever's signal L delayed by DELAY redstone ticks: A falls at once and
+# rises late, S rises late and falls at once. Four torches: A on a block L and Ld power; S on a block NOT L and
+# NOT Ld power. Every line is laid by mcb.router.
+# Signals: L the lever; Ld L delayed; NL, NLd their inverses; A the area shifters (NOT (L OR Ld)); S the line shifters (L AND Ld); a diode <out><<in>.
+size 24 13 28
+lever 5 1 11
+allow L Ld
+allow NL NLd
+fill visible 0 0 0 23 0 27 minecraft:grass_block
+fill visible 3 0 12 15 9 24 minecraft:stone_bricks
+fill visible 4 0 13 14 0 23 minecraft:sand
+fill visible 4 1 13 14 9 23 minecraft:air
+fill visible 4 1 13 14 8 23 minecraft:water
+fill visible 7 1 16 11 8 20 minecraft:glass
+fill visible 8 1 17 10 8 19 minecraft:light_blue_stained_glass
+visible 5 1 11 minecraft:lever[face=floor,facing=south,powered=false]
+hidden 4 0 11 minecraft:stone
+hidden 6 0 11 minecraft:stone
+hidden 5 0 10 minecraft:stone
+hidden 20 0 3 minecraft:stone
+hidden 20 1 3 minecraft:stone
+hidden 2 0 3 minecraft:stone
+hidden 2 1 3 minecraft:stone
+hidden 8 0 3 minecraft:stone
+hidden 8 1 3 minecraft:stone
+hidden 14 0 7 minecraft:stone
+hidden 14 1 7 minecraft:stone
+hidden 11 0 18 minecraft:stone
+hidden 3 0 11 minecraft:glass
+hidden 2 0 11 minecraft:glass
+hidden 1 0 11 minecraft:glass
+hidden 0 0 11 minecraft:glass
+hidden 0 0 10 minecraft:glass
+hidden 0 0 9 minecraft:glass
+hidden 0 0 8 minecraft:glass
+hidden 0 0 7 minecraft:glass
+hidden 0 0 6 minecraft:glass
+hidden 0 0 5 minecraft:glass
+hidden 0 0 4 minecraft:glass
+hidden 0 0 3 minecraft:glass
+hidden 0 0 2 minecraft:glass
+hidden 0 0 1 minecraft:glass
+hidden 1 0 1 minecraft:glass
+hidden 2 0 1 minecraft:glass
+hidden 2 0 2 minecraft:glass
+hidden 3 0 1 minecraft:glass
+hidden 4 1 1 minecraft:stone
+hidden 5 2 1 minecraft:stone
+hidden 6 2 1 minecraft:glass
+hidden 7 2 1 minecraft:glass
+hidden 8 2 1 minecraft:glass
+hidden 9 2 1 minecraft:stone
+hidden 10 1 1 minecraft:glass
+hidden 11 1 1 minecraft:glass
+hidden 12 1 1 minecraft:glass
+hidden 13 1 1 minecraft:glass
+hidden 14 1 1 minecraft:glass
+hidden 15 1 1 minecraft:stone
+hidden 16 0 1 minecraft:glass
+hidden 17 0 1 minecraft:glass
+hidden 18 0 1 minecraft:glass
+hidden 19 0 1 minecraft:glass
+hidden 20 0 1 minecraft:glass
+hidden 20 0 2 minecraft:glass
+hidden 7 0 11 minecraft:glass
+hidden 8 0 11 minecraft:glass
+hidden 9 1 11 minecraft:stone
+hidden 10 1 11 minecraft:glass
+hidden 11 2 11 minecraft:stone
+hidden 12 2 11 minecraft:glass
+hidden 13 2 11 minecraft:glass
+hidden 13 2 10 minecraft:glass
+hidden 13 2 9 minecraft:glass
+hidden 13 2 8 minecraft:glass
+hidden 13 2 7 minecraft:glass
+hidden 13 2 6 minecraft:glass
+hidden 13 2 5 minecraft:glass
+hidden 13 2 4 minecraft:stone
+hidden 13 1 3 minecraft:stone
+hidden 14 0 3 minecraft:glass
+hidden 15 0 3 minecraft:glass
+hidden 16 0 3 minecraft:glass
+hidden 17 0 3 minecraft:glass
+hidden 18 0 3 minecraft:glass
+hidden 19 0 3 minecraft:glass
+hidden 5 0 9 minecraft:glass
+hidden 5 0 8 minecraft:glass
+hidden 5 1 7 minecraft:stone
+hidden 5 1 6 minecraft:stone
+hidden 5 0 5 minecraft:glass
+hidden 5 0 4 minecraft:glass
+hidden 5 0 3 minecraft:glass
+hidden 6 0 3 minecraft:glass
+hidden 6 0 2 minecraft:glass
+hidden 6 0 1 minecraft:glass
+hidden 7 0 1 minecraft:glass
+hidden 8 0 1 minecraft:glass
+hidden 8 0 2 minecraft:glass
+hidden 2 0 5 minecraft:glass
+hidden 2 0 6 minecraft:glass
+hidden 2 1 7 minecraft:stone
+hidden 3 2 7 minecraft:stone
+hidden 4 3 7 minecraft:stone
+hidden 5 3 7 minecraft:glass
+hidden 6 3 7 minecraft:stone
+hidden 7 2 7 minecraft:glass
+hidden 8 2 7 minecraft:glass
+hidden 9 2 7 minecraft:glass
+hidden 10 2 7 minecraft:stone
+hidden 11 1 7 minecraft:stone
+hidden 12 0 7 minecraft:glass
+hidden 13 0 7 minecraft:glass
+hidden 8 0 5 minecraft:glass
+hidden 8 0 6 minecraft:glass
+hidden 9 0 6 minecraft:glass
+hidden 10 0 6 minecraft:glass
+hidden 10 0 5 minecraft:glass
+hidden 11 0 5 minecraft:glass
+hidden 12 0 5 minecraft:glass
+hidden 13 0 5 minecraft:glass
+hidden 14 0 5 minecraft:glass
+hidden 14 0 6 minecraft:glass
+hidden 14 0 9 minecraft:glass
+hidden 14 0 10 minecraft:glass
+hidden 14 0 11 minecraft:glass
+hidden 14 1 12 minecraft:stone
+hidden 14 2 13 minecraft:stone
+hidden 14 2 14 minecraft:glass
+hidden 14 2 15 minecraft:stone
+hidden 14 1 16 minecraft:stone
+hidden 14 0 17 minecraft:glass
+hidden 14 0 18 minecraft:glass
+hidden 13 0 18 minecraft:glass
+hidden 12 0 18 minecraft:glass
+hidden 20 0 5 minecraft:glass
+hidden 20 0 6 minecraft:glass
+hidden 20 0 7 minecraft:glass
+hidden 20 0 8 minecraft:glass
+hidden 20 0 9 minecraft:glass
+hidden 20 0 10 minecraft:glass
+hidden 20 0 11 minecraft:glass
+hidden 20 0 12 minecraft:glass
+hidden 20 0 13 minecraft:glass
+hidden 20 0 14 minecraft:glass
+hidden 19 0 14 minecraft:glass
+hidden 18 0 14 minecraft:glass
+hidden 17 0 14 minecraft:glass
+hidden 16 0 14 minecraft:glass
+hidden 15 0 14 minecraft:glass
+hidden 14 0 14 minecraft:glass
+hidden 13 0 14 minecraft:glass
+hidden 12 0 14 minecraft:glass
+hidden 11 0 14 minecraft:glass
+hidden 10 0 14 minecraft:glass
+hidden 9 0 14 minecraft:glass
+hidden 8 0 14 minecraft:glass
+hidden 7 0 14 minecraft:glass
+hidden 7 0 15 minecraft:glass
+hidden 11 0 15 minecraft:glass
+hidden 11 1 16 minecraft:stone
+hidden 11 2 17 minecraft:stone
+hidden 11 3 18 minecraft:stone
+hidden 11 4 19 minecraft:stone
+hidden 12 5 19 minecraft:stone
+hidden 13 6 19 minecraft:stone
+hidden 13 7 20 minecraft:stone
+hidden 12 7 20 minecraft:glass
+hidden 5 0 11 phasecraft:phase_port @L
+hidden 5 1 11 minecraft:redstone_wire[east=side,north=side,south=none,west=side] @L
+hidden 4 1 11 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @L
+hidden 6 1 11 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @L
+hidden 5 1 10 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @L
+hidden 20 1 4 minecraft:redstone_wall_torch[facing=south,lit=true] @A<L
+hidden 2 1 4 minecraft:redstone_wall_torch[facing=south,lit=true] @NL<L
+hidden 8 1 4 minecraft:redstone_wall_torch[facing=south,lit=true] @NLd<Ld
+hidden 14 1 8 minecraft:redstone_wall_torch[facing=south,lit=false] @S<NL
+hidden 8 0 17 phasecraft:line_shifter[delay=1,facing=up,powered=false] @S
+hidden 8 1 17 minecraft:redstone_wire[east=side,north=none,south=side,west=none] @S
+hidden 8 0 18 phasecraft:line_shifter[delay=1,facing=up,powered=false] @S
+hidden 8 1 18 minecraft:redstone_wire[east=side,north=side,south=side,west=none] @S
+hidden 8 0 19 phasecraft:line_shifter[delay=1,facing=up,powered=false] @S
+hidden 8 1 19 minecraft:redstone_wire[east=side,north=side,south=none,west=none] @S
+hidden 9 0 17 phasecraft:line_shifter[delay=1,facing=up,powered=false] @S
+hidden 9 1 17 minecraft:redstone_wire[east=side,north=none,south=side,west=side] @S
+hidden 9 0 18 phasecraft:line_shifter[delay=1,facing=up,powered=false] @S
+hidden 9 1 18 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @S
+hidden 9 0 19 phasecraft:line_shifter[delay=1,facing=up,powered=false] @S
+hidden 9 1 19 minecraft:redstone_wire[east=side,north=side,south=none,west=side] @S
+hidden 10 0 17 phasecraft:line_shifter[delay=1,facing=up,powered=false] @S
+hidden 10 1 17 minecraft:redstone_wire[east=none,north=none,south=side,west=side] @S
+hidden 10 0 18 phasecraft:line_shifter[delay=1,facing=up,powered=false] @S
+hidden 10 1 18 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @S
+hidden 10 0 19 phasecraft:line_shifter[delay=1,facing=up,powered=false] @S
+hidden 10 1 19 minecraft:redstone_wire[east=none,north=side,south=none,west=side] @S
+hidden 11 1 18 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @S
+hidden 3 1 11 minecraft:repeater[delay=1,facing=east] @L<L
+hidden 2 1 11 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @L
+hidden 1 1 11 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @L
+hidden 0 1 11 minecraft:redstone_wire[east=side,north=side,south=none,west=none] @L
+hidden 0 1 10 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @L
+hidden 0 1 9 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @L
+hidden 0 1 8 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @L
+hidden 0 1 7 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @L
+hidden 0 1 6 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @L
+hidden 0 1 5 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @L
+hidden 0 1 4 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @L
+hidden 0 1 3 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @L
+hidden 0 1 2 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @L
+hidden 0 1 1 minecraft:redstone_wire[east=side,north=none,south=side,west=none] @L
+hidden 1 1 1 minecraft:repeater[delay=1,facing=west] @L<L
+hidden 2 1 1 minecraft:redstone_wire[east=side,north=none,south=side,west=side] @L
+hidden 2 1 2 minecraft:repeater[delay=1,facing=north] @L<L
+hidden 3 1 1 minecraft:redstone_wire[east=up,north=none,south=none,west=side] @L
+hidden 4 2 1 minecraft:redstone_wire[east=up,north=none,south=none,west=side] @L
+hidden 5 3 1 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @L
+hidden 6 3 1 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @L
+hidden 7 3 1 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @L
+hidden 8 3 1 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @L
+hidden 9 3 1 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @L
+hidden 10 2 1 minecraft:redstone_wire[east=side,north=none,south=none,west=up] @L
+hidden 11 2 1 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @L
+hidden 12 2 1 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @L
+hidden 13 2 1 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @L
+hidden 14 2 1 minecraft:repeater[delay=1,facing=west] @L<L
+hidden 15 2 1 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @L
+hidden 16 1 1 minecraft:redstone_wire[east=side,north=none,south=none,west=up] @L
+hidden 17 1 1 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @L
+hidden 18 1 1 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @L
+hidden 19 1 1 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @L
+hidden 20 1 1 minecraft:redstone_wire[east=none,north=none,south=side,west=side] @L
+hidden 20 1 2 minecraft:repeater[delay=1,facing=north] @L<L
+hidden 7 1 11 minecraft:repeater[delay=4,facing=west] @Ld<L
+hidden 8 1 11 minecraft:redstone_wire[east=up,north=none,south=none,west=side] @Ld
+hidden 9 2 11 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @Ld
+hidden 10 2 11 minecraft:redstone_wire[east=up,north=none,south=none,west=side] @Ld
+hidden 11 3 11 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @Ld
+hidden 12 3 11 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @Ld
+hidden 13 3 11 minecraft:redstone_wire[east=none,north=side,south=none,west=side] @Ld
+hidden 13 3 10 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @Ld
+hidden 13 3 9 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @Ld
+hidden 13 3 8 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @Ld
+hidden 13 3 7 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @Ld
+hidden 13 3 6 minecraft:repeater[delay=4,facing=south] @Ld<Ld
+hidden 13 3 5 minecraft:repeater[delay=4,facing=south] @Ld<Ld
+hidden 13 3 4 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @Ld
+hidden 13 2 3 minecraft:redstone_wire[east=side,north=none,south=up,west=none] @Ld
+hidden 14 1 3 minecraft:redstone_wire[east=side,north=none,south=none,west=up] @Ld
+hidden 15 1 3 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @Ld
+hidden 16 1 3 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @Ld
+hidden 17 1 3 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @Ld
+hidden 18 1 3 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @Ld
+hidden 19 1 3 minecraft:repeater[delay=4,facing=west] @Ld<Ld
+hidden 5 1 9 minecraft:repeater[delay=4,facing=south] @Ld<L
+hidden 5 1 8 minecraft:redstone_wire[east=none,north=up,south=side,west=none] @Ld
+hidden 5 2 7 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @Ld
+hidden 5 2 6 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @Ld
+hidden 5 1 5 minecraft:redstone_wire[east=none,north=side,south=up,west=none] @Ld
+hidden 5 1 4 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @Ld
+hidden 5 1 3 minecraft:redstone_wire[east=side,north=none,south=side,west=none] @Ld
+hidden 6 1 3 minecraft:redstone_wire[east=none,north=side,south=none,west=side] @Ld
+hidden 6 1 2 minecraft:repeater[delay=4,facing=south] @Ld<Ld
+hidden 6 1 1 minecraft:redstone_wire[east=side,north=none,south=side,west=none] @Ld
+hidden 7 1 1 minecraft:repeater[delay=4,facing=west] @Ld<Ld
+hidden 8 1 1 minecraft:redstone_wire[east=none,north=none,south=side,west=side] @Ld
+hidden 8 1 2 minecraft:repeater[delay=4,facing=north] @Ld<Ld
+hidden 2 1 5 minecraft:repeater[delay=1,facing=north,powered=true] @NL<NL
+hidden 2 1 6 minecraft:redstone_wire[east=none,north=side,power=15,south=up,west=none] @NL
+hidden 2 2 7 minecraft:redstone_wire[east=up,north=side,power=14,south=none,west=none] @NL
+hidden 3 3 7 minecraft:redstone_wire[east=up,north=none,power=13,south=none,west=side] @NL
+hidden 4 4 7 minecraft:redstone_wire[east=side,north=none,power=12,south=none,west=side] @NL
+hidden 5 4 7 minecraft:redstone_wire[east=side,north=none,power=11,south=none,west=side] @NL
+hidden 6 4 7 minecraft:redstone_wire[east=side,north=none,power=10,south=none,west=side] @NL
+hidden 7 3 7 minecraft:redstone_wire[east=side,north=none,power=9,south=none,west=up] @NL
+hidden 8 3 7 minecraft:redstone_wire[east=side,north=none,power=8,south=none,west=side] @NL
+hidden 9 3 7 minecraft:redstone_wire[east=side,north=none,power=7,south=none,west=side] @NL
+hidden 10 3 7 minecraft:redstone_wire[east=side,north=none,power=6,south=none,west=side] @NL
+hidden 11 2 7 minecraft:redstone_wire[east=side,north=none,power=5,south=none,west=up] @NL
+hidden 12 1 7 minecraft:redstone_wire[east=side,north=none,power=4,south=none,west=up] @NL
+hidden 13 1 7 minecraft:repeater[delay=1,facing=west,powered=true] @NL<NL
+hidden 8 1 5 minecraft:repeater[delay=1,facing=north,powered=true] @NLd<NLd
+hidden 8 1 6 minecraft:redstone_wire[east=side,north=side,power=15,south=none,west=none] @NLd
+hidden 9 1 6 minecraft:redstone_wire[east=side,north=none,power=14,south=none,west=side] @NLd
+hidden 10 1 6 minecraft:redstone_wire[east=none,north=side,power=13,south=none,west=side] @NLd
+hidden 10 1 5 minecraft:redstone_wire[east=side,north=none,power=12,south=side,west=none] @NLd
+hidden 11 1 5 minecraft:redstone_wire[east=side,north=none,power=11,south=none,west=side] @NLd
+hidden 12 1 5 minecraft:redstone_wire[east=side,north=none,power=10,south=none,west=side] @NLd
+hidden 13 1 5 minecraft:redstone_wire[east=side,north=none,power=9,south=none,west=side] @NLd
+hidden 14 1 5 minecraft:redstone_wire[east=none,north=none,power=8,south=side,west=side] @NLd
+hidden 14 1 6 minecraft:repeater[delay=1,facing=north,powered=true] @NLd<NLd
+hidden 14 1 9 minecraft:repeater[delay=1,facing=north,powered=false] @S<S
+hidden 14 1 10 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @S
+hidden 14 1 11 minecraft:redstone_wire[east=none,north=side,south=up,west=none] @S
+hidden 14 2 12 minecraft:redstone_wire[east=none,north=side,south=up,west=none] @S
+hidden 14 3 13 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @S
+hidden 14 3 14 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @S
+hidden 14 3 15 minecraft:redstone_wire[east=none,north=side,south=side,west=none] @S
+hidden 14 2 16 minecraft:redstone_wire[east=none,north=up,south=side,west=none] @S
+hidden 14 1 17 minecraft:redstone_wire[east=none,north=up,south=side,west=none] @S
+hidden 14 1 18 minecraft:redstone_wire[east=none,north=side,south=none,west=side] @S
+hidden 13 1 18 minecraft:redstone_wire[east=side,north=none,south=none,west=side] @S
+hidden 12 1 18 minecraft:repeater[delay=1,facing=east,powered=false] @S<S
+hidden 20 1 5 minecraft:repeater[delay=1,facing=north,powered=true] @A<A
+hidden 20 1 6 minecraft:redstone_wire[east=none,north=side,power=15,south=side,west=none] @A
+hidden 20 1 7 minecraft:redstone_wire[east=none,north=side,power=14,south=side,west=none] @A
+hidden 20 1 8 minecraft:redstone_wire[east=none,north=side,power=13,south=side,west=none] @A
+hidden 20 1 9 minecraft:redstone_wire[east=none,north=side,power=12,south=side,west=none] @A
+hidden 20 1 10 minecraft:redstone_wire[east=none,north=side,power=11,south=side,west=none] @A
+hidden 20 1 11 minecraft:redstone_wire[east=none,north=side,power=10,south=side,west=none] @A
+hidden 20 1 12 minecraft:redstone_wire[east=none,north=side,power=9,south=side,west=none] @A
+hidden 20 1 13 minecraft:redstone_wire[east=none,north=side,power=8,south=side,west=none] @A
+hidden 20 1 14 minecraft:redstone_wire[east=none,north=side,power=7,south=none,west=side] @A
+hidden 19 1 14 minecraft:redstone_wire[east=side,north=none,power=6,south=none,west=side] @A
+hidden 18 1 14 minecraft:redstone_wire[east=side,north=none,power=5,south=none,west=side] @A
+hidden 17 1 14 minecraft:redstone_wire[east=side,north=none,power=4,south=none,west=side] @A
+hidden 16 1 14 minecraft:redstone_wire[east=side,north=none,power=3,south=none,west=side] @A
+hidden 15 1 14 minecraft:repeater[delay=1,facing=east,powered=true] @A<A
+hidden 14 1 14 minecraft:redstone_wire[east=side,north=none,power=15,south=none,west=side] @A
+hidden 13 1 14 minecraft:redstone_wire[east=side,north=none,power=14,south=none,west=side] @A
+hidden 12 1 14 minecraft:redstone_wire[east=side,north=none,power=13,south=none,west=side] @A
+hidden 11 1 14 minecraft:redstone_wire[east=side,north=none,power=12,south=side,west=side] @A
+hidden 10 1 14 minecraft:redstone_wire[east=side,north=none,power=11,south=none,west=side] @A
+hidden 9 1 14 minecraft:redstone_wire[east=side,north=none,power=10,south=none,west=side] @A
+hidden 8 1 14 minecraft:redstone_wire[east=side,north=none,power=9,south=none,west=side] @A
+hidden 7 1 14 minecraft:redstone_wire[east=side,north=none,power=8,south=side,west=none] @A
+hidden 7 1 15 minecraft:repeater[delay=1,facing=north,powered=true] @A<A
+hidden 11 1 15 minecraft:redstone_wire[east=none,north=side,power=11,south=up,west=none] @A
+hidden 11 2 16 minecraft:redstone_wire[east=none,north=side,power=10,south=up,west=none] @A
+hidden 11 3 17 minecraft:redstone_wire[east=none,north=side,power=9,south=up,west=none] @A
+hidden 11 4 18 minecraft:redstone_wire[east=none,north=side,power=8,south=up,west=none] @A
+hidden 11 5 19 minecraft:redstone_wire[east=up,north=side,power=7,south=none,west=none] @A
+hidden 12 6 19 minecraft:redstone_wire[east=up,north=none,power=6,south=none,west=side] @A
+hidden 13 7 19 minecraft:redstone_wire[east=none,north=none,power=5,south=up,west=side] @A
+hidden 13 8 20 minecraft:redstone_wire[east=none,north=side,power=4,south=none,west=side] @A
+hidden 12 8 20 minecraft:repeater[delay=1,facing=east,powered=true] @A<A
+hidden 7 1 16 phasecraft:area_shifter[delay=1,powered=false] @A
+hidden 11 8 20 phasecraft:area_shifter[delay=1,powered=false] @A
