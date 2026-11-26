@@ -4,13 +4,16 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.phasecraft.layer.HiddenDimensions;
 import dev.phasecraft.phased.PhasedItems;
+import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.Container;
 import net.minecraft.world.Containers;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.EntityBlock;
@@ -18,7 +21,11 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.piston.PistonBaseBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -92,19 +99,23 @@ public final class Shifting {
 
     /**
      * Puts a held block back at pos, breaking a visible block in its spot first (the person, 2026-11-24: "I think it
-     * should break the main world block"): it drops as if broken with no tool, contents included, silently. Returns
-     * false, changing nothing, while a mob or player stands there, the block there is unbreakable (bedrock, a moving
-     * piston...) or the spot is not loaded: the caller waits and tries again.
+     * should break the main world block"): it drops as if broken with no tool, contents included, silently. A mob or
+     * player in the way is lifted to stand on it, as a piston pushing up would move them (the person, 2026-11-26,
+     * choosing this over waiting). Returns false, changing nothing, while one in the way has no room above, the block
+     * there is unbreakable (bedrock, a moving piston...) or the spot is not loaded: the caller waits and tries again.
      */
     public static boolean putBack(ServerLevel visible, BlockPos pos, Held held) {
-        if (!visible.isLoaded(pos) || !visible.isUnobstructed(held.state(), pos, CollisionContext.empty())) {
+        if (!visible.isLoaded(pos)) {
             return false;
         }
         BlockState there = visible.getBlockState(pos);
+        if (!there.canBeReplaced() && there.getDestroySpeed(visible, pos) < 0.0F) {
+            return false;
+        }
+        if (!liftOutOfTheWay(visible, pos, held.state())) {
+            return false;
+        }
         if (!there.canBeReplaced()) {
-            if (there.getDestroySpeed(visible, pos) < 0.0F) {
-                return false;
-            }
             PhasedItems.silently(visible, () -> visible.destroyBlock(pos, true));
         }
         visible.setBlock(pos, Block.updateFromNeighbourShapes(held.state(), visible, pos), Block.UPDATE_ALL);
@@ -112,6 +123,34 @@ public final class Shifting {
         if (held.data() != null && contents != null) {
             contents.loadWithComponents(TagValueInput.create(ProblemReporter.DISCARDING, visible.registryAccess(), held.data()));
             contents.setChanged();
+        }
+        return true;
+    }
+
+    /**
+     * Lifts every mob or player (whatever blocks building, as {@code Level.isUnobstructed} counts them) whose box
+     * meets the block's collision shape at pos, to stand on the shape's top. False, lifting none, if one would not
+     * fit there (a ceiling above it), or stands lower than the block, only its head in the spot: it is never lifted
+     * through the block.
+     */
+    private static boolean liftOutOfTheWay(ServerLevel visible, BlockPos pos, BlockState state) {
+        VoxelShape shape = state.getCollisionShape(visible, pos, CollisionContext.empty());
+        if (shape.isEmpty()) {
+            return true;
+        }
+        VoxelShape at = shape.move(pos);
+        double top = at.max(Direction.Axis.Y);
+        List<Entity> inTheWay = visible.getEntities((Entity) null, at.bounds(), e -> !e.isRemoved() && e.blocksBuilding
+                && Shapes.joinIsNotEmpty(at, Shapes.create(e.getBoundingBox()), BooleanOp.AND));
+        for (Entity e : inTheWay) {
+            AABB lifted = e.getBoundingBox().move(0, top - e.getBoundingBox().minY, 0);
+            if (e.getBoundingBox().minY < at.min(Direction.Axis.Y) - 1.0E-7 || !visible.noCollision(e, lifted)) {
+                return false;
+            }
+        }
+        for (Entity e : inTheWay) {
+            e.teleportRelative(0, top - e.getBoundingBox().minY, 0);
+            e.resetFallDistance();
         }
         return true;
     }
