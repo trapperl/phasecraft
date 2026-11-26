@@ -1,0 +1,16 @@
+# The light-up dance floor (DanceFloorGameTests, examples station 31). Check with: python3 tools/redstone_check.py <this file>
+#
+# A 6 x 6 floor of redstone lamps (x 2..7, z 2..7, y = 1) in a blackstone border: each lamp lights while someone
+# stands on it, and goes out when they step off. No plate, wire or anything else shows: under each tile, in the
+# hidden layer, a pressure plate stands where the dancer's feet are (y = 2) on a phase block at the tile's spot
+# (y = 1), so it is pressed by visible players and mobs; it powers the phase block, which powers the phase port under
+# it (y = 0), which gives the power out in the visible world like an invisible redstone block there: the lamp above
+# it lights. Ports ignore each other, and a powered phase block powers no other tile's port (they are diagonal), so
+# each tile lights alone.
+size 10 4 10
+fill visible 0 0 0 9 0 9 minecraft:dirt
+fill visible 0 1 0 9 1 9 minecraft:polished_blackstone
+fill visible 2 1 2 7 1 7 minecraft:redstone_lamp[lit=false]
+fill hidden 2 0 2 7 0 7 phasecraft:phase_port
+fill hidden 2 1 2 7 1 7 phasecraft:phase_block
+fill hidden 2 2 2 7 2 7 minecraft:polished_blackstone_pressure_plate[powered=false]

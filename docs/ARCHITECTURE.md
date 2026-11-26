@@ -918,7 +918,24 @@ has such cells.
    - Broken on purpose: with the delayed lines' repeaters at 1 tick the
      filler goes before the walls are back and stays; without the wire into
      the line shifters the shaft never empties. Both fail the test.
-15. **Mob farm:** not a target yet; the person lists one among the showcase
+15. **Light-up dance floor: done** (`DanceFloorGameTests`, examples station
+   31, `contraptions/dance_floor.txt`; on the person's liked list). A 6 x 6
+   floor of redstone lamps in a blackstone border: each lamp lights while
+   someone stands on it and goes out a second after they step off, so a
+   dancer leaves a short trail. Nothing shows but the lamps.
+   - Per tile, three hidden blocks: a pressure plate where the feet are, on a
+     phase block at the lamp's spot (so it feels visible players and mobs),
+     and a phase port under that. The pressed plate strongly powers the phase
+     block (it conducts in the hidden layer; it only carries nothing across
+     layers), which powers the port, which gives the power out in the visible
+     world like an invisible redstone block under the lamp. 108 hidden
+     blocks, no wire.
+   - Each tile lights alone: a port's invisible redstone block touches only
+     the lamp above it (the others are diagonal), ports ignore each other,
+     and a powered phase block touches only its own port.
+   - Broken on purpose: without the ports, or on plain stone instead of
+     phase blocks, no lamp lights; both fail the test.
+16. **Mob farm:** not a target yet; the person lists one among the showcase
    builds (AGENTS.md).
 
 ## Validation status

@@ -309,6 +309,11 @@ flip it back and the sea closes over it. Two hidden area shifters bring the
 walls (and a filler) back into the water, and hidden line shifters under the
 sand take the filler out; closing, the same in reverse.
 
+Station 31 is a light-up dance floor (x = 614 to 619): walk on it and the lamps
+light under your feet, going out a second after you step off. Under each lamp
+a hidden pressure plate on a phase block feels you, and a hidden phase port
+lights the lamp; there is nothing else.
+
 ![A dark stone room lit by a glowstone hidden in its far wall](images/phased-light-room.png)
 
 Save and exit your test world, reopen it, and run `/phasecraft get` again to

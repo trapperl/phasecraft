@@ -1375,6 +1375,50 @@ def ocean_lever(on):
                         f"minecraft:lever[face=floor,facing=south,powered={str(on).lower()}]"])
 
 
+# Station 31: the light-up dance floor, built from its layout file (shared with DanceFloorGameTests). Lamps that
+# light under whoever stands on them; hidden plates on phase blocks feel the feet, hidden ports light the lamps.
+DANCE_LAYOUT = pathlib.Path(__file__).resolve().parent.parent / "src/gametest/resources/contraptions/dance_floor.txt"
+DANCE_ORIGIN = (612, Y - 2, 0)       # the layout's (0, 0, 0): its floor (y = 1) is level with the world's grass
+
+
+def dance_pos(x, y, z):
+    return (DANCE_ORIGIN[0] + x, DANCE_ORIGIN[1] + y, DANCE_ORIGIN[2] + z)
+
+
+def dance_commands():
+    a, b = dance_pos(0, 0, -2), dance_pos(9, 3, 9)       # from the sign's row
+    out = [in_dimension(HIDDEN_OVERWORLD, f"fill {coords(a)} {coords(b)} minecraft:air"),
+           f"kill @e[type=minecraft:pig,x={a[0]},y={a[1]},z={a[2]},dx=10,dy=4,dz=12]",
+           f"fill {a[0]} {a[1] + 2} {a[2]} {coords(b)} minecraft:air"]
+    placements, _ = read_layout(DANCE_LAYOUT)
+    for layer, p, q, block in placements:
+        command = (f"fill {coords(dance_pos(*p))} {coords(dance_pos(*q))} {block}" if p != q
+                   else f"setblock {coords(dance_pos(*p))} {block}")
+        out.append(in_dimension(HIDDEN_OVERWORLD, command) if layer == "hidden" else command)
+    out.append(sign((DANCE_ORIGIN[0] + 4, Y, SIGN_Z), ["31. Dance floor", "Step on it:", "the lamps light", "under your feet"]))
+    return out
+
+
+def dance_lit():
+    """The lit lamps, as (x, z) in layout space."""
+    tiles = [(x, z) for x in range(2, 8) for z in range(2, 8)]
+    replies = rcon.send_commands([f"phasecraft get {coords(dance_pos(x, 1, z))}" for x, z in tiles])
+    return [t for t, r in zip(tiles, replies) if "lit=true" in r.split("visible: ", 1)[1].split(" |")[0]]
+
+
+def dance_check():
+    """Lamps lit: nobody, a pig on tile (4, 5), and once it has gone."""
+    x, y, z = dance_pos(4, 2, 5)
+    seen = [("nobody", dance_lit())]
+    rcon.send_commands([f"summon minecraft:pig {x + 0.5} {y} {z + 0.5} {{NoAI:1b,Silent:1b,Tags:[\"dancer\"]}}"])
+    time.sleep(1)
+    seen.append(("a pig on 4,5", dance_lit()))
+    rcon.send_commands(["kill @e[tag=dancer]"])
+    time.sleep(2)
+    seen.append(("gone", dance_lit()))
+    return seen
+
+
 def flying_observer_commands():
     """The engine's two observers, sent a second after flying_commands(): placed in the same
     batch, the engine starts on its own. They are placed "strict" because a plain setblock
@@ -1415,6 +1459,8 @@ def build_commands():
         in_dimension(HIDDEN_OVERWORLD, "forceload add 560 -4 590 20"),
         "forceload add 580 -14 610 20",      # station 30, the hole in the ocean
         in_dimension(HIDDEN_OVERWORLD, "forceload add 580 -14 610 20"),
+        "forceload add 608 -4 626 12",       # station 31, the dance floor
+        in_dimension(HIDDEN_OVERWORLD, "forceload add 608 -4 626 12"),
         "gamerule phasecraft:area_shifters true",   # station 29 (off by default)
         # Clear the area (visible) and lay a path of andesite under the stations.
         "fill -4 -60 -8 54 -55 4 minecraft:air",
@@ -1461,6 +1507,7 @@ def build_commands():
     commands += tower_commands()
     commands += cottage_commands()
     commands += ocean_commands()
+    commands += dance_commands()
     for station in STATIONS:
         for dimension, pos, *_ in station["hidden"]:
             commands.append(in_dimension(dimension, f"phasecraft clear {coords(pos)}"))
@@ -1714,6 +1761,14 @@ def main():
     ocean_ok = [s for _, s in ocean_seen] == ["closed", "open", "closed"]
     ok &= ocean_ok
     print(f"{'ok ' if ocean_ok else 'BAD'} hole in the ocean: " + ", ".join(f"{name}: {state}" for name, state in ocean_seen))
+    try:
+        dance_seen = dance_check()
+    except rcon.RconError as error:
+        print(error, file=sys.stderr)
+        return 1
+    dance_ok = [lit for _, lit in dance_seen] == [[], [(4, 5)], []]
+    ok &= dance_ok
+    print(f"{'ok ' if dance_ok else 'BAD'} dance floor: " + ", ".join(f"{name}: {lit}" for name, lit in dance_seen))
     print("Examples built and verified." if ok else "Some examples did not build as expected.")
     return 0 if ok else 1
 
