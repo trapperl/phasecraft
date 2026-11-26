@@ -51,7 +51,7 @@ class Shot:
 
 
 def shots():
-    track_x0 = 716.5                      # the minecart track's west start rail (station 35)
+    track_x0 = 716.5                      # the plain rail beside the minecart track's west start rail (station 35)
     cart = "@e[type=minecraft:minecart,tag=trailer_cart,limit=1]"
     return [
         Shot("A round door that opens from the middle", 120, (228.5, -54, -13.5, 0, 0), (228.5, -54, -9.5, 0, 0),

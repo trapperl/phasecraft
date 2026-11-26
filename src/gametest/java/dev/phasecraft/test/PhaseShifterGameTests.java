@@ -9,6 +9,9 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.animal.golem.IronGolem;
 import net.minecraft.world.entity.animal.pig.Pig;
+import net.minecraft.world.entity.vehicle.minecart.Minecart;
+import net.minecraft.world.level.GameType;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
@@ -262,6 +265,86 @@ public class PhaseShifterGameTests {
                 .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.GOLD_BLOCK, SPOT))
                 .thenExecute(() -> helper.assertValueEqual(pig[0].getY(), (double) helper.absolutePos(SPOT).getY() + 1,
                         "the pig's feet"))
+                .thenSucceed();
+    }
+
+    /** A player standing in the spot is lifted onto the block, as a pig is (their client hears of it). */
+    @GameTest(maxTicks = 100)
+    public void liftsAPlayerInTheSpot(GameTestHelper helper) {
+        floor(helper);
+        helper.setBlock(SPOT, Blocks.GOLD_BLOCK);
+        shifter(helper, SPOT);
+        ServerPlayer[] player = new ServerPlayer[1];
+        BlockPos at = helper.absolutePos(SPOT);
+        helper.startSequence()
+                .thenExecute(() -> power(helper, SPOT, true))
+                .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.AIR, SPOT))
+                .thenExecute(() -> {
+                    player[0] = TestPlayers.join(helper, GameType.SURVIVAL);
+                    player[0].teleportTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
+                    power(helper, SPOT, false);
+                })
+                .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.GOLD_BLOCK, SPOT))
+                .thenExecute(() -> {
+                    helper.assertValueEqual(player[0].getY(), (double) at.getY() + 1, "the player's feet");
+                    TestPlayers.leave(helper, player[0]);
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * A spectator in the spot, a ceiling right over them: they are not lifted, and they do not hold the block up
+     * either (it comes back through them, as any block a spectator floats in).
+     */
+    @GameTest(maxTicks = 100)
+    public void aSpectatorIsLeftAloneAndDoesNotHoldTheBlockUp(GameTestHelper helper) {
+        floor(helper);
+        helper.setBlock(SPOT, Blocks.GOLD_BLOCK);
+        shifter(helper, SPOT);
+        ServerPlayer[] player = new ServerPlayer[1];
+        BlockPos at = helper.absolutePos(SPOT);
+        helper.startSequence()
+                .thenExecute(() -> power(helper, SPOT, true))
+                .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.AIR, SPOT))
+                .thenExecute(() -> {
+                    helper.setBlock(SPOT.above(), Blocks.STONE);
+                    player[0] = TestPlayers.join(helper, GameType.SPECTATOR);
+                    player[0].teleportTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
+                    power(helper, SPOT, false);
+                })
+                .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.GOLD_BLOCK, SPOT))
+                .thenExecute(() -> {
+                    helper.assertValueEqual(player[0].getY(), (double) at.getY(), "the spectator's feet");
+                    TestPlayers.leave(helper, player[0]);
+                })
+                .thenSucceed();
+    }
+
+    /** A minecart with a pig in it, in the spot: the cart is lifted onto the block and carries the pig up with it. */
+    @GameTest(maxTicks = 100)
+    public void aRiderGoesUpWithItsVehicle(GameTestHelper helper) {
+        floor(helper);
+        helper.setBlock(SPOT, Blocks.GOLD_BLOCK);
+        shifter(helper, SPOT);
+        Minecart[] cart = new Minecart[1];
+        Pig[] pig = new Pig[1];
+        BlockPos at = helper.absolutePos(SPOT);
+        helper.startSequence()
+                .thenExecute(() -> power(helper, SPOT, true))
+                .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.AIR, SPOT))
+                .thenExecute(() -> {
+                    cart[0] = helper.spawn(EntityTypes.MINECART, net.minecraft.world.phys.Vec3.atBottomCenterOf(SPOT));
+                    pig[0] = helper.spawnWithNoFreeWill(EntityTypes.PIG, SPOT);
+                    helper.assertTrue(pig[0].startRiding(cart[0]), "the pig got in");
+                })
+                .thenIdle(5)
+                .thenExecute(() -> power(helper, SPOT, false))
+                .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.GOLD_BLOCK, SPOT))
+                .thenExecute(() -> {
+                    helper.assertValueEqual(cart[0].getY(), (double) at.getY() + 1, "the cart's bottom");
+                    helper.assertTrue(pig[0].getVehicle() == cart[0], "the pig still in the cart");
+                    helper.assertTrue(pig[0].getY() >= cart[0].getY(), "the pig above the cart's bottom: " + pig[0].getY());
+                })
                 .thenSucceed();
     }
 

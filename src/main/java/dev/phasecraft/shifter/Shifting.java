@@ -128,10 +128,10 @@ public final class Shifting {
     }
 
     /**
-     * Lifts every mob or player (whatever blocks building, as {@code Level.isUnobstructed} counts them) whose box
-     * meets the block's collision shape at pos, to stand on the shape's top. False, lifting none, if one would not
-     * fit there (a ceiling above it), or stands lower than the block, only its head in the spot: it is never lifted
-     * through the block.
+     * Lifts every mob or player (whatever blocks building, spectators aside, as {@code Level.isUnobstructed} counts
+     * them) whose box meets the block's collision shape at pos, to stand on the shape's top. A rider is not lifted on
+     * its own: its vehicle, lifted, carries it. False, lifting none, if one would not fit there (a ceiling above it),
+     * or stands lower than the block, only its head in the spot: it is never lifted through the block.
      */
     private static boolean liftOutOfTheWay(ServerLevel visible, BlockPos pos, BlockState state) {
         VoxelShape shape = state.getCollisionShape(visible, pos, CollisionContext.empty());
@@ -141,6 +141,7 @@ public final class Shifting {
         VoxelShape at = shape.move(pos);
         double top = at.max(Direction.Axis.Y);
         List<Entity> inTheWay = visible.getEntities((Entity) null, at.bounds(), e -> !e.isRemoved() && e.blocksBuilding
+                && !e.isSpectator() && !e.isPassenger()
                 && Shapes.joinIsNotEmpty(at, Shapes.create(e.getBoundingBox()), BooleanOp.AND));
         for (Entity e : inTheWay) {
             AABB lifted = e.getBoundingBox().move(0, top - e.getBoundingBox().minY, 0);
@@ -149,8 +150,11 @@ public final class Shifting {
             }
         }
         for (Entity e : inTheWay) {
-            e.teleportRelative(0, top - e.getBoundingBox().minY, 0);
-            e.resetFallDistance();
+            double up = top - e.getBoundingBox().minY;
+            if (up > 0) {
+                e.teleportRelative(0, up, 0);
+                e.resetFallDistance();
+            }
         }
         return true;
     }
