@@ -944,11 +944,7 @@ All of these run on every `./gradlew build`, locally and in CI:
 
 - **JUnit** (`src/test`): `LayerCellStore` invariants (used by the old list).
 - **GameTests** (`src/gametest`, headless 26.3 server; a test-only mixin adds
-  data-pack dimensions, which vanilla's test server leaves out; another clears
-  the hidden layer with each test's box, as vanilla clears only the visible
-  blocks before a test and between batches, which reuse the same places: an
-  earlier batch's hidden redstone once stopped an area shifter test's corners
-  (`HiddenTestSpaceGameTests`)):
+  data-pack dimensions, which vanilla's test server leaves out):
   - a hidden block and a visible block coexist at the same XYZ;
   - breaking the visible block leaves the hidden block intact;
   - full block states are kept; vanilla rules apply (floating wire breaks);
