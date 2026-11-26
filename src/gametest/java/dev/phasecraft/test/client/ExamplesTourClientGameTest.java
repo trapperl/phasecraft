@@ -97,7 +97,11 @@ public class ExamplesTourClientGameTest implements FabricClientGameTest {
             new View("pixels", "656.5 -50 -4.5 0 0"),
             new View("pixels_drawing", "656.5 -50 -4.5 0 0",
                     "setblock 663 -54 9 minecraft:lever[face=floor,facing=north,powered=true]", 48),
-            new View("pixels_face", "656.5 -50 -4.5 0 0", null, 40));
+            new View("pixels_face", "656.5 -50 -4.5 0 0", null, 40),
+            // from the path, facing the altar; a gold nugget in the barrel brings the treasure out
+            new View("treasure", "693.5 -56 -1.5 0 20"),
+            new View("treasure_offered", "693.5 -56 -1.5 0 20",
+                    "item replace block 693 -60 6 container.13 with minecraft:gold_nugget", 20));
 
     @Override
     public void runTest(ClientGameTestContext context) {

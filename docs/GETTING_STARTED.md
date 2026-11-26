@@ -326,6 +326,11 @@ eyes first; flip it back and the face goes. A hidden phase shifter behind each
 of the face's 20 pixels takes the lime block, and the black behind shows
 through.
 
+Station 34 is a treasure reveal (x = 686 to 700, south of the path): put
+anything in the barrel on the altar and the treasure appears on the pedestals
+behind it; take the offering back out and it goes. A hidden comparator reads
+the barrel, and hidden phase shifters hold the treasure.
+
 ![A dark stone room lit by a glowstone hidden in its far wall](images/phased-light-room.png)
 
 Save and exit your test world, reopen it, and run `/phasecraft get` again to

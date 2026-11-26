@@ -127,6 +127,19 @@ class CheckTest(unittest.TestCase):
     def test_a_repeater_reading_an_or_takes_no_other_signal(self):
         self.assertEqual(len([line for line in self.joined("a") if "repeater at (1, 1, 2)" in line]), 2)
 
+    def test_a_phased_comparator_reads_the_visible_world(self):
+        # a comparator on a phase block reads the visible block behind it (nothing hidden there): an input
+        loud = self.report([
+            "hidden 1 0 0 phasecraft:phase_block", "hidden 1 1 0 minecraft:comparator[facing=north] @o",
+            "hidden 1 0 1 minecraft:glass", "hidden 1 1 1 minecraft:redstone_wire @o"])
+        self.assertEqual([line for line in loud if "(1, 1, 0)" in line], [])
+
+    def test_an_unphased_comparator_with_nothing_behind_it_is_unpowered(self):
+        loud = self.report([
+            "hidden 1 0 0 minecraft:stone", "hidden 1 1 0 minecraft:comparator[facing=north] @o",
+            "hidden 1 0 1 minecraft:glass", "hidden 1 1 1 minecraft:redstone_wire @o"])
+        self.assertEqual(len([line for line in loud if "UNPOWERED" in line and "(1, 1, 0)" in line]), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

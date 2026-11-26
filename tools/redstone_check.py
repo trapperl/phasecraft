@@ -256,6 +256,8 @@ def check(path):
                 got = {parts[src][2]}
             if k == "comparator" and layout.kind(src) in CONTAINERS:
                 got = {inputs.get(p, signal)}     # it reads the container's fill level: its own signal
+            if k == "comparator" and layout.kind(add(p, "down")) == "phase_block":
+                got = {inputs.get(p, signal)}     # phased: it reads the visible block behind it, an input
             if k == "comparator":
                 for side in HORIZONTAL:
                     if side not in (facing, OPPOSITE[facing]):
