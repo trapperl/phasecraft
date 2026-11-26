@@ -341,6 +341,14 @@ beside it: the track is laid across the chasm ahead of you and taken up
 behind you. Hidden shifter pistons hold each piece of the track; hidden strings
 at rail height sense the cart.
 
+Station 36 is a skeleton farm (x = 773 to 781, south of the path): a dark
+tower with a skeleton spawner in a room at its top. Climb the stairs around it
+to the gallery, watch through the window, and press the button: the room's
+floor is gone for a second, the skeletons fall to the tower's foot and die,
+and their bones and arrows turn up in the chest outside. The floor's
+machinery and the loot's way to the chest are hidden. (Spawners make nothing
+in Peaceful: set the difficulty to Easy or harder to see skeletons.)
+
 ![A dark stone room lit by a glowstone hidden in its far wall](images/phased-light-room.png)
 
 Save and exit your test world, reopen it, and run `/phasecraft get` again to

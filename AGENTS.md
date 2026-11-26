@@ -216,7 +216,10 @@ ocean (done, station 30: area shifters put glass walls and a filler back into
 the sea, hidden line shifters under the sand take the filler: dry and
 repeatable, no sponges; tools/gen_ocean.py), a
 sorting machine (done, station 27: a hidden hopper sorter, tools/gen_sorter.py;
-its four kinds the agent's choice, open to change), mob farms. A shifter
+its four kinds the agent's choice, open to change), mob farms (a skeleton
+farm, the person's choice, 2026-11-26: done, station 36: a button takes the
+spawner room's floor away, the fall kills, hidden hoppers fill a chest; the
+fall kill over XP the person's choice; tools/gen_skeleton.py). A shifter
 passes no power on, as a piston does not (the person, 2026-11-25: "Let's make
 the change, I think it opens up more building opportunities"), so every block
 of a one-block wall or tower can be fed on its own; a shifter still needs a free

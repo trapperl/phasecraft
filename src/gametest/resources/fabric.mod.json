@@ -42,6 +42,7 @@
       "dev.phasecraft.test.PixelWallGameTests",
       "dev.phasecraft.test.TreasureRevealGameTests",
       "dev.phasecraft.test.MinecartTrackGameTests",
+      "dev.phasecraft.test.SkeletonFarmGameTests",
       "dev.phasecraft.test.PhasedWatcherGameTests",
       "dev.phasecraft.test.PhasedItemGameTests",
       "dev.phasecraft.test.HiddenEditingGameTests",
