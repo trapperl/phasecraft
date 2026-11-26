@@ -92,7 +92,12 @@ public class ExamplesTourClientGameTest implements FabricClientGameTest {
             new View("lock_three_set", "634.5 -57.5 7.5 180 10",
                     "setblock 627 -59 0 minecraft:lever[face=wall,facing=south,powered=true]", 40),
             new View("lock_open", "634.5 -57.5 7.5 180 10",
-                    "setblock 640 -59 0 minecraft:lever[face=wall,facing=south,powered=true]", 50));
+                    "setblock 640 -59 0 minecraft:lever[face=wall,facing=south,powered=true]", 50),
+            // from the path, facing the lime wall; the face's steps come at 36, 44, 52 and 60 game ticks
+            new View("pixels", "656.5 -50 -4.5 0 0"),
+            new View("pixels_drawing", "656.5 -50 -4.5 0 0",
+                    "setblock 663 -54 9 minecraft:lever[face=floor,facing=north,powered=true]", 48),
+            new View("pixels_face", "656.5 -50 -4.5 0 0", null, 40));
 
     @Override
     public void runTest(ClientGameTestContext context) {

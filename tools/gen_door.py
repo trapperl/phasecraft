@@ -222,11 +222,12 @@ def place_unit(g, name, k, y, s, members, u, tx):
 
 
 def units(y):
-    """The row's runs of one ring, inner rings first."""
-    row = [x for x, yy in cells() if yy == y]
+    """The row's runs of one ring, inner rings first: next to each other, so a gap starts a new run (a run
+    shares one wire, which feeds only the blocks along it)."""
+    row = sorted(x for x, yy in cells() if yy == y)
     runs = []
     for x in row:
-        if runs and ring_of(runs[-1][-1], y) == ring_of(x, y):
+        if runs and runs[-1][-1] == x - 1 and ring_of(runs[-1][-1], y) == ring_of(x, y):
             runs[-1].append(x)
         else:
             runs.append([x])
@@ -573,6 +574,10 @@ def simulate(opens):
             rings.setdefault(D.ring(*door[p]), set()).add(t - t0)
             if v != (on != D.invert):
                 sys.exit(f"shifter at {p} switched the wrong way")
+        switched = {p for _, p, _, _ in sim.events}
+        if switched != set(door):
+            sys.exit(f"simulated {'opening' if on else 'closing'}: shifters that never switched: "
+                     f"{sorted(door[p] for p in set(door) - switched)}")
         want = {k: {2 * (opens + (k if on else D.top - k) * D.step)} for k in D.planes}
         if rings != want:
             sys.exit(f"simulated {'opening' if on else 'closing'}: {rings}, expected {want}")
