@@ -57,7 +57,8 @@
       "dev.phasecraft.test.client.PhasedLightClientGameTest",
       "dev.phasecraft.test.client.OverlayCacheClientGameTest",
       "dev.phasecraft.test.client.PhasePistonAnimationClientGameTest",
-      "dev.phasecraft.test.client.ExamplesTourClientGameTest"
+      "dev.phasecraft.test.client.ExamplesTourClientGameTest",
+      "dev.phasecraft.test.client.TrailerClientGameTest"
     ]
   },
   "depends": {
