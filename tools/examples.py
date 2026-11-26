@@ -1378,7 +1378,7 @@ def drop_cleanup_commands():
     (lanterns at the staircase's foot, whose sensors then felt them and stood the steps up with nobody there; over
     a thousand hidden redstone parts falling through the hidden layer's void). Sent with the late batch, once the
     build has settled, before the checks."""
-    box = "x=-20,y=-130,z=-40,dx=800,dy=200,dz=260"     # falling items may be far below
+    box = "x=-20,y=-130,z=-40,dx=820,dy=200,dz=260"     # falling items may be far below
     return [f"kill @e[type=minecraft:item,{box}]",
             in_dimension(HIDDEN_OVERWORLD, f"kill @e[type=minecraft:item,{box}]")]
 
@@ -1644,6 +1644,59 @@ def track_cart(column):
         commands.append(f"summon minecraft:minecart {x + 0.5} {y} {z + 0.5} {{NoGravity:1b,Tags:[\"pc_track\"]}}")
     rcon.send_commands(commands)
 
+# Station 36: the skeleton farm, built from its layout file (written by tools/gen_skeleton.py; shared with
+# SkeletonFarmGameTests). South of the path: a dark tower with a skeleton spawner in a room at its top; stairs wind up
+# to a gallery with a button that takes the room's floor away for a second. The skeletons fall to the tower's foot
+# and die; hidden hoppers and a hidden dropper bring their loot to the chest outside. (In Peaceful, the dev world's
+# difficulty, the spawner makes nothing: the check drops loot in by hand.)
+SKELETON_LAYOUT = pathlib.Path(__file__).resolve().parent.parent / "src/gametest/resources/contraptions/skeleton_farm.txt"
+SKELETON_ORIGIN = (770, -64, 4)    # layout (0, 0, 0); the generator's (0, 0, 0), the landing floor's middle, at (7, 3, 7)
+SKELETON_ROOM = 28
+
+
+def skeleton_pos(x, y, z):
+    """A world position from generator space."""
+    return (SKELETON_ORIGIN[0] + 7 + x, SKELETON_ORIGIN[1] + 3 + y, SKELETON_ORIGIN[2] + 7 + z)
+
+
+def skeleton_commands():
+    ox, oy, oz = SKELETON_ORIGIN
+    size = next(tuple(int(v) for v in line.split()[1:4]) for line in open(SKELETON_LAYOUT) if line.startswith("size "))
+    far = (ox + size[0] - 1, oy + size[1] - 1, oz + size[2] - 1)
+    out = [in_dimension(HIDDEN_OVERWORLD, f"fill {ox} {oy} {oz} {coords(far)} minecraft:air"),    # hidden first
+           f"fill {ox} {oy} {oz} {coords(far)} minecraft:air",
+           f"fill {ox} {oy} {oz} {far[0]} -62 {far[2]} minecraft:dirt",
+           clear_sign((ox + 4, Y, 1))]
+    placements, _ = read_layout(SKELETON_LAYOUT)
+    for layer, a, b, block in placements:
+        a = (ox + a[0], oy + a[1], oz + a[2])
+        b = (ox + b[0], oy + b[1], oz + b[2])
+        command = f"fill {coords(a)} {coords(b)} {block}" if a != b else f"setblock {coords(a)} {block}"
+        out.append(in_dimension(HIDDEN_OVERWORLD, command) if layer == "hidden" else command)
+    out.append(f"setblock {coords(skeleton_pos(0, SKELETON_ROOM + 2, 0))} "
+               'minecraft:spawner{SpawnData:{entity:{id:"minecraft:skeleton"}}}')
+    out.append(sign((ox + 4, Y, 1), ["36. Skeleton", "farm: up the", "stairs, press", "the button"]))
+    return out
+
+
+def skeleton_floor():
+    """How many of the room's 49 floor blocks are there."""
+    replies = rcon.send_commands([f"phasecraft get {coords(skeleton_pos(x, SKELETON_ROOM, z))}"
+                                  for x in range(-3, 4) for z in range(-3, 4)])
+    return sum(1 for r in replies if "visible: minecraft:deepslate_tiles" in r)
+
+
+def skeleton_button(on):
+    rcon.send_commands([f"setblock {coords(skeleton_pos(5, SKELETON_ROOM + 2, 3))} "
+                        f"minecraft:stone_button[face=wall,facing=east,powered={'true' if on else 'false'}]"])
+
+
+def skeleton_chest_bones():
+    reply = rcon.send_commands([f"data get block {coords(skeleton_pos(5, 1, 3))} Items"])[0]
+    items = re.findall(r"\{[^{}]*\}", reply)          # {count: 3, Slot: 0b, id: "minecraft:bone"}, ...
+    return sum(int(re.search(r"count: (\d+)", i).group(1)) for i in items if '"minecraft:bone"' in i)
+
+
 
 
 def flying_observer_commands():
@@ -1696,6 +1749,8 @@ def build_commands():
         in_dimension(HIDDEN_OVERWORLD, "forceload add 682 0 704 22"),
         "forceload add 710 0 764 34",        # station 35, the minecart track
         in_dimension(HIDDEN_OVERWORLD, "forceload add 710 0 764 34"),
+        "forceload add 768 2 788 20",        # station 36, the skeleton farm
+        in_dimension(HIDDEN_OVERWORLD, "forceload add 768 2 788 20"),
         "gamerule phasecraft:area_shifters true",   # station 29 (off by default)
         # Clear the area (visible) and lay a path of andesite under the stations.
         "fill -4 -60 -8 54 -55 4 minecraft:air",
@@ -1747,6 +1802,7 @@ def build_commands():
     commands += pixels_commands()
     commands += treasure_commands()
     commands += track_commands()
+    commands += skeleton_commands()
     for station in STATIONS:
         for dimension, pos, *_ in station["hidden"]:
             commands.append(in_dimension(dimension, f"phasecraft clear {coords(pos)}"))
@@ -2052,6 +2108,21 @@ def main():
     ok &= track_ok
     print(f"{'ok ' if track_ok else 'BAD'} minecart track (columns there): "
           + ", ".join(f"{name}: {t}" for name, t in track_seen))
+    try:
+        skeleton_seen = [("at rest", skeleton_floor())]
+        skeleton_button(True); time.sleep(1); skeleton_seen.append(("button on", skeleton_floor()))
+        skeleton_button(False); time.sleep(1); skeleton_seen.append(("button off", skeleton_floor()))
+        x, y, z = skeleton_pos(0, 1, 0)
+        rcon.send_commands([f'summon minecraft:item {x + 0.5} {y} {z + 0.5} {{Item:{{id:"minecraft:bone",count:3}}}}'])
+        time.sleep(8)                    # about 8 hoppers, an item every 8 game ticks each
+        bones = skeleton_chest_bones()
+    except rcon.RconError as error:
+        print(error, file=sys.stderr)
+        return 1
+    skeleton_ok = [n for _, n in skeleton_seen] == [49, 0, 49] and bones == 3
+    ok &= skeleton_ok
+    print(f"{'ok ' if skeleton_ok else 'BAD'} skeleton farm (floor blocks there, of 49): "
+          + ", ".join(f"{name}: {n}" for name, n in skeleton_seen) + f"; 3 bones dropped at the foot, in the chest: {bones}")
     print("Examples built and verified." if ok else "Some examples did not build as expected.")
     return 0 if ok else 1
 

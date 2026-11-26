@@ -1019,8 +1019,26 @@ has such cells.
      cart's column and the next are there and nothing more than 6 ahead.
    - Broken on purpose: slower line shifters (delay 4) leave the column ahead
      of the cart missing; a reach of 8 shows columns too far ahead.
-20. **Mob farm:** not a target yet; the person lists one among the showcase
-   builds (AGENTS.md).
+20. **Skeleton farm: done** (`SkeletonFarmGameTests`, examples station 36,
+   `tools/gen_skeleton.py`; the person chose a skeleton farm, and that the
+   fall kills, over XP). A dark tower with a skeleton spawner in a 7 x 7 room
+   at its top; stairs wind up its outside to a gallery with a window of
+   tinted glass (it lets no light into the room) and a button. Pressed, the
+   room's floor is gone for a second: the skeletons fall 28 blocks to the lit
+   floor at the tower's foot (25 damage, 20 health) and die. 206 hidden
+   blocks, nothing in the shaft.
+   - The floor: a phase shifter at each of its 49 blocks, a grid of wire on
+     them (C16); a phase port at the wall block the button hangs on brings
+     its power down a wire into the grid.
+   - The loot: a phased hopper under each landing block pulls what lands on
+     it; the hoppers pass it east, then south, out under the wall into a
+     phased dropper facing up under the chest, fired by an observer clock
+     (as in the sorting machine).
+   - Broken on purpose: plain stone instead of the phase blocks leaves the
+     chest empty; without the port the skeletons never fall.
+   - The dev world is Peaceful, where a spawner makes nothing: the examples
+     check opens the floor and drops loot in by hand; the GameTest drops real
+     skeletons.
 
 ## Validation status
 

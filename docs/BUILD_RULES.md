@@ -9,7 +9,7 @@ Tools: `tools/redstone_check.py` (static: which signal reaches each part), `tool
 `mcb.redstone`, checked tick by tick against the real game; the router; shapes), the generators
 (`tools/gen_door.py` and its configs, `tools/gen_path.py`, `tools/gen_sorter.py`, `tools/gen_tower.py`,
 `tools/gen_ocean.py`, `tools/gen_lock.py`, `tools/gen_pixels.py`, `tools/gen_treasure.py`,
-`tools/gen_track.py`), GameTests, `tools/examples.py`.
+`tools/gen_track.py`, `tools/gen_skeleton.py`), GameTests, `tools/examples.py`.
 
 ## 1. What a build must do
 

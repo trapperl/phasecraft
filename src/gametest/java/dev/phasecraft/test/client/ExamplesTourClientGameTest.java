@@ -105,7 +105,10 @@ public class ExamplesTourClientGameTest implements FabricClientGameTest {
             // from above the north cliff, looking along the chasm: empty; a cart (held at rail height) over the
             // middle brings out the track around it
             new View("track", "736.5 -46 8.5 0 35"),
-            new View("track_cart", "736.5 -46 8.5 0 35", "summon minecraft:minecart 737.5 -54 20.5 {NoGravity:1b}", 20));
+            new View("track_cart", "736.5 -46 8.5 0 35", "summon minecraft:minecart 737.5 -54 20.5 {NoGravity:1b}", 20),
+            // the skeleton farm's tower from the path, and its gallery: the window into the spawner room, the button
+            new View("skeleton_tower", "777.5 -46 -16 0 -8"),
+            new View("skeleton_gallery", "784.5 -32 12.5 100 10"));
 
     @Override
     public void runTest(ClientGameTestContext context) {

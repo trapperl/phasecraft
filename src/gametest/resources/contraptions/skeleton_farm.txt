@@ -1,0 +1,282 @@
+# Written by tools/gen_skeleton.py; change the generator and run it again.
+# The skeleton farm: a dark tower with a skeleton spawner in a room at its top. Press the button in the gallery
+# outside the room and the room's floor is gone for a second: every skeleton in it falls down the tower to the lit
+# floor at its foot and dies of the fall, and their bones and arrows turn up in a chest by the tower's door. No water,
+# no visible redstone, nothing in the shaft: the floor's machinery and the loot's way to the chest are hidden.
+#
+# Writes src/gametest/resources/contraptions/skeleton_farm.txt and its GameTest area, and checks the floor's wiring in
+# tools/mcb's redstone simulator. The spawner is placed by tools/examples.py (a layout line carries no spawner data):
+# in the GameTest the room is fed skeletons by hand.
+#
+# Generator space: the shaft's inside is x, z = -3..3; the walls are at |x| = 4 or |z| = 4; the landing floor at y = 0,
+# the room's floor at y = ROOM. Hidden, all of it:
+# - Under each of the room's 49 floor blocks a phase shifter at its spot, with a grid of wire on top of them (a wire
+#   powers the block it stands on: the only way into the middle ones, C16).
+# - The button hangs on the gallery side of the tower's wall; a phase port at that wall block brings its power into the
+#   hidden layer, down a wire into the grid's corner. Pressed, every shifter holds its floor block: the floor is gone
+#   while the button is on (a stone button: a second).
+# - Under each of the landing floor's 49 blocks a phased hopper (on a phase block) pulls what lands on it; they pass
+#   it east, then south, out under the wall, into a phased dropper facing up under the chest, which a clock (two
+#   observers watching each other) fires, as in the sorting machine (station 27).
+# Signals: B the button (the port, the wire, the floor's shifters); K the dropper's clock.
+size 17 38 15
+fill visible 0 3 0 16 3 14 minecraft:grass_block
+fill visible 3 3 3 11 36 11 minecraft:deepslate_bricks
+fill visible 4 4 4 10 30 10 minecraft:air
+fill visible 4 32 4 10 35 10 minecraft:air
+fill visible 4 3 4 10 3 10 minecraft:polished_deepslate
+fill visible 4 31 4 10 31 10 minecraft:deepslate_tiles
+visible 7 4 11 minecraft:shroomlight
+visible 7 4 3 minecraft:shroomlight
+visible 11 4 7 minecraft:shroomlight
+visible 3 4 7 minecraft:shroomlight
+visible 7 33 7 minecraft:spawner
+fill visible 11 33 6 11 34 8 minecraft:tinted_glass
+fill visible 12 31 3 14 31 11 minecraft:polished_deepslate
+visible 13 32 2 minecraft:deepslate_brick_wall
+visible 13 32 12 minecraft:deepslate_brick_wall
+visible 14 32 2 minecraft:deepslate_brick_wall
+visible 14 32 12 minecraft:deepslate_brick_wall
+visible 15 32 2 minecraft:deepslate_brick_wall
+visible 15 32 12 minecraft:deepslate_brick_wall
+visible 12 32 12 minecraft:deepslate_brick_wall
+fill visible 15 32 3 15 32 11 minecraft:deepslate_brick_wall
+fill visible 12 31 2 15 31 2 minecraft:polished_deepslate
+fill visible 12 31 12 15 31 12 minecraft:polished_deepslate
+fill visible 15 31 3 15 31 11 minecraft:polished_deepslate
+visible 12 33 10 minecraft:stone_button[face=wall,facing=east,powered=false]
+visible 9 4 12 minecraft:deepslate_brick_stairs[facing=west]
+visible 8 5 12 minecraft:deepslate_brick_stairs[facing=west]
+visible 7 6 12 minecraft:deepslate_brick_stairs[facing=west]
+visible 6 7 12 minecraft:deepslate_brick_stairs[facing=west]
+visible 5 8 12 minecraft:deepslate_brick_stairs[facing=west]
+visible 4 9 12 minecraft:deepslate_brick_stairs[facing=west]
+visible 3 10 12 minecraft:deepslate_brick_stairs[facing=west]
+visible 2 11 12 minecraft:deepslate_brick_stairs[facing=north]
+visible 2 12 11 minecraft:deepslate_brick_stairs[facing=north]
+visible 2 13 10 minecraft:deepslate_brick_stairs[facing=north]
+visible 2 14 9 minecraft:deepslate_brick_stairs[facing=north]
+visible 2 15 8 minecraft:deepslate_brick_stairs[facing=north]
+visible 2 16 7 minecraft:deepslate_brick_stairs[facing=north]
+visible 2 17 6 minecraft:deepslate_brick_stairs[facing=north]
+visible 2 18 5 minecraft:deepslate_brick_stairs[facing=north]
+visible 2 19 4 minecraft:deepslate_brick_stairs[facing=north]
+visible 2 20 3 minecraft:deepslate_brick_stairs[facing=north]
+visible 2 21 2 minecraft:deepslate_brick_stairs[facing=east]
+visible 3 22 2 minecraft:deepslate_brick_stairs[facing=east]
+visible 4 23 2 minecraft:deepslate_brick_stairs[facing=east]
+visible 5 24 2 minecraft:deepslate_brick_stairs[facing=east]
+visible 6 25 2 minecraft:deepslate_brick_stairs[facing=east]
+visible 7 26 2 minecraft:deepslate_brick_stairs[facing=east]
+visible 8 27 2 minecraft:deepslate_brick_stairs[facing=east]
+visible 9 28 2 minecraft:deepslate_brick_stairs[facing=east]
+visible 10 29 2 minecraft:deepslate_brick_stairs[facing=east]
+visible 11 30 2 minecraft:deepslate_brick_stairs[facing=east]
+visible 12 31 2 minecraft:deepslate_brick_stairs[facing=south]
+visible 12 4 10 minecraft:chest[facing=east]
+hidden 4 31 4 phasecraft:phase_shifter[powered=false] @B
+hidden 4 31 5 phasecraft:phase_shifter[powered=false] @B
+hidden 4 31 6 phasecraft:phase_shifter[powered=false] @B
+hidden 4 31 7 phasecraft:phase_shifter[powered=false] @B
+hidden 4 31 8 phasecraft:phase_shifter[powered=false] @B
+hidden 4 31 9 phasecraft:phase_shifter[powered=false] @B
+hidden 4 31 10 phasecraft:phase_shifter[powered=false] @B
+hidden 5 31 4 phasecraft:phase_shifter[powered=false] @B
+hidden 5 31 5 phasecraft:phase_shifter[powered=false] @B
+hidden 5 31 6 phasecraft:phase_shifter[powered=false] @B
+hidden 5 31 7 phasecraft:phase_shifter[powered=false] @B
+hidden 5 31 8 phasecraft:phase_shifter[powered=false] @B
+hidden 5 31 9 phasecraft:phase_shifter[powered=false] @B
+hidden 5 31 10 phasecraft:phase_shifter[powered=false] @B
+hidden 6 31 4 phasecraft:phase_shifter[powered=false] @B
+hidden 6 31 5 phasecraft:phase_shifter[powered=false] @B
+hidden 6 31 6 phasecraft:phase_shifter[powered=false] @B
+hidden 6 31 7 phasecraft:phase_shifter[powered=false] @B
+hidden 6 31 8 phasecraft:phase_shifter[powered=false] @B
+hidden 6 31 9 phasecraft:phase_shifter[powered=false] @B
+hidden 6 31 10 phasecraft:phase_shifter[powered=false] @B
+hidden 7 31 4 phasecraft:phase_shifter[powered=false] @B
+hidden 7 31 5 phasecraft:phase_shifter[powered=false] @B
+hidden 7 31 6 phasecraft:phase_shifter[powered=false] @B
+hidden 7 31 7 phasecraft:phase_shifter[powered=false] @B
+hidden 7 31 8 phasecraft:phase_shifter[powered=false] @B
+hidden 7 31 9 phasecraft:phase_shifter[powered=false] @B
+hidden 7 31 10 phasecraft:phase_shifter[powered=false] @B
+hidden 8 31 4 phasecraft:phase_shifter[powered=false] @B
+hidden 8 31 5 phasecraft:phase_shifter[powered=false] @B
+hidden 8 31 6 phasecraft:phase_shifter[powered=false] @B
+hidden 8 31 7 phasecraft:phase_shifter[powered=false] @B
+hidden 8 31 8 phasecraft:phase_shifter[powered=false] @B
+hidden 8 31 9 phasecraft:phase_shifter[powered=false] @B
+hidden 8 31 10 phasecraft:phase_shifter[powered=false] @B
+hidden 9 31 4 phasecraft:phase_shifter[powered=false] @B
+hidden 9 31 5 phasecraft:phase_shifter[powered=false] @B
+hidden 9 31 6 phasecraft:phase_shifter[powered=false] @B
+hidden 9 31 7 phasecraft:phase_shifter[powered=false] @B
+hidden 9 31 8 phasecraft:phase_shifter[powered=false] @B
+hidden 9 31 9 phasecraft:phase_shifter[powered=false] @B
+hidden 9 31 10 phasecraft:phase_shifter[powered=false] @B
+hidden 10 31 4 phasecraft:phase_shifter[powered=false] @B
+hidden 10 31 5 phasecraft:phase_shifter[powered=false] @B
+hidden 10 31 6 phasecraft:phase_shifter[powered=false] @B
+hidden 10 31 7 phasecraft:phase_shifter[powered=false] @B
+hidden 10 31 8 phasecraft:phase_shifter[powered=false] @B
+hidden 10 31 9 phasecraft:phase_shifter[powered=false] @B
+hidden 10 31 10 phasecraft:phase_shifter[powered=false] @B
+hidden 4 32 4 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 4 32 5 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 4 32 6 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 4 32 7 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 4 32 8 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 4 32 9 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 4 32 10 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 5 32 4 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 5 32 5 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 5 32 6 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 5 32 7 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 5 32 8 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 5 32 9 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 5 32 10 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 6 32 4 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 6 32 5 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 6 32 6 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 6 32 7 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 6 32 8 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 6 32 9 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 6 32 10 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 7 32 4 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 7 32 5 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 7 32 6 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 7 32 7 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 7 32 8 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 7 32 9 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 7 32 10 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 8 32 4 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 8 32 5 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 8 32 6 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 8 32 7 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 8 32 8 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 8 32 9 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 8 32 10 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 9 32 4 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 9 32 5 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 9 32 6 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 9 32 7 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 9 32 8 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 9 32 9 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 9 32 10 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 10 32 4 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 10 32 5 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 10 32 6 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 10 32 7 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 10 32 8 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 10 32 9 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 10 32 10 minecraft:redstone_wire[east=side,north=side,south=side,west=side] @B
+hidden 11 31 10 minecraft:stone
+hidden 11 32 10 minecraft:redstone_wire[east=none,north=none,south=none,west=side] @B
+hidden 11 33 10 phasecraft:phase_port @B
+hidden 4 2 4 phasecraft:phase_block
+hidden 4 2 5 phasecraft:phase_block
+hidden 4 2 6 phasecraft:phase_block
+hidden 4 2 7 phasecraft:phase_block
+hidden 4 2 8 phasecraft:phase_block
+hidden 4 2 9 phasecraft:phase_block
+hidden 4 2 10 phasecraft:phase_block
+hidden 5 2 4 phasecraft:phase_block
+hidden 5 2 5 phasecraft:phase_block
+hidden 5 2 6 phasecraft:phase_block
+hidden 5 2 7 phasecraft:phase_block
+hidden 5 2 8 phasecraft:phase_block
+hidden 5 2 9 phasecraft:phase_block
+hidden 5 2 10 phasecraft:phase_block
+hidden 6 2 4 phasecraft:phase_block
+hidden 6 2 5 phasecraft:phase_block
+hidden 6 2 6 phasecraft:phase_block
+hidden 6 2 7 phasecraft:phase_block
+hidden 6 2 8 phasecraft:phase_block
+hidden 6 2 9 phasecraft:phase_block
+hidden 6 2 10 phasecraft:phase_block
+hidden 7 2 4 phasecraft:phase_block
+hidden 7 2 5 phasecraft:phase_block
+hidden 7 2 6 phasecraft:phase_block
+hidden 7 2 7 phasecraft:phase_block
+hidden 7 2 8 phasecraft:phase_block
+hidden 7 2 9 phasecraft:phase_block
+hidden 7 2 10 phasecraft:phase_block
+hidden 8 2 4 phasecraft:phase_block
+hidden 8 2 5 phasecraft:phase_block
+hidden 8 2 6 phasecraft:phase_block
+hidden 8 2 7 phasecraft:phase_block
+hidden 8 2 8 phasecraft:phase_block
+hidden 8 2 9 phasecraft:phase_block
+hidden 8 2 10 phasecraft:phase_block
+hidden 9 2 4 phasecraft:phase_block
+hidden 9 2 5 phasecraft:phase_block
+hidden 9 2 6 phasecraft:phase_block
+hidden 9 2 7 phasecraft:phase_block
+hidden 9 2 8 phasecraft:phase_block
+hidden 9 2 9 phasecraft:phase_block
+hidden 9 2 10 phasecraft:phase_block
+hidden 10 2 4 phasecraft:phase_block
+hidden 10 2 5 phasecraft:phase_block
+hidden 10 2 6 phasecraft:phase_block
+hidden 10 2 7 phasecraft:phase_block
+hidden 10 2 8 phasecraft:phase_block
+hidden 10 2 9 phasecraft:phase_block
+hidden 10 2 10 phasecraft:phase_block
+hidden 4 3 4 minecraft:hopper[enabled=true,facing=east]
+hidden 4 3 5 minecraft:hopper[enabled=true,facing=east]
+hidden 4 3 6 minecraft:hopper[enabled=true,facing=east]
+hidden 4 3 7 minecraft:hopper[enabled=true,facing=east]
+hidden 4 3 8 minecraft:hopper[enabled=true,facing=east]
+hidden 4 3 9 minecraft:hopper[enabled=true,facing=east]
+hidden 4 3 10 minecraft:hopper[enabled=true,facing=east]
+hidden 5 3 4 minecraft:hopper[enabled=true,facing=east]
+hidden 5 3 5 minecraft:hopper[enabled=true,facing=east]
+hidden 5 3 6 minecraft:hopper[enabled=true,facing=east]
+hidden 5 3 7 minecraft:hopper[enabled=true,facing=east]
+hidden 5 3 8 minecraft:hopper[enabled=true,facing=east]
+hidden 5 3 9 minecraft:hopper[enabled=true,facing=east]
+hidden 5 3 10 minecraft:hopper[enabled=true,facing=east]
+hidden 6 3 4 minecraft:hopper[enabled=true,facing=east]
+hidden 6 3 5 minecraft:hopper[enabled=true,facing=east]
+hidden 6 3 6 minecraft:hopper[enabled=true,facing=east]
+hidden 6 3 7 minecraft:hopper[enabled=true,facing=east]
+hidden 6 3 8 minecraft:hopper[enabled=true,facing=east]
+hidden 6 3 9 minecraft:hopper[enabled=true,facing=east]
+hidden 6 3 10 minecraft:hopper[enabled=true,facing=east]
+hidden 7 3 4 minecraft:hopper[enabled=true,facing=east]
+hidden 7 3 5 minecraft:hopper[enabled=true,facing=east]
+hidden 7 3 6 minecraft:hopper[enabled=true,facing=east]
+hidden 7 3 7 minecraft:hopper[enabled=true,facing=east]
+hidden 7 3 8 minecraft:hopper[enabled=true,facing=east]
+hidden 7 3 9 minecraft:hopper[enabled=true,facing=east]
+hidden 7 3 10 minecraft:hopper[enabled=true,facing=east]
+hidden 8 3 4 minecraft:hopper[enabled=true,facing=east]
+hidden 8 3 5 minecraft:hopper[enabled=true,facing=east]
+hidden 8 3 6 minecraft:hopper[enabled=true,facing=east]
+hidden 8 3 7 minecraft:hopper[enabled=true,facing=east]
+hidden 8 3 8 minecraft:hopper[enabled=true,facing=east]
+hidden 8 3 9 minecraft:hopper[enabled=true,facing=east]
+hidden 8 3 10 minecraft:hopper[enabled=true,facing=east]
+hidden 9 3 4 minecraft:hopper[enabled=true,facing=east]
+hidden 9 3 5 minecraft:hopper[enabled=true,facing=east]
+hidden 9 3 6 minecraft:hopper[enabled=true,facing=east]
+hidden 9 3 7 minecraft:hopper[enabled=true,facing=east]
+hidden 9 3 8 minecraft:hopper[enabled=true,facing=east]
+hidden 9 3 9 minecraft:hopper[enabled=true,facing=east]
+hidden 9 3 10 minecraft:hopper[enabled=true,facing=east]
+hidden 10 3 4 minecraft:hopper[enabled=true,facing=south]
+hidden 10 3 5 minecraft:hopper[enabled=true,facing=south]
+hidden 10 3 6 minecraft:hopper[enabled=true,facing=south]
+hidden 10 3 7 minecraft:hopper[enabled=true,facing=south]
+hidden 10 3 8 minecraft:hopper[enabled=true,facing=south]
+hidden 10 3 9 minecraft:hopper[enabled=true,facing=south]
+hidden 10 3 10 minecraft:hopper[enabled=true,facing=east]
+hidden 11 3 10 minecraft:hopper[enabled=true,facing=east]
+hidden 12 2 10 phasecraft:phase_block
+hidden 12 3 10 minecraft:dropper[facing=up,triggered=false]
+hidden 13 1 10 minecraft:stone
+hidden 13 2 10 minecraft:repeater[delay=1,facing=east,powered=false] @K
+hidden 14 2 10 minecraft:observer[facing=east,powered=false] @K
+hidden 15 2 10 minecraft:observer[facing=west,powered=false] @K
