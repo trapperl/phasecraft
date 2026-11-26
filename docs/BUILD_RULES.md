@@ -108,7 +108,10 @@ Tools: `tools/redstone_check.py` (static: which signal reaches each part), `tool
   places such parts a second later (the ocean's corners, the flying machine's observers). Checked by: the examples
   script's checks.
 - **C17. Area shifters pair with the nearest corner within 15: keep other corners further away**, other builds'
-  and other GameTests' too (tests in a batch stand about 5 blocks apart: area shifter tests use 24-wide areas).
+  and other GameTests' too. The GameTest server lays every test on one grid, batch after batch: 5 blocks between
+  tests in a row, 6 between rows. So a test with area shifters gets an area large enough that its corners, plus
+  the gap, plus a neighbour's, make 16 or more: the area shifter tests use 24 x 24 areas, the hole in the ocean
+  24 x 32 (its high corner was 15 blocks from the next row's corners, and an area shifter test there failed).
   Lesson: the area shifter's own tests paired with each other's huts. Checked by: `AreaShifterGameTests`.
 
 ## 3. Size
