@@ -1269,6 +1269,65 @@ def tower_lever(on):
                         f"minecraft:lever[face=floor,facing=north,powered={str(on).lower()}]"])
 
 
+# Station 29: the vanishing cottage, built from its layout file (shared with VanishingCottageGameTests). Two hidden
+# area shifters at opposite corners take the whole cottage out of the visible world when its lever (north of the
+# doorway) is flipped, roof first, and build it back from the floor. Needs the game rule phasecraft:area_shifters
+# (off by default; the dev world turns it on).
+COTTAGE_LAYOUT = pathlib.Path(__file__).resolve().parent.parent / "src/gametest/resources/contraptions/vanishing_cottage.txt"
+COTTAGE_ORIGIN = (566, Y - 1, 0)     # the layout's (0, 0, 0): its ground is the world's grass
+COTTAGE_BOX = ((3, 1, 3), (9, 5, 9))
+
+
+def cottage_pos(x, y, z):
+    return (COTTAGE_ORIGIN[0] + x, COTTAGE_ORIGIN[1] + y, COTTAGE_ORIGIN[2] + z)
+
+
+def cottage_commands():
+    a, b = cottage_pos(0, 0, -3), cottage_pos(12, 6, 11)    # from the sign's row
+    # hidden first: removing a corner puts back what the pair holds, then it is cleared
+    out = [in_dimension(HIDDEN_OVERWORLD, f"fill {coords(a)} {coords(b)} minecraft:air"),
+           f"fill {a[0]} {a[1] + 1} {a[2]} {coords(b)} minecraft:air"]
+    placements, _ = read_layout(COTTAGE_LAYOUT)
+    for layer, p, q, block in placements:
+        command = (f"fill {coords(cottage_pos(*p))} {coords(cottage_pos(*q))} {block}" if p != q
+                   else f"setblock {coords(cottage_pos(*p))} {block}")
+        out.append(in_dimension(HIDDEN_OVERWORLD, command) if layer == "hidden" else command)
+    for raw in open(COTTAGE_LAYOUT):
+        words = raw.split("#", 1)[0].split()
+        if words[:2] == ["items", "visible"]:
+            pos = coords(cottage_pos(*(int(v) for v in words[2:5])))
+            for slot, spec in enumerate(words[5:]):
+                item, _, count = spec.rpartition("*")
+                out.append(f"item replace block {pos} container.{slot} with {item} {count}")
+    out.append(sign((COTTAGE_ORIGIN[0] + 4, Y, SIGN_Z), ["29. Vanishing", "cottage: flip", "the lever, the", "house is gone"]))
+    return out
+
+
+def cottage_state():
+    """'standing', 'gone' or how many of its blocks stand."""
+    placements, _ = read_layout(COTTAGE_LAYOUT)
+    (x0, y0, z0), (x1, y1, z1) = COTTAGE_BOX
+    cells = {}
+    for layer, p, q, block in placements:       # what the layout leaves in the box's visible cells
+        if layer != "visible":
+            continue
+        for x in range(p[0], q[0] + 1):
+            for y in range(p[1], q[1] + 1):
+                for z in range(p[2], q[2] + 1):
+                    if x0 <= x <= x1 and y0 <= y <= y1 and z0 <= z <= z1:
+                        cells[(x, y, z)] = block
+    solid = [c for c, block in cells.items() if block != "minecraft:air"]
+    replies = rcon.send_commands([f"phasecraft get {coords(cottage_pos(*c))}" for c in solid])
+    there = sum(1 for r in replies if "minecraft:air" not in r.split("visible: ", 1)[1].split(" |")[0])
+    return "standing" if there == len(solid) else "gone" if there == 0 else f"{there} of {len(solid)} standing"
+
+
+def cottage_lever(on):
+    _, info = read_layout(COTTAGE_LAYOUT)
+    rcon.send_commands([f"setblock {coords(cottage_pos(*info['lever']))} "
+                        f"minecraft:lever[face=floor,facing=north,powered={str(on).lower()}]"])
+
+
 def flying_observer_commands():
     """The engine's two observers, sent a second after flying_commands(): placed in the same
     batch, the engine starts on its own. They are placed "strict" because a plain setblock
@@ -1305,6 +1364,9 @@ def build_commands():
         in_dimension(HIDDEN_OVERWORLD, "forceload add 448 -8 476 4"),
         "forceload add 494 -27 558 21",      # station 28, the castle tower (and what its first layout used)
         in_dimension(HIDDEN_OVERWORLD, "forceload add 494 -27 558 21"),
+        "forceload add 560 -4 590 20",       # station 29, the vanishing cottage
+        in_dimension(HIDDEN_OVERWORLD, "forceload add 560 -4 590 20"),
+        "gamerule phasecraft:area_shifters true",   # station 29 (off by default)
         # Clear the area (visible) and lay a path of andesite under the stations.
         "fill -4 -60 -8 54 -55 4 minecraft:air",
         "fill -4 -61 -8 54 -61 4 minecraft:grass_block",
@@ -1348,6 +1410,7 @@ def build_commands():
     commands += stairs_commands()
     commands += sorter_commands()
     commands += tower_commands()
+    commands += cottage_commands()
     for station in STATIONS:
         for dimension, pos, *_ in station["hidden"]:
             commands.append(in_dimension(dimension, f"phasecraft clear {coords(pos)}"))
@@ -1580,6 +1643,16 @@ def main():
     tower_ok = [s for _, s in tower_seen] == ["standing", "down", "standing"]
     ok &= tower_ok
     print(f"{'ok ' if tower_ok else 'BAD'} castle tower: " + ", ".join(f"{name}: {state}" for name, state in tower_seen))
+    try:
+        cottage_seen = [("before", cottage_state())]
+        cottage_lever(True); time.sleep(4); cottage_seen.append(("lever on", cottage_state()))
+        cottage_lever(False); time.sleep(4); cottage_seen.append(("lever off", cottage_state()))
+    except rcon.RconError as error:
+        print(error, file=sys.stderr)
+        return 1
+    cottage_ok = [s for _, s in cottage_seen] == ["standing", "gone", "standing"]
+    ok &= cottage_ok
+    print(f"{'ok ' if cottage_ok else 'BAD'} vanishing cottage: " + ", ".join(f"{name}: {state}" for name, state in cottage_seen))
     print("Examples built and verified." if ok else "Some examples did not build as expected.")
     return 0 if ok else 1
 

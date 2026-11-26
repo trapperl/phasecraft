@@ -28,7 +28,7 @@ def observed(scene_or_sim, layer="hidden"):
         for p, (k, props) in scene_or_sim.parts.items():
             if k == "redstone_wire":
                 out[p] = scene_or_sim.wire_power.get(p, 0)
-            elif k in ("repeater", "phase_shifter", "line_shifter", "lever", "comparator", "observer"):
+            elif k in ("repeater", "phase_shifter", "line_shifter", "area_shifter", "lever", "comparator", "observer"):
                 out[p] = props.get("powered") == "true"
             elif k in ("redstone_torch", "redstone_wall_torch"):
                 out[p] = props.get("lit", "true") == "true"
@@ -40,7 +40,7 @@ def observed(scene_or_sim, layer="hidden"):
         k = name.split(":")[-1]
         if k == "redstone_wire":
             out[p] = int(props.get("power", 0))
-        elif k in ("repeater", "phase_shifter", "line_shifter", "lever", "comparator", "observer"):
+        elif k in ("repeater", "phase_shifter", "line_shifter", "area_shifter", "lever", "comparator", "observer"):
             out[p] = props.get("powered") == "true"
         elif k in ("redstone_torch", "redstone_wall_torch"):
             out[p] = props.get("lit") == "true"

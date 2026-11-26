@@ -88,7 +88,7 @@ class Layout:
     def is_conductor(self, p):
         k = self.kind(p)
         return k not in ("air", "redstone_wire", "repeater", "comparator", "redstone_torch", "redstone_wall_torch",
-                         "phase_port", "lever", "glass", "redstone_block", "observer", "hopper", "chest", "phase_shifter", "line_shifter") and "piston" not in k and "button" not in k and "bulb" not in k \
+                         "phase_port", "lever", "glass", "redstone_block", "observer", "hopper", "chest", "phase_shifter", "line_shifter", "area_shifter") and "piston" not in k and "button" not in k and "bulb" not in k \
             and "pressure_plate" not in k and "tripwire" not in k
 
     def wire_connects(self, p, d):
@@ -238,7 +238,7 @@ def check(path):
             if bad:
                 print(f"LEAK       wire at {p} (@{signal}): picks up {sorted(bad)}")
                 problems += 1
-        elif "bulb" in k or k in ("phase_shifter", "line_shifter"):
+        elif "bulb" in k or k in ("phase_shifter", "line_shifter", "area_shifter"):
             got = layout.into(p)
             bad = got - ok
             # fed by its own signal, or only by signals it is made of (a shifter fed twice: an OR)
