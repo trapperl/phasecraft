@@ -105,7 +105,10 @@ transparent layer, not a separate world.
       the spot, it waits. Recipe (the person, 2026-11-23: ender pearls, "since
       this would be pretty powerful", and "make two"): Phase Block + ender
       pearl + piston makes 2.
-   a3. The line shifter (the person's idea, 2026-11-25: "'pushing' phase
+   a3. The line shifter, shown to players as the Shifter Piston (the
+      person's name, chosen 2026-11-26; the id stays phasecraft:line_shifter
+      so placed blocks survive; the code and developer docs keep "line
+      shifter") (the person's idea, 2026-11-25: "'pushing' phase
       blocks in a row or column would be an intuitive fix"; "I like this,
       let's implement and test"): a hidden block facing a way, as a piston,
       that takes the line in front of it (a piston's line: up to the first

@@ -129,7 +129,8 @@ not placed in the hidden layer, so it never collides with hidden machinery.
   four bricks of a wall vanish into a doorway; station 21: a chest in a
   wall vanishes with its contents.
 
-**Line shifter** (`phasecraft:line_shifter`, Redstone tab; recipe: Phase
+**Line shifter**, named **Shifter Piston** in the game (the person, 2026-11-26;
+the id stays, so placed blocks survive) (`phasecraft:line_shifter`, Redstone tab; recipe: Phase
 Shifter + piston; the person's idea, 2026-11-25: "'pushing' phase blocks in
 a row or column would be an intuitive fix", after the castle tower needed
 3,483 hidden blocks to give each of its 112 blocks its own wire). A phase
