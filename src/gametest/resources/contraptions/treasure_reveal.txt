@@ -1,0 +1,88 @@
+# Written by tools/gen_treasure.py; change the generator and run it again.
+# The treasure reveal: an altar with an offering barrel, and empty pedestals behind it. Put anything in the barrel
+# and the treasure appears: a gold, a diamond and an emerald block on the pedestals, and two sea lanterns on the
+# pillars beside them; take the offering back and the treasure goes. Nothing but the shrine shows.
+#
+# Writes src/gametest/resources/contraptions/treasure_reveal.txt and its GameTest area, and checks it in tools/mcb's
+# redstone simulator.
+#
+# How, all in the hidden layer: a comparator on a phase block reads the visible barrel behind it (a phased
+# comparator). Its output powers a block with a torch on it: "hide", on while the barrel is empty. Hide powers a phase
+# shifter at each treasure block's spot, which holds the block out of the visible world while powered and puts it
+# back when hide goes off. Hide's lines are laid by mcb.router.
+# Signals: O the phased comparator's reading of the barrel; H hide (NOT O); a diode <out><<in>.
+size 19 8 18
+fill visible 0 0 0 18 0 17 minecraft:grass_block
+fill visible 2 0 2 16 0 15 minecraft:polished_andesite
+fill visible 8 1 4 10 1 4 minecraft:chiseled_stone_bricks
+visible 9 1 4 minecraft:barrel[facing=up,open=false]
+visible 6 1 12 minecraft:quartz_pillar
+visible 6 2 12 minecraft:gold_block
+visible 9 1 13 minecraft:quartz_pillar
+visible 9 2 13 minecraft:diamond_block
+visible 12 1 12 minecraft:quartz_pillar
+visible 12 2 12 minecraft:emerald_block
+visible 4 1 10 minecraft:stone_bricks
+visible 4 2 10 minecraft:stone_bricks
+visible 4 3 10 minecraft:sea_lantern
+visible 14 1 10 minecraft:stone_bricks
+visible 14 2 10 minecraft:stone_bricks
+visible 14 3 10 minecraft:sea_lantern
+hidden 9 0 5 phasecraft:phase_block
+hidden 9 0 6 minecraft:stone
+hidden 9 1 6 minecraft:stone
+hidden 9 0 8 minecraft:glass
+hidden 9 0 9 minecraft:glass
+hidden 8 0 9 minecraft:glass
+hidden 7 0 9 minecraft:glass
+hidden 6 0 9 minecraft:glass
+hidden 6 1 10 minecraft:stone
+hidden 6 1 11 minecraft:glass
+hidden 9 0 10 minecraft:glass
+hidden 9 1 11 minecraft:stone
+hidden 9 1 12 minecraft:glass
+hidden 10 0 10 minecraft:glass
+hidden 11 1 10 minecraft:stone
+hidden 12 1 10 minecraft:glass
+hidden 12 1 11 minecraft:glass
+hidden 6 0 8 minecraft:glass
+hidden 5 1 8 minecraft:stone
+hidden 4 2 8 minecraft:stone
+hidden 4 2 9 minecraft:glass
+hidden 11 1 9 minecraft:glass
+hidden 11 1 8 minecraft:glass
+hidden 12 2 8 minecraft:stone
+hidden 13 2 8 minecraft:glass
+hidden 14 2 8 minecraft:glass
+hidden 14 2 9 minecraft:glass
+hidden 9 1 5 minecraft:comparator[facing=north,mode=compare,powered=false] @O
+hidden 9 1 7 minecraft:redstone_wall_torch[facing=south,lit=true] @H<O
+hidden 9 1 8 minecraft:repeater[delay=1,facing=north,powered=true] @H<H
+hidden 9 1 9 minecraft:redstone_wire[east=none,north=side,power=15,south=side,west=side] @H
+hidden 8 1 9 minecraft:redstone_wire[east=side,north=none,power=14,south=none,west=side] @H
+hidden 7 1 9 minecraft:redstone_wire[east=side,north=none,power=13,south=none,west=side] @H
+hidden 6 1 9 minecraft:redstone_wire[east=side,north=side,power=12,south=up,west=none] @H
+hidden 6 2 10 minecraft:redstone_wire[east=none,north=side,power=11,south=side,west=none] @H
+hidden 6 2 11 minecraft:repeater[delay=1,facing=north,powered=true] @H<H
+hidden 9 1 10 minecraft:redstone_wire[east=side,north=side,power=14,south=up,west=none] @H
+hidden 9 2 11 minecraft:redstone_wire[east=none,north=side,power=13,south=side,west=none] @H
+hidden 9 2 12 minecraft:repeater[delay=1,facing=north,powered=true] @H<H
+hidden 10 1 10 minecraft:redstone_wire[east=up,north=none,power=13,south=none,west=side] @H
+hidden 11 2 10 minecraft:redstone_wire[east=side,north=side,power=12,south=none,west=side] @H
+hidden 12 2 10 minecraft:redstone_wire[east=none,north=none,power=11,south=side,west=side] @H
+hidden 12 2 11 minecraft:repeater[delay=1,facing=north,powered=true] @H<H
+hidden 6 1 8 minecraft:redstone_wire[east=none,north=none,power=11,south=side,west=up] @H
+hidden 5 2 8 minecraft:redstone_wire[east=side,north=none,power=10,south=none,west=up] @H
+hidden 4 3 8 minecraft:redstone_wire[east=side,north=none,power=9,south=side,west=none] @H
+hidden 4 3 9 minecraft:repeater[delay=1,facing=north,powered=true] @H<H
+hidden 11 2 9 minecraft:redstone_wire[east=none,north=side,power=11,south=side,west=none] @H
+hidden 11 2 8 minecraft:redstone_wire[east=up,north=none,power=10,south=side,west=none] @H
+hidden 12 3 8 minecraft:redstone_wire[east=side,north=none,power=9,south=none,west=side] @H
+hidden 13 3 8 minecraft:redstone_wire[east=side,north=none,power=8,south=none,west=side] @H
+hidden 14 3 8 minecraft:redstone_wire[east=none,north=none,power=7,south=side,west=side] @H
+hidden 14 3 9 minecraft:repeater[delay=1,facing=north,powered=true] @H<H
+hidden 6 2 12 phasecraft:phase_shifter[powered=false] @H
+hidden 9 2 13 phasecraft:phase_shifter[powered=false] @H
+hidden 12 2 12 phasecraft:phase_shifter[powered=false] @H
+hidden 4 3 10 phasecraft:phase_shifter[powered=false] @H
+hidden 14 3 10 phasecraft:phase_shifter[powered=false] @H

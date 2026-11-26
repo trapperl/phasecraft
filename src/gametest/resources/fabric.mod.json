@@ -40,6 +40,7 @@
       "dev.phasecraft.test.DanceFloorGameTests",
       "dev.phasecraft.test.CombinationLockGameTests",
       "dev.phasecraft.test.PixelWallGameTests",
+      "dev.phasecraft.test.TreasureRevealGameTests",
       "dev.phasecraft.test.PhasedWatcherGameTests",
       "dev.phasecraft.test.PhasedItemGameTests",
       "dev.phasecraft.test.HiddenEditingGameTests",

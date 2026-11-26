@@ -289,6 +289,12 @@ def sign(pos, lines):
     return f"setblock {coords(pos)} minecraft:oak_sign[rotation=8]{{front_text:{{messages:[{messages}]}}}} replace"
 
 
+def clear_sign(pos):
+    """Removes a sign a station built earlier, outside its cleared area (a sign over the same sign cannot be set);
+    nothing if there is none (a plain setblock of air there would fail)."""
+    return f"execute if block {coords(pos)} #minecraft:signs run setblock {coords(pos)} minecraft:air"
+
+
 def in_dimension(dimension, command):
     return f"execute in {dimension} run {command}"
 
@@ -1457,7 +1463,7 @@ def lock_commands():
     a, b = lock_pos(0, 0, 0), lock_pos(15, 7, 17)
     out = [in_dimension(HIDDEN_OVERWORLD, f"fill {coords(a)} {coords(b)} minecraft:air"),
            f"fill {a[0]} {a[1] + 1} {a[2]} {coords(b)} minecraft:air",
-           f"setblock {LOCK_ORIGIN[0] - 2} {Y} 1 minecraft:air"]          # its sign, outside the area
+           clear_sign((LOCK_ORIGIN[0] - 2, Y, 1))]                          # its sign, outside the area
     placements, _ = read_layout(LOCK_LAYOUT)
     for layer, p, q, block in placements:
         command = (f"fill {coords(lock_pos(*p))} {coords(lock_pos(*q))} {block}" if p != q
@@ -1543,6 +1549,43 @@ def pixels_lever(on):
                         + state.replace("powered=false", f"powered={str(on).lower()}")])
 
 
+# Station 34: the treasure reveal, built from its layout file (written by tools/gen_treasure.py; shared with
+# TreasureRevealGameTests). South of the path: an altar with a barrel; anything put in it brings out the treasure on
+# the pedestals behind it (a phased comparator reads the barrel; phase shifters hold the treasure).
+TREASURE_LAYOUT = pathlib.Path(__file__).resolve().parent.parent / "src/gametest/resources/contraptions/treasure_reveal.txt"
+TREASURE_ORIGIN = (684, Y - 1, 2)    # the layout's (0, 0, 0): its ground is the world's grass
+TREASURE_BARREL = (9, 1, 4)
+TREASURE_SPOTS = [(6, 2, 12), (9, 2, 13), (12, 2, 12), (4, 3, 10), (14, 3, 10)]
+
+
+def treasure_pos(x, y, z):
+    return (TREASURE_ORIGIN[0] + x, TREASURE_ORIGIN[1] + y, TREASURE_ORIGIN[2] + z)
+
+
+def treasure_commands():
+    a, b = treasure_pos(0, 0, 0), treasure_pos(18, 7, 17)
+    out = [in_dimension(HIDDEN_OVERWORLD, f"fill {coords(a)} {coords(b)} minecraft:air"),
+           f"fill {a[0]} {a[1] + 1} {a[2]} {coords(b)} minecraft:air",
+           clear_sign((TREASURE_ORIGIN[0] + 2, Y, 1))]                          # its sign, outside the area
+    placements, _ = read_layout(TREASURE_LAYOUT)
+    for layer, p, q, block in placements:
+        command = (f"fill {coords(treasure_pos(*p))} {coords(treasure_pos(*q))} {block}" if p != q
+                   else f"setblock {coords(treasure_pos(*p))} {block}")
+        out.append(in_dimension(HIDDEN_OVERWORLD, command) if layer == "hidden" else command)
+    out.append(sign((TREASURE_ORIGIN[0] + 2, Y, 1), ["34. Treasure", "Put anything in", "the barrel on", "the altar"]))
+    return out
+
+
+def treasure_state():
+    """How many of the five treasure blocks are there."""
+    replies = rcon.send_commands([f"phasecraft get {coords(treasure_pos(*p))}" for p in TREASURE_SPOTS])
+    return sum(1 for r in replies if "visible: minecraft:air" not in r)
+
+
+def treasure_offer(item):
+    rcon.send_commands([f"item replace block {coords(treasure_pos(*TREASURE_BARREL))} container.13 with {item}"])
+
+
 def flying_observer_commands():
     """The engine's two observers, sent a second after flying_commands(): placed in the same
     batch, the engine starts on its own. They are placed "strict" because a plain setblock
@@ -1589,6 +1632,8 @@ def build_commands():
         in_dimension(HIDDEN_OVERWORLD, "forceload add 622 -16 644 4"),
         "forceload add 646 -2 682 24",       # station 33, the pixel wall
         in_dimension(HIDDEN_OVERWORLD, "forceload add 646 -2 682 24"),
+        "forceload add 682 0 704 22",        # station 34, the treasure reveal
+        in_dimension(HIDDEN_OVERWORLD, "forceload add 682 0 704 22"),
         "gamerule phasecraft:area_shifters true",   # station 29 (off by default)
         # Clear the area (visible) and lay a path of andesite under the stations.
         "fill -4 -60 -8 54 -55 4 minecraft:air",
@@ -1638,6 +1683,7 @@ def build_commands():
     commands += dance_commands()
     commands += lock_commands()
     commands += pixels_commands()
+    commands += treasure_commands()
     for station in STATIONS:
         for dimension, pos, *_ in station["hidden"]:
             commands.append(in_dimension(dimension, f"phasecraft clear {coords(pos)}"))
@@ -1918,6 +1964,17 @@ def main():
     ok &= pixels_ok
     print(f"{'ok ' if pixels_ok else 'BAD'} pixel wall (pixels showing black): "
           + ", ".join(f"{name}: {a} of {n}" for name, (a, n) in pixels_seen))
+    try:
+        treasure_seen = [("empty", treasure_state())]
+        treasure_offer("minecraft:gold_nugget"); time.sleep(2); treasure_seen.append(("a nugget in", treasure_state()))
+        treasure_offer("minecraft:air"); time.sleep(2); treasure_seen.append(("taken out", treasure_state()))
+    except rcon.RconError as error:
+        print(error, file=sys.stderr)
+        return 1
+    treasure_ok = [n for _, n in treasure_seen] == [0, 5, 0]
+    ok &= treasure_ok
+    print(f"{'ok ' if treasure_ok else 'BAD'} treasure reveal (blocks there, of 5): "
+          + ", ".join(f"{name}: {n}" for name, n in treasure_seen))
     print("Examples built and verified." if ok else "Some examples did not build as expected.")
     return 0 if ok else 1
 

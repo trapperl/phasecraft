@@ -977,7 +977,20 @@ has such cells.
      and the waterfall come out the same.
    - On the dev server it stands on a platform like the iris (its wiring
      goes 9 blocks under its floor), south of the path and facing it.
-18. **Mob farm:** not a target yet; the person lists one among the showcase
+18. **Treasure reveal: done** (`TreasureRevealGameTests`, examples station
+   34, `tools/gen_treasure.py`; on the person's liked list). An altar with a
+   barrel and empty pedestals behind it: put anything in the barrel and the
+   treasure appears (a gold, a diamond and an emerald block on the
+   pedestals, sea lanterns on the pillars beside them); take the offering out
+   and it goes. A hidden comparator on a phase block reads the visible
+   barrel; its output powers a block whose torch is "hide", and hide powers
+   a phase shifter at each treasure block's spot (a router-laid tree). 58
+   hidden blocks.
+   - The checker now knows a phased comparator: on a phase block it reads
+     the visible block behind it, an input of the layout.
+   - Broken on purpose: on plain stone instead of a phase block the
+     comparator reads nothing hidden and the treasure never comes.
+19. **Mob farm:** not a target yet; the person lists one among the showcase
    builds (AGENTS.md).
 
 ## Validation status
