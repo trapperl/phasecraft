@@ -138,8 +138,8 @@ Recipes (a starting point for balancing):
 | Phase Piston | piston + Phase Block |
 | Sticky Phase Piston | Phase Piston + slime ball, or sticky piston + Phase Block |
 | Phase Shifter (2) | Phase Block + ender pearl + piston |
-| Line Shifter | Phase Shifter + piston |
-| Area Shifter (2) | Line Shifter + diamond block |
+| Shifter Piston | Phase Shifter + piston |
+| Area Shifter (2) | Shifter Piston + diamond block |
 
 ### Secret switches: the phase block
 
@@ -224,10 +224,12 @@ two. Like a piston it passes no power on: a repeater into one shifter of a
 wall takes just that block. It takes what a piston could push, and chests, furnaces, barrels and
 other blocks with contents too: they go with everything in them and come
 back exactly as they were. If you build something in the gap meanwhile,
-the returning block breaks it (it drops as an item); only an unbreakable
-block like bedrock, or someone standing in the gap, makes it wait.
+the returning block breaks it (it drops as an item). Someone standing in the
+gap is lifted onto the returning block, as a piston pushing up would; only an
+unbreakable block like bedrock, or no room above them, makes it wait.
 
-The **Line Shifter** (Phase Shifter + piston) does the same for a whole row
+The **Shifter Piston** (Phase Shifter + piston; called the line shifter in the
+code and the developer docs) does the same for a whole row
 or column, with a piston's rules. It faces a way, like a piston (it faces
 you when you place it), and works on the visible blocks in front of it: when
 powered it takes them one by one from the far end, and when the power goes
@@ -235,7 +237,7 @@ it puts them back one by one from its own end, so the line grows back out of
 it. It takes the line a piston there could push: up to the first gap, at
 most 12 blocks, and nothing at all if there are 13 or something immovable
 like obsidian is in the way. Click it to set its speed, as on a repeater:
-one block every 1 to 4 redstone ticks. One line shifter under a pillar,
+one block every 1 to 4 redstone ticks. One shifter piston under a pillar,
 facing up, makes the whole pillar sink into the ground and rise again. A
 comparator behind it reads how many blocks it holds, like a chest's fill
 level: wait for a line to be all gone before the next thing moves.
@@ -293,7 +295,7 @@ Station 28 is a castle tower (x = 543 to 547): flip the lever beside the path
 to its door. The tower comes down block by block from the battlements in a
 spiral, a course lower every side; flip the lever back and it builds itself up
 again from the ground the same way. Flip it back while it is moving and it
-turns around. A line shifter under each column of the tower does it, all
+turns around. A shifter piston under each column of the tower does it, all
 hidden.
 
 Station 29 is a vanishing cottage (x = 569 to 575): flip the lever in front of
@@ -306,7 +308,7 @@ corners do it. Area shifters only work with the game rule on
 Station 30 is a hole in the ocean (a pool at x = 587 to 599): flip the lever at
 the pool's north edge and a glass-walled shaft opens down to the sand, dry;
 flip it back and the sea closes over it. Two hidden area shifters bring the
-walls (and a filler) back into the water, and hidden line shifters under the
+walls (and a filler) back into the water, and hidden shifter pistons under the
 sand take the filler out; closing, the same in reverse. Stand in the shaft as
 it closes and the filler coming back lifts you up to the surface.
 
@@ -336,7 +338,7 @@ Station 35 is a minecart track (x = 714 to 759, south of the path, up the
 steps): a chasm with rails on both cliffs and nothing between them. Put a
 minecart on the powered rail by either wall, get in and press the button
 beside it: the track is laid across the chasm ahead of you and taken up
-behind you. Hidden line shifters hold each piece of the track; hidden strings
+behind you. Hidden shifter pistons hold each piece of the track; hidden strings
 at rail height sense the cart.
 
 ![A dark stone room lit by a glowstone hidden in its far wall](images/phased-light-room.png)

@@ -6,7 +6,7 @@ redstone and pistons hidden in that layer can act on the blocks of the visible w
 **Target: Minecraft Java Edition 26.3** with Fabric and Java 25. Working on the development branches: the
 hidden layer (a real dimension, run by vanilla), phase ports that carry power between layers, phase pistons
 that move visible blocks from the hidden layer, phase shifters that take a visible block out of the world and
-put it back (and line shifters that do it for a whole row or column, block by block, with a piston's rules; and, as an option a world turns on, area shifters for a whole box), a hidden 2x2 piston door, a hidden staircase (flat floor
+put it back (and shifter pistons that do it for a whole row or column, block by block, with a piston's rules; and, as an option a world turns on, area shifters for a whole box), a hidden 2x2 piston door, a hidden staircase (flat floor
 that opens into stairs down to a cellar), a hidden 3x3 flush door, the transparent overlay (press **H** in Creative to see hidden blocks drawn as
 see-through ghosts over the world; `[` and `]` change the opacity), editing mode (press **J**, and your
 clicks place, use and break blocks in the hidden layer instead of the visible world) and the phase block

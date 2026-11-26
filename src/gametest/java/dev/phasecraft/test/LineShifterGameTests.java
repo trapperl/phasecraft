@@ -135,6 +135,17 @@ public class LineShifterGameTests {
         }
     }
 
+    /** Players see it as the Shifter Piston (the person, 2026-11-26); its id stays phasecraft:line_shifter. */
+    @GameTest(structure = STRUCTURE, maxTicks = 20)
+    public void itsNameIsShifterPiston(GameTestHelper helper) {
+        helper.assertValueEqual(new ItemStack(PhaseCraftBlocks.LINE_SHIFTER_ITEM).getHoverName().getString(), "Shifter Piston",
+                "the item's name");
+        helper.assertValueEqual(PhaseCraftBlocks.LINE_SHIFTER.getName().getString(), "Shifter Piston", "the block's name");
+        helper.assertValueEqual(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(PhaseCraftBlocks.LINE_SHIFTER).toString(),
+                "phasecraft:line_shifter", "the block's id");
+        helper.succeed();
+    }
+
     /**
      * A column of five different blocks over a line shifter facing up: powered, the top block goes at once and the
      * next one down every redstone tick (delay 1); unpowered, the bottom one comes back at once and the next one up
