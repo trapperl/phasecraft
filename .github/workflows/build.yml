@@ -1,7 +1,10 @@
 name: Build PhaseCraft
 
+# One run per change: pull requests build on each push to them; main builds after each merge. (Both push and
+# pull_request on every branch built each push to a PR twice.)
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
