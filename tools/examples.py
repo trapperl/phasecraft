@@ -1347,11 +1347,32 @@ def ocean_commands():
            f"fill {a[0]} {a[1] + 1} {a[2]} {coords(b)} minecraft:air"]
     placements, _ = read_layout(OCEAN_LAYOUT)
     for layer, p, q, block in placements:
+        if "area_shifter" in block:
+            continue                     # ocean_corner_commands(), once the controller has settled
         command = (f"fill {coords(ocean_pos(*p))} {coords(ocean_pos(*q))} {block}" if p != q
                    else f"setblock {coords(ocean_pos(*p))} {block}")
         out.append(in_dimension(HIDDEN_OVERWORLD, command) if layer == "hidden" else command)
     out.append(sign((OCEAN_ORIGIN[0] + 8, Y, SIGN_Z), ["30. A hole in", "the ocean: flip", "the lever: a", "dry shaft opens"]))
     return out
+
+
+def ocean_corner_commands():
+    """The two area shifters, sent a second after ocean_commands(): built over many ticks, the controller's torches
+    flicker while it is placed and can power the line shifters, which would put filler back while the corners take
+    the box (a GameTest builds in one tick)."""
+    placements, _ = read_layout(OCEAN_LAYOUT)
+    return [in_dimension(HIDDEN_OVERWORLD, f"setblock {coords(ocean_pos(*p))} {block}")
+            for layer, p, q, block in placements if "area_shifter" in block]
+
+
+def drop_cleanup_commands():
+    """Removes the items a rebuild drops: parts that pop while a station is cleared and built again over many ticks
+    (lanterns at the staircase's foot, whose sensors then felt them and stood the steps up with nobody there; over
+    a thousand hidden redstone parts falling through the hidden layer's void). Sent with the late batch, once the
+    build has settled, before the checks."""
+    box = "x=-20,y=-130,z=-40,dx=680,dy=200,dz=260"     # falling items may be far below
+    return [f"kill @e[type=minecraft:item,{box}]",
+            in_dimension(HIDDEN_OVERWORLD, f"kill @e[type=minecraft:item,{box}]")]
 
 
 def ocean_state():
@@ -1419,6 +1440,64 @@ def dance_check():
     return seen
 
 
+# Station 32: the combination lock, built from its layout file (written by tools/gen_lock.py; shared with
+# CombinationLockGameTests). Four levers on a wall by the path; on, off, on, on (west to east) opens a door in the wall
+# that looks like the rest of it, onto a vault with a chest. The lock faces south, onto the path.
+LOCK_LAYOUT = pathlib.Path(__file__).resolve().parent.parent / "src/gametest/resources/contraptions/combination_lock.txt"
+LOCK_ORIGIN = (626, Y - 1, -14)      # the layout's (0, 0, 0): its wall at z = -1, its levers over the path at z = 0
+LOCK_LEVERS = [1, 4, 11, 14]
+LOCK_DOOR = [(8, 1, 13), (8, 2, 13)]
+
+
+def lock_pos(x, y, z):
+    return (LOCK_ORIGIN[0] + x, LOCK_ORIGIN[1] + y, LOCK_ORIGIN[2] + z)
+
+
+def lock_commands():
+    a, b = lock_pos(0, 0, 0), lock_pos(15, 7, 17)
+    out = [in_dimension(HIDDEN_OVERWORLD, f"fill {coords(a)} {coords(b)} minecraft:air"),
+           f"fill {a[0]} {a[1] + 1} {a[2]} {coords(b)} minecraft:air",
+           f"setblock {LOCK_ORIGIN[0] - 2} {Y} 1 minecraft:air"]          # its sign, outside the area
+    placements, _ = read_layout(LOCK_LAYOUT)
+    for layer, p, q, block in placements:
+        command = (f"fill {coords(lock_pos(*p))} {coords(lock_pos(*q))} {block}" if p != q
+                   else f"setblock {coords(lock_pos(*p))} {block}")
+        out.append(in_dimension(HIDDEN_OVERWORLD, command) if layer == "hidden" else command)
+    for raw in open(LOCK_LAYOUT):
+        words = raw.split("#", 1)[0].split()
+        if words[:2] == ["items", "visible"]:
+            pos = coords(lock_pos(*(int(v) for v in words[2:5])))
+            for slot, spec in enumerate(words[5:]):
+                item, _, count = spec.rpartition("*")
+                out.append(f"item replace block {pos} container.{slot} with {item} {count}")
+    out.append(sign((LOCK_ORIGIN[0] - 2, Y, 1), ["32. Combination", "lock: find the", "levers' setting", "that opens it"]))
+    return out
+
+
+def lock_set(setting):
+    rcon.send_commands([f"setblock {coords(lock_pos(x, 2, 14))} "
+                        f"minecraft:lever[face=wall,facing=south,powered={str(on).lower()}]"
+                        for x, on in zip(LOCK_LEVERS, setting)])
+
+
+def lock_door():
+    replies = rcon.send_commands([f"phasecraft get {coords(lock_pos(*c))}" for c in LOCK_DOOR])
+    seen = [r.split("visible: ", 1)[1].split(" |")[0].strip() for r in replies]
+    return "shut" if all(v == "minecraft:stone_bricks" for v in seen) else "open" if all(
+        v == "minecraft:air" for v in seen) else f"half: {seen}"
+
+
+def lock_check():
+    """The door: all levers off; the combination; one lever wrong; all off again."""
+    seen = []
+    for name, setting in (("all off", [False] * 4), ("on off on on", [True, False, True, True]),
+                          ("on on on on", [True] * 4), ("all off", [False] * 4)):
+        lock_set(setting)
+        time.sleep(2)
+        seen.append((name, lock_door()))
+    return seen
+
+
 def flying_observer_commands():
     """The engine's two observers, sent a second after flying_commands(): placed in the same
     batch, the engine starts on its own. They are placed "strict" because a plain setblock
@@ -1461,6 +1540,8 @@ def build_commands():
         in_dimension(HIDDEN_OVERWORLD, "forceload add 580 -14 610 20"),
         "forceload add 608 -4 626 12",       # station 31, the dance floor
         in_dimension(HIDDEN_OVERWORLD, "forceload add 608 -4 626 12"),
+        "forceload add 622 -16 644 4",       # station 32, the combination lock
+        in_dimension(HIDDEN_OVERWORLD, "forceload add 622 -16 644 4"),
         "gamerule phasecraft:area_shifters true",   # station 29 (off by default)
         # Clear the area (visible) and lay a path of andesite under the stations.
         "fill -4 -60 -8 54 -55 4 minecraft:air",
@@ -1508,6 +1589,7 @@ def build_commands():
     commands += cottage_commands()
     commands += ocean_commands()
     commands += dance_commands()
+    commands += lock_commands()
     for station in STATIONS:
         for dimension, pos, *_ in station["hidden"]:
             commands.append(in_dimension(dimension, f"phasecraft clear {coords(pos)}"))
@@ -1534,7 +1616,7 @@ def main():
         return 1 if bad else 0
     if "--print-commands" in sys.argv[1:]:
         # For the screenshot tour (ExamplesTourClientGameTest): the build, without RCON.
-        print("\n".join(build_commands() + flying_observer_commands() + sorter_fill_commands()))
+        print("\n".join(build_commands() + flying_observer_commands() + sorter_fill_commands() + ocean_corner_commands() + drop_cleanup_commands()))
         return 0
     props = rcon.read_properties(rcon.PROPERTIES)
     if props.get("pause-when-empty-seconds", "60") not in ("0", ""):
@@ -1548,7 +1630,7 @@ def main():
             print(f"FAILED: {command}\n  {reply}")
 
         time.sleep(1)  # let cross-layer updates (one tick) settle before checking
-        rcon.send_commands(flying_observer_commands() + sorter_fill_commands())
+        rcon.send_commands(flying_observer_commands() + sorter_fill_commands() + ocean_corner_commands() + drop_cleanup_commands())
         checks = [(cell[0], cell[1], cell[-1]) for s in STATIONS for cell in s["hidden"]]
         answers = rcon.send_commands([in_dimension(d, f"phasecraft get {coords(pos)}") for d, pos, _ in checks])
     except rcon.RconError as error:
@@ -1601,7 +1683,7 @@ def main():
         after = flying_cargo_x()
         rcon.send_commands(flying_commands())  # ready for another flight
         time.sleep(1)
-        rcon.send_commands(flying_observer_commands() + sorter_fill_commands())
+        rcon.send_commands(flying_observer_commands() + sorter_fill_commands() + ocean_corner_commands() + drop_cleanup_commands())
         time.sleep(1)
         reset = flying_cargo_x()
     except rcon.RconError as error:
@@ -1769,6 +1851,14 @@ def main():
     dance_ok = [lit for _, lit in dance_seen] == [[], [(4, 5)], []]
     ok &= dance_ok
     print(f"{'ok ' if dance_ok else 'BAD'} dance floor: " + ", ".join(f"{name}: {lit}" for name, lit in dance_seen))
+    try:
+        lock_seen = lock_check()
+    except rcon.RconError as error:
+        print(error, file=sys.stderr)
+        return 1
+    lock_ok = [state for _, state in lock_seen] == ["shut", "open", "shut", "shut"]
+    ok &= lock_ok
+    print(f"{'ok ' if lock_ok else 'BAD'} combination lock: " + ", ".join(f"{name}: {state}" for name, state in lock_seen))
     print("Examples built and verified." if ok else "Some examples did not build as expected.")
     return 0 if ok else 1
 

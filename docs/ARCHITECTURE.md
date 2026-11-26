@@ -936,7 +936,30 @@ has such cells.
      and a powered phase block touches only its own port.
    - Broken on purpose: without the ports, or on plain stone instead of
      phase blocks, no lamp lights; both fail the test.
-16. **Mob farm:** not a target yet; the person lists one among the showcase
+16. **Combination lock: done** (`CombinationLockGameTests`, examples station
+   32, `tools/gen_lock.py`; on the person's liked list). Four levers on a
+   stone-brick wall and a doorway in it that looks like the rest of the wall:
+   on, off, on, on (west to east) opens it onto a vault with a chest; any
+   other setting keeps it, or puts it back, shut. Only the levers show.
+   - A phase port at the wall block each lever hangs on brings its power into
+     the hidden layer. A lever that must be on goes through a torch (wrong
+     while off), one that must be off goes straight (wrong while on); the
+     four wrong lines run into one block (two of them first join in another,
+     J: a block has three free sides beside the torch), and the torch on it
+     is "open". A phase shifter at each door block takes it while open,
+     powered through a stone right behind it: the lower from the north, the
+     upper from the south, so no line ends a step from the other shifter
+     (the router refuses that). 251 hidden blocks, all lines by
+     `mcb.router.route_all`.
+   - The generator checks all 16 settings in the simulator; the GameTest
+     goes through all 16 in the real game, one lever at a time (a Gray code,
+     so each lever is flipped both ways), 40 game ticks each: the door opens
+     about 24 game ticks after the last lever.
+   - The checker now lets a repeater read a block that lines of the signals
+     it is declared to be made of power (an OR), as it did a shifter or a
+     gate's torch.
+   - Broken on purpose: without lever 1's torch, off, off, on, on opens it.
+17. **Mob farm:** not a target yet; the person lists one among the showcase
    builds (AGENTS.md).
 
 ## Validation status

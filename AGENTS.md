@@ -219,7 +219,8 @@ line shifters powered by wire on top of them). Liked (the person: "I like your s
 too"): a shifter display (pixel wall), a track built ahead of a minecart,
 a shifting maze, a light-up dance floor (done, station 31: hidden plates on
 phase blocks, ports under the lamps), a treasure reveal, a combination
-lock. No movable shifters (the person, 2026-11-24: "Nah"), so no tunneling
+lock (done, station 32: on, off, on, on opens a door that looks like the wall;
+tools/gen_lock.py). No movable shifters (the person, 2026-11-24: "Nah"), so no tunneling
 flying machine. Once something is cool: a trailer (the person; look up how
 others make them first).
 

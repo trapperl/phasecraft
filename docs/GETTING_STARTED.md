@@ -314,6 +314,12 @@ light under your feet, going out a second after you step off. Under each lamp
 a hidden pressure plate on a phase block feels you, and a hidden phase port
 lights the lamp; there is nothing else.
 
+Station 32 is a combination lock (x = 627 to 641): four levers on a stone-brick
+wall by the path. Find the setting that opens the door in the wall (it looks
+like the rest of the wall) onto a small vault with a chest; any other setting
+shuts it. (The answer: on, off, on, on, from west to east.) All the logic and
+the door's machinery are hidden.
+
 ![A dark stone room lit by a glowstone hidden in its far wall](images/phased-light-room.png)
 
 Save and exit your test world, reopen it, and run `/phasecraft get` again to
