@@ -1750,6 +1750,9 @@ def build_commands():
         "forceload add 768 2 788 20",        # station 36, the skeleton farm
         in_dimension(HIDDEN_OVERWORLD, "forceload add 768 2 788 20"),
         "gamerule phasecraft:area_shifters true",   # station 29 (off by default)
+        # Off by default on a dedicated server, which the dev server is; it is private, and the stations
+        # are there to be tried in Survival too.
+        "gamerule phasecraft:survival_access true",
         # Clear the area (visible) and lay a path of andesite under the stations.
         "fill -4 -60 -8 54 -55 4 minecraft:air",
         "fill -4 -61 -8 54 -61 4 minecraft:grass_block",

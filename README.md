@@ -12,7 +12,7 @@ see-through ghosts over the world; `[` and `]` change the opacity), editing mode
 clicks place, use and break blocks in the hidden layer instead of the visible world) and the phase block
 (a hidden button, lever, pressure plate or light standing on it reacts to the visible world: secret bricks,
 secret floor tiles, and lamps hidden in walls that light the room). It all works in Survival too, with
-recipes and Survival rules, and a hidden flying-machine engine can push visible blocks along (a game rule turns that off for public servers). See [Getting started](docs/GETTING_STARTED.md) and [Architecture](docs/ARCHITECTURE.md).
+recipes and Survival rules (a game rule decides whether Survival players may see and edit the hidden layer: on in single player and LAN, off on dedicated servers until an admin turns it on), and a hidden flying-machine engine can push visible blocks along. See [Getting started](docs/GETTING_STARTED.md) and [Architecture](docs/ARCHITECTURE.md).
 
 | Overlay off | Overlay on (H) |
 | --- | --- |

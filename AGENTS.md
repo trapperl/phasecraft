@@ -175,7 +175,8 @@ transparent layer, not a separate world.
       in front of them, silently (the agent's default, open to change).
       Done (station 20). The person's list (2026-11-24) is done: the
       shifter takes chests with their contents, and the iris door.
-   c. Survival play (done): one game rule, on by default, that lets Survival
+   c. Survival play (done): one game rule, on by default (off on dedicated
+      servers, see below), that lets Survival
       players use the overlay and editing mode (with Survival rules:
       placing uses the item, breaking takes mining time and the right tool
       and drops the block, normal reach), plus crafting recipes for phase
@@ -213,7 +214,17 @@ transparent layer, not a separate world.
 
 Decided by the person: phase pistons show no visible arm; missing blocks
 are handled as vanilla does; Survival players may see and edit while the
-game rule phasecraft:survival_access is on (default). Decided by the agent,
+game rule phasecraft:survival_access is on: the default in single player
+and on LAN, but off on a dedicated server until an admin turns it on (the
+person, 2026-11-27, after a security review: on a public server it shows
+every Survival player the hidden builds near them and opens other people's
+hidden chests). A game rule has one default, so a dedicated server sets it
+to false the first time it starts a world, once (Access.applyServerDefault;
+worlds from earlier versions too), and leaves the admin's setting alone
+after that. GameTest servers are left out (Fabric makes them say they are
+dedicated), so tests run with the rule on unless they set it; the client
+GameTests' dedicated server and the dev server are real ones, and
+tools/examples.py turns the rule on on the dev server. Decided by the agent,
 open to change: Spectators see the overlay but cannot edit, Adventure
 players neither; ghosts show through
 visible blocks (fainter); in editing mode (J) a click on a visible block

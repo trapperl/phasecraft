@@ -1,6 +1,7 @@
 package dev.phasecraft.test;
 
 import dev.phasecraft.PhaseCraftBlocks;
+import dev.phasecraft.layer.Access;
 import dev.phasecraft.layer.HiddenLayer;
 import dev.phasecraft.layer.PhaseLayerData;
 import java.util.List;
@@ -122,6 +123,12 @@ public class PhaseLayerRestartPhases {
             level.getDataStorage().saveAndJoin();
         }
         ServerLevel overworld = server.overworld();
+        // As a dedicated server's first start on this world: survival_access is switched off, once, and the world
+        // remembers. Then the admin turns it on; that must hold after the restart.
+        helper.assertTrue(Access.applyServerDefault(server, true, overworld.getDataStorage()),
+                "a dedicated server's first start did not switch survival_access off");
+        helper.assertFalse(server.getGameRules().get(Access.SURVIVAL_ACCESS), "survival_access after a dedicated server's first start");
+        server.getGameRules().set(Access.SURVIVAL_ACCESS, true, server);
         HiddenLayer layer = HiddenLayer.of(overworld);
         overworld.setBlock(SHIFTED, Blocks.GOLD_BLOCK.defaultBlockState(), Block.UPDATE_ALL);
         layer.setBlock(SHIFTED, PhaseCraftBlocks.PHASE_SHIFTER.defaultBlockState());
@@ -206,6 +213,9 @@ public class PhaseLayerRestartPhases {
                     "old-style cells left in " + cell.dimension().identifier());
         }
         ServerLevel overworld = server.overworld();
+        helper.assertFalse(Access.applyServerDefault(server, true, overworld.getDataStorage()),
+                "a dedicated server switched survival_access off a second time, after a restart");
+        helper.assertTrue(server.getGameRules().get(Access.SURVIVAL_ACCESS), "the admin's survival_access setting was undone by a restart");
         HiddenLayer layer = HiddenLayer.of(overworld);
         helper.assertValueEqual(overworld.getBlockState(SHIFTED).getBlock(), Blocks.AIR, "visible spot of the shifted gold after restart");
         helper.assertTrue(layer.level().getBlockEntity(SHIFTED) instanceof PhaseShifterBlockEntity entity
