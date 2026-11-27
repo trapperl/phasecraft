@@ -3,6 +3,7 @@ package dev.phasecraft.test;
 import dev.phasecraft.PhaseCraftBlocks;
 import dev.phasecraft.layer.Access;
 import dev.phasecraft.layer.HiddenLayer;
+import dev.phasecraft.link.HiddenChunks;
 import dev.phasecraft.layer.PhaseLayerData;
 import java.util.List;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
@@ -68,6 +69,10 @@ public class PhaseLayerRestartPhases {
      * the restart must bring it up to date (issue #17).
      */
     private static final BlockPos STALE_PORT = new BlockPos(20, 70, 30);
+    /** In the Nether's hidden layer, far from the rest. */
+    private static final BlockPos OLD_WORLD = new BlockPos(600, 70, 600);
+    /** In the overworld's hidden layer, far from the rest. */
+    private static final BlockPos FAR = new BlockPos(-700, 70, 900);
 
     /** Same XYZ in every dimension, plus a cell far outside any loaded chunk. */
     /**
@@ -194,6 +199,73 @@ public class PhaseLayerRestartPhases {
                 .thenWaitUntil(() -> helper.assertValueEqual(hidden.getBlockState(STALE_PORT).getValue(PhasePortBlock.POWER), 15,
                         "the port's power after its chunk loaded (the visible redstone block at its spot)"))
                 .thenExecute(() -> overworld.setChunkForced(chunkX, chunkZ, false))
+                .thenSucceed();
+    }
+
+    /**
+     * A hidden block in a world from before the hidden chunk index (HiddenChunks): here the Nether's hidden layer
+     * forgets its index after the block is placed. After the restart the index is listed again from the files on
+     * disk, and the block's chunk loads and ticks under its ticking twin. (The overworld keeps its index: the stale
+     * port above checks that a saved index brings its chunk back.)
+     */
+    @GameTest
+    public void writeAnOldWorldsHiddenBlock(GameTestHelper helper) {
+        ServerLevel nether = helper.getLevel().getServer().getLevel(Level.NETHER);
+        HiddenLayer layer = HiddenLayer.of(nether);
+        layer.setBlock(OLD_WORLD, Blocks.STONE.defaultBlockState());
+        HiddenChunks.forgetIndex(layer.level());
+        helper.assertFalse(HiddenChunks.mayHold(layer.level(), SectionPos.blockToSectionCoord(OLD_WORLD.getX()),
+                SectionPos.blockToSectionCoord(OLD_WORLD.getZ())), "the forgotten index still lists the block's chunk");
+        helper.succeed();
+    }
+
+    @GameTest(maxTicks = 1200)
+    public void verifyAnOldWorldsHiddenBlockTicks(GameTestHelper helper) {
+        verifyFarHiddenBlockTicks(helper, helper.getLevel().getServer().getLevel(Level.NETHER), OLD_WORLD,
+                "the old world's hidden block");
+    }
+
+    /**
+     * A hidden block far from everything else, which nothing reads after the restart: its chunk comes back only
+     * because the saved index lists it (reading a hidden chunk loads it, and one that loads holding blocks is
+     * listed again, which would hide a lost index).
+     */
+    @GameTest
+    public void writeAFarHiddenBlock(GameTestHelper helper) {
+        HiddenLayer.of(helper.getLevel().getServer().overworld()).setBlock(FAR, Blocks.STONE.defaultBlockState());
+        helper.succeed();
+    }
+
+    @GameTest(maxTicks = 1200)
+    public void verifyAFarHiddenBlockTicks(GameTestHelper helper) {
+        verifyFarHiddenBlockTicks(helper, helper.getLevel().getServer().overworld(), FAR, "the far hidden block");
+    }
+
+    /**
+     * Keeps the visible chunk at pos ticking and waits for its hidden twin to tick, then checks the hidden stone is
+     * there. The visible chunks around, and the hidden ones around but not the twin itself, are loaded first, so
+     * only the twin's own ticket is waited for (a far chunk generated or loaded by tickets alone can take longer
+     * than the test's ticks, which run back to back when few tests do).
+     */
+    private static void verifyFarHiddenBlockTicks(GameTestHelper helper, ServerLevel visible, BlockPos pos, String what) {
+        ServerLevel hidden = HiddenLayer.of(visible).level();
+        int chunkX = SectionPos.blockToSectionCoord(pos.getX());
+        int chunkZ = SectionPos.blockToSectionCoord(pos.getZ());
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dz = -2; dz <= 2; dz++) {
+                visible.getChunk(chunkX + dx, chunkZ + dz);
+                if (dx != 0 || dz != 0) {
+                    hidden.getChunk(chunkX + dx, chunkZ + dz);
+                }
+            }
+        }
+        visible.setChunkForced(chunkX, chunkZ, true);
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(hidden.isPositionEntityTicking(pos), what + "'s chunk ticks under its ticking twin"))
+                .thenExecute(() -> {
+                    helper.assertValueEqual(hidden.getBlockState(pos).getBlock(), Blocks.STONE, what);
+                    visible.setChunkForced(chunkX, chunkZ, false);
+                })
                 .thenSucceed();
     }
 

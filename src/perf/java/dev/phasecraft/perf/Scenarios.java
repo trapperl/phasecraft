@@ -362,7 +362,7 @@ final class Scenarios {
         int chunks = (2 * radius + 1) * (2 * radius + 1);
         Scenario s = new Scenario(name, chunks + " visible chunks of a flat world kept loaded and ticking (a " + (2 * radius + 1) + " x "
                 + (2 * radius + 1) + " square" + (radius == 10 ? ", one player's view at view distance 10" : "") + "), nothing "
-                + "built. `follow_on`: as shipped, an empty hidden chunk loaded and ticking under each (hiddenChunks); "
+                + "built. `follow_on`: as shipped (since HiddenChunks, an empty hidden chunk is not loaded; before, one ticked under each); "
                 + "`follow_off`: PhaseLink.followTicking does nothing, so no hidden chunk is loaded. heapMb: heap in use "
                 + "after a full collection (the difference is the hidden chunks' memory, roughly).").chunks(radius, radius);
         s.heap = true;

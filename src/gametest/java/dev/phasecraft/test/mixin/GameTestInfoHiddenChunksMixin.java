@@ -1,6 +1,7 @@
 package dev.phasecraft.test.mixin;
 
 import dev.phasecraft.layer.HiddenDimensions;
+import dev.phasecraft.link.HiddenChunks;
 import net.minecraft.gametest.framework.GameTestInfo;
 import net.minecraft.gametest.framework.GameTestRunner;
 import net.minecraft.server.level.ServerLevel;
@@ -57,6 +58,9 @@ abstract class GameTestInfoHiddenChunksMixin {
         if (hidden == null) {
             return;
         }
+        // The hidden chunks under a test load and tick as if they held something already (HiddenChunks): a test
+        // builds its hidden blocks as it goes, and its first ones would otherwise wait for their chunk to load.
+        testInstanceBlockEntity.getStructureBoundingBox().intersectingChunks().forEach(chunk -> HiddenChunks.hold(hidden, chunk));
         boolean ticking = testInstanceBlockEntity.getStructureBoundingBox().intersectingChunks()
                 .allMatch(chunk -> phasecraftTest$ticks(hidden, chunk));
         if (PHASECRAFT_TEST$WAIT) {

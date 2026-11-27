@@ -79,6 +79,37 @@ minecarts) where visible entities tick. (Until 2026-11-22 only blocks did,
 so hidden falling blocks hung in the air.) The
 hidden layer's own chunks around a player standing in it also tick, as usual.
 
+**Only hidden chunks that hold something** (`HiddenChunks`; since
+2026-11-27, the person: "Let's fix that"). Giving every ticking visible chunk
+a ticking hidden twin cost about 1 µs a chunk a tick and 50 to 90 KB of
+memory each, though almost every twin is empty: +0.4 ms a tick and 40 MB for
+one player's view at distance 10 (`src/perf`, twins). Now each hidden
+dimension keeps an index, saved with it (`data/phasecraft/hidden_chunks`), of
+its chunks that hold something, and only those get the ticket:
+- A chunk goes in when a block other than air is set in it (every successful
+  setBlock: placed, moved by a piston, flowed, built by a structure), when a
+  hidden entity other than a player is in it at the end of a tick (an item
+  thrown, a minecart rolling on), and, as a backstop, when it loads holding
+  blocks.
+- A chunk comes out when its twin stops ticking and it is found empty then:
+  only air, no block entities, its entities loaded and none in it.
+- A world from before the index starts with every hidden chunk on disk
+  listed (read from the region and entity files' headers); the empty ones
+  come out as each is left. Nothing changes for them until then.
+- A chunk that goes in gets its ticket at the end of the tick and loads from
+  the next: a first hidden block in a new chunk is placed at once, but what it
+  schedules waits those few ticks. A ticking hidden chunk's neighbours are
+  loaded as vanilla always does, so water, pistons and falling blocks can
+  reach into them, and that puts them in the index in turn.
+- Everything that reads the hidden layer from the visible side already
+  treats a chunk that is not loaded as air, which is what an empty one is;
+  the overlay sends an empty unlisted chunk as empty without loading it.
+- GameTests: the harness lists the chunks under each test's structure before
+  it starts (GameTestInfoHiddenChunksMixin). `HiddenChunkGameTests` checks the
+  rules above; `PhaseLayerRestartPhases` that a saved index brings a chunk
+  back (the stale port) and that an old world's files are listed (the
+  Nether's hidden layer forgets its index before the restart).
+
 **Phase piston / sticky phase piston** (Redstone tab). Placed in the hidden
 layer, powered by hidden redstone exactly like a vanilla piston (including
 quasi-connectivity), it moves the **visible** blocks in front of its

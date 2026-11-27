@@ -1,5 +1,6 @@
 package dev.phasecraft.mixin;
 
+import dev.phasecraft.link.HiddenChunks;
 import dev.phasecraft.link.PhaseLink;
 import dev.phasecraft.overlay.OverlaySync;
 import dev.phasecraft.phased.PhasedInput;
@@ -25,6 +26,7 @@ abstract class ServerLevelPhaseLinkMixin {
     @Inject(method = "updatePOIOnBlockStateChange", at = @At("HEAD"))
     private void phasecraft$notifyOtherLayer(BlockPos pos, BlockState oldState, BlockState newState, CallbackInfo ci) {
         ServerLevel level = (ServerLevel) (Object) this;
+        HiddenChunks.onBlockChanged(level, pos, newState);
         PhaseLink.onBlockChanged(level, pos, oldState, newState);
         OverlaySync.onBlockChanged(level, pos, newState);
         PhasedInput.onBlockChanged(level, pos, oldState, newState);

@@ -328,33 +328,15 @@ public final class PhaseLink {
         });
     }
 
+    /**
+     * A visible chunk's ticking changed: its hidden twin follows, if it holds something ({@link HiddenChunks}).
+     * (Kept here, by this name: test and perf mixins hold it back or switch it off.)
+     */
     private static void followTicking(ServerLevel level, LevelChunk chunk, FullChunkStatus oldStatus, FullChunkStatus newStatus) {
         ResourceKey<Level> hiddenKey = HiddenDimensions.hiddenOf(level.dimension()).orElse(null);
         ServerLevel hidden = hiddenKey == null ? null : level.getServer().getLevel(hiddenKey);
-        if (hidden == null) {
-            return;
+        if (hidden != null) {
+            HiddenChunks.onVisibleTicking(level, hidden, chunk.getPos(), newStatus);
         }
-        // The hidden chunk ticks exactly as the visible one does: blocks where it
-        // ticks blocks, entities too (falling sand, items, minecarts) where it
-        // ticks entities. A ticket of radius r puts its centre chunk at level
-        // 33 - r: 32 is block ticking, 31 entity ticking.
-        int oldRadius = ticketRadius(oldStatus);
-        int newRadius = ticketRadius(newStatus);
-        if (oldRadius == newRadius) {
-            return;
-        }
-        if (newRadius > 0) {
-            hidden.getChunkSource().addTicketWithRadius(PHASE_TICKET, chunk.getPos(), newRadius);
-        }
-        if (oldRadius > 0) {
-            hidden.getChunkSource().removeTicketWithRadius(PHASE_TICKET, chunk.getPos(), oldRadius);
-        }
-    }
-
-    private static int ticketRadius(FullChunkStatus status) {
-        if (status.isOrAfter(FullChunkStatus.ENTITY_TICKING)) {
-            return 2;
-        }
-        return status.isOrAfter(FullChunkStatus.BLOCK_TICKING) ? 1 : 0;
     }
 }
