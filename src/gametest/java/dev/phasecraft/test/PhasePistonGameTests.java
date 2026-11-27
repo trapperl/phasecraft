@@ -59,8 +59,11 @@ public class PhasePistonGameTests {
                 .thenSucceed();
     }
 
+    /** A row of 13 blocks and the spot past it need more room than the default 8x8x8 area. */
+    static final String LONG_ROW = "phasecraft-test:empty_24x7x24";
+
     /** README: a piston cannot push 13 ordinary blocks (12 is the limit). */
-    @GameTest(maxTicks = 40)
+    @GameTest(maxTicks = 40, structure = LONG_ROW)
     public void cannotPushThirteenBlocks(GameTestHelper helper) {
         BlockPos pistonRel = new BlockPos(0, 2, 1);
         BlockPos piston = helper.absolutePos(pistonRel);
@@ -89,7 +92,7 @@ public class PhasePistonGameTests {
     }
 
     /** Twelve blocks is the vanilla limit, and is pushed. */
-    @GameTest(maxTicks = 60)
+    @GameTest(maxTicks = 60, structure = LONG_ROW)
     public void pushesTwelveBlocks(GameTestHelper helper) {
         BlockPos pistonRel = new BlockPos(0, 2, 3);
         BlockPos piston = helper.absolutePos(pistonRel);
