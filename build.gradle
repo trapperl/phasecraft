@@ -180,6 +180,65 @@ loom {
     }
 }
 
+// Performance measurements (src/perf, mod phasecraft-perf; docs: src/perf/README.md): ./gradlew runPerf starts a
+// dedicated server on a fresh flat world, builds each scenario, records server tick times with and without
+// PhaseCraft's part, writes build/perf/results.md and stops. Never shipped, and not part of build or check (only
+// compiled there, so it cannot rot): it takes many minutes and its numbers mean nothing on a busy CI runner.
+//   -Pperf.scenarios=wire,twins   only scenarios whose name contains one of these
+//   -Pperf.variants=as_shipped,hooks_off   only variants with exactly these names
+//   -Pperf.rounds=3 -Pperf.ticks=300 -Pperf.rate=20 (ticks a second) -Pperf.jfr=true (profile each measurement)
+sourceSets {
+    perf {
+        compileClasspath += sourceSets.main.compileClasspath + sourceSets.main.output
+        runtimeClasspath += sourceSets.main.runtimeClasspath + sourceSets.main.output
+    }
+}
+//   -Pperf.tag=name   its own run and results folders (build/perf-name), to run two at once (with -Pperf.port=N)
+def perfTag = findProperty('perf.tag') ? "perf-${findProperty('perf.tag')}" : 'perf'
+def perfRunDir = "build/run/${perfTag}"
+loom {
+    mods {
+        phasecraftPerf {
+            sourceSet sourceSets.perf
+        }
+    }
+    runs {
+        perf {
+            server()
+            configName = 'Performance measurements'
+            source sourceSets.perf
+            runDir = perfRunDir
+            programArgs 'nogui'
+            vmArgs offlineTestArgs
+            // The second pair: profiler samples name the method they are in, not the nearest safepoint's.
+            vmArgs '-Xms4G', '-Xmx4G', '-XX:+UnlockDiagnosticVMOptions', '-XX:+DebugNonSafepoints'
+            vmArgs "-Dphasecraft.perf.out=${layout.buildDirectory.dir(perfTag).get().asFile}",
+                    "-Dphasecraft.perf.contraptions=${file('src/gametest/resources/contraptions')}"
+            ['scenarios', 'variants', 'rounds', 'ticks', 'rate', 'jfr'].each { name ->
+                if (findProperty("perf.${name}") != null) {
+                    vmArg "-Dphasecraft.perf.${name}=${findProperty("perf.${name}")}"
+                }
+            }
+        }
+    }
+}
+tasks.named('check') { dependsOn tasks.named('compilePerfJava') }
+tasks.named('runPerf') { task ->
+    def dir = file(perfRunDir)
+    doFirst {
+        // A fresh world every run; a local server that never talks to Mojang (see offlineTestArgs).
+        delete "${perfRunDir}/world"
+        dir.mkdirs()
+        new File(dir, 'eula.txt').text = '# Accepted for the measurement server, as for the test servers.\neula=true\n'
+        new File(dir, 'server.properties').text = [
+                'online-mode=false', 'server-ip=127.0.0.1', "server-port=${findProperty('perf.port') ?: 25599}",
+                'enable-rcon=false', 'enable-query=false', 'level-name=world', 'level-type=minecraft\\:flat',
+                'generate-structures=false', 'pause-when-empty-seconds=0', 'max-tick-time=-1',
+                'view-distance=5', 'simulation-distance=5', 'spawn-protection=0', 'sync-chunk-writes=false',
+                'enforce-secure-profile=false', 'motd=PhaseCraft perf'].join('\n') + '\n'
+    }
+}
+
 tasks.register('cleanRestartTest', Delete) {
     delete restartRunDir
 }

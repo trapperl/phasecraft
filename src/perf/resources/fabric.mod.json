@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "phasecraft-perf",
+  "version": "1.0.0",
+  "name": "PhaseCraft performance measurements",
+  "description": "Builds heavy scenarios on a throwaway server and records tick times (./gradlew runPerf). Not shipped with the mod.",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["dev.phasecraft.perf.PerfMod"]
+  },
+  "depends": {
+    "phasecraft": "*",
+    "fabric-lifecycle-events-v1": "*"
+  },
+  "mixins": [
+    "phasecraft-perf.mixins.json"
+  ]
+}

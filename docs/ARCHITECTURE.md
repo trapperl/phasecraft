@@ -57,7 +57,11 @@ the examples no longer use one.
   end of the tick (`PhaseUpdateQueue`). A loop through both layers therefore
   advances one hop per tick, like a clock, instead of recursing.
 - A change counts if a signal source or conductor changes within two blocks
-  (direct power, or power through a conductor).
+  (direct power, or power through a conductor). Nothing is queued where no
+  chunk section within those two blocks can hold a port in the other layer
+  (its palette says), which is almost everywhere: queueing 25 refreshes for
+  every such change, and looking for a hidden port on every visible signal
+  read, took a fifth of the tick on a busy wire network (`src/perf`).
 - **Ports catch up when their chunk starts ticking.** A refresh for a port
   whose chunk is not loaded is dropped, and a hidden chunk loads a few ticks
   after its visible twin, so the visible power at a port can change before
@@ -372,9 +376,13 @@ changes what is phased.
 - **Pressure plates:** every plate's signal goes through vanilla's
   `getEntityCount`; for a phased plate `BasePressurePlateMixin` counts the
   visible level's entities in the same box. No entity ever touches a hidden
-  plate, so `PhasedInput` keeps a list of the plates in loaded hidden chunks
-  (block changes and chunk loads) and checks the released ones every tick;
-  once pressed, the plate's own scheduled ticks keep counting.
+  plate, so `PhasedInput` keeps a list of the plates in loaded hidden chunks,
+  by chunk (block changes and chunk loads; a chunk's are dropped when it
+  unloads), and checks the released ones every tick in the chunks that tick
+  blocks; once pressed, the plate's own scheduled ticks keep counting.
+  (Checking every plate ever seen, wherever it was, read its block every
+  tick, which kept hidden chunks with plates from ever unloading:
+  `src/perf`, plates_unloaded.)
 - **Watchers** (`PhasedWatchers`; the third step, as the person approved
   it, 2026-11-23):
   - A phased **observer** watches the visible block in front of it. Every

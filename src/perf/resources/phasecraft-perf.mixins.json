@@ -1,0 +1,8 @@
+{
+  "required": true,
+  "package": "dev.phasecraft.perf.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "mixins": ["PhaseLinkSwitchMixin", "OverlaySyncSwitchMixin", "PhasedInputSwitchMixin", "PhasedLightsSwitchMixin",
+             "PhasedWatchersSwitchMixin", "BlockChangeCounterMixin"],
+  "injectors": {"defaultRequire": 1}
+}

@@ -2,13 +2,16 @@ package dev.phasecraft.test;
 
 import dev.phasecraft.PhaseCraftBlocks;
 import dev.phasecraft.layer.HiddenLayer;
+import dev.phasecraft.link.PhasePortBlock;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ButtonBlock;
 import net.minecraft.world.level.block.LeverBlock;
@@ -211,6 +214,78 @@ public class HiddenPortGameTests {
                 .thenWaitUntil(() -> helper.assertTrue(visibleLit(helper, portSpot.above()), "visible lamp not lit by the secret brick"))
                 .thenWaitUntil(() -> helper.assertFalse(visibleLit(helper, portSpot.above()), "visible lamp stayed lit after the button let go"))
                 .thenExecute(() -> TestPlayers.leave(helper, player))
+                .thenSucceed();
+    }
+
+    /**
+     * A port hears a change two blocks away in the neighbouring chunk. (A change queues port refreshes only where
+     * the other layer's chunk sections near it can hold a port: the sections across a chunk border count too.)
+     * The port is the first block of a chunk; a visible repeater two blocks west of it, in the chunk before,
+     * powers the visible stone between them, and that is the port's input.
+     */
+    @GameTest(structure = "phasecraft-test:empty_24x7x24", maxTicks = 80)
+    public void portHearsAChangeAcrossAChunkBorder(GameTestHelper helper) {
+        int x = 4;
+        while ((helper.absolutePos(new BlockPos(x, 2, 5)).getX() & 15) != 0) {
+            x++;
+        }
+        helper.assertTrue(x <= 20, "no chunk border in the test area");
+        BlockPos spot = new BlockPos(x, 2, 5);
+        for (int floorX = x - 4; floorX <= x + 2; floorX++) {
+            helper.setBlock(new BlockPos(floorX, 1, 5), Blocks.STONE);
+        }
+        hidden(helper, spot.below(), Blocks.STONE.defaultBlockState());
+        hidden(helper, spot, port());
+        hidden(helper, spot.east(), Blocks.REDSTONE_LAMP.defaultBlockState());
+        helper.setBlock(spot.west(), Blocks.STONE);
+        helper.setBlock(spot.west(2), Blocks.REPEATER.defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.WEST));
+        helper.startSequence()
+                .thenIdle(5)
+                .thenExecute(() -> helper.assertFalse(hiddenLit(helper, spot.east()), "hidden lamp lit before any power"))
+                .thenExecute(() -> helper.setBlock(spot.west(3), Blocks.REDSTONE_BLOCK))
+                .thenWaitUntil(() -> helper.assertTrue(hiddenLit(helper, spot.east()),
+                        "hidden lamp not lit: the port did not hear the repeater in the next chunk"))
+                .thenExecute(() -> helper.setBlock(spot.west(3), Blocks.AIR))
+                .thenWaitUntil(() -> helper.assertFalse(hiddenLit(helper, spot.east()), "hidden lamp stayed lit"))
+                .thenSucceed();
+    }
+
+    /**
+     * The same reach where no other test's port is near. Whether a change queues refreshes is asked of the chunk
+     * sections' palettes, and those of the test area list the ports of the tests around (so the test above would
+     * pass even if only the change's own chunk were asked). Far from everything: a port in the first block of a
+     * chunk, a visible lever two blocks west of it, in the chunk before, on the visible stone between them.
+     * Nothing ticks there, and nothing needs to: the port is refreshed at the end of the tick of the change.
+     */
+    @GameTest(maxTicks = 40)
+    public void portHearsAChangeAcrossAChunkBorderFarFromOtherPorts(GameTestHelper helper) {
+        ServerLevel visible = helper.getLevel();
+        HiddenLayer hidden = HiddenLayer.of(visible);
+        BlockPos near = helper.absolutePos(SPOT);
+        BlockPos spot = new BlockPos((near.getX() + 160_000) & ~15, near.getY(), near.getZ() + 160_000);
+        BlockState lever = Blocks.LEVER.defaultBlockState().setValue(LeverBlock.FACE, AttachFace.WALL)
+                .setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.WEST);
+        hidden.setBlock(spot, port());
+        visible.setBlock(spot.west(), Blocks.STONE.defaultBlockState(), Block.UPDATE_ALL);
+        visible.setBlock(spot.west(2), lever, Block.UPDATE_ALL);
+        helper.startSequence()
+                .thenIdle(2)
+                .thenExecute(() -> {
+                    // Reading the port's spot in both layers brings its chunks into memory, as they are where the world ticks.
+                    helper.assertValueEqual(hidden.getBlock(spot).getValue(PhasePortBlock.POWER), 0, "port power before the lever");
+                    helper.assertTrue(visible.getBlockState(spot).isAir(), "something visible at the port's spot");
+                    visible.setBlock(spot.west(2), lever.setValue(LeverBlock.POWERED, true), Block.UPDATE_ALL);
+                })
+                .thenIdle(1)
+                .thenExecute(() -> {
+                    helper.assertValueEqual(hidden.getBlock(spot).getValue(PhasePortBlock.POWER), 15,
+                            "port power: it did not hear the lever in the next chunk");
+                    helper.assertTrue(visible.getBlockState(spot).isAir(), "something visible at the port's spot");
+                    visible.setBlock(spot.west(2), lever, Block.UPDATE_ALL);
+                })
+                .thenIdle(1)
+                .thenExecute(() -> helper.assertValueEqual(hidden.getBlock(spot).getValue(PhasePortBlock.POWER), 0,
+                        "port power after the lever went off"))
                 .thenSucceed();
     }
 }
