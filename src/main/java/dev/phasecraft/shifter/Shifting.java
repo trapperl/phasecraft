@@ -12,8 +12,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.ProblemReporter;
-import net.minecraft.world.Container;
-import net.minecraft.world.Containers;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -123,6 +121,12 @@ public final class Shifting {
         }
         // As placed: connected to its neighbours (a fence's arms), which is the shape a mob must be lifted clear of.
         BlockState placed = Block.updateFromNeighbourShapes(held.state(), visible, pos);
+        if (placed.isAir()) {
+            // It cannot stand there any more (a sign whose wall is gone): it drops as an item, as it would the
+            // moment it was placed, with what it held. What stands in the spot is left alone.
+            drop(visible, pos, held);
+            return true;
+        }
         if (!liftOutOfTheWay(visible, pos, placed)) {
             return false;
         }
@@ -191,21 +195,38 @@ public final class Shifting {
         return true;
     }
 
+    /**
+     * Whether a held block, put back at pos now, would not stand there but drop as an item: what holds it up is not
+     * there (a sign whose wall is still held).
+     */
+    static boolean wouldDrop(ServerLevel visible, BlockPos pos, Held held) {
+        return Block.updateFromNeighbourShapes(held.state(), visible, pos).isAir();
+    }
+
     /** Puts a held block back at pos, or, if it cannot (or a claim refuses), drops it there as an item with its contents. */
     public static void putBackOrDrop(ServerLevel visible, BlockPos pos, Held held, MachineRights rights) {
-        if (putBack(visible, pos, held, rights)) {
-            return;
+        if (!putBack(visible, pos, held, rights)) {
+            drop(visible, pos, held);
         }
+    }
+
+    /**
+     * Drops a held block at pos as an item, as if it had stood there and been broken with no tool: its loot, and
+     * then what its block entity lets go of when it is removed (vanilla's own {@code preRemoveSideEffects}: a
+     * container's items, a lectern's book, a jukebox's record, a campfire's food, a furnace's experience).
+     */
+    private static void drop(ServerLevel visible, BlockPos pos, Held held) {
         BlockEntity contents = null;
         if (held.data() != null && held.state().getBlock() instanceof EntityBlock block) {
             contents = block.newBlockEntity(pos, held.state());
             if (contents != null) {
+                contents.setLevel(visible);
                 contents.loadWithComponents(TagValueInput.create(ProblemReporter.DISCARDING, visible.registryAccess(), held.data()));
             }
         }
-        if (contents instanceof Container container) {
-            Containers.dropContents(visible, pos, container);
-        }
         Block.dropResources(held.state(), visible, pos, contents);
+        if (contents != null) {
+            contents.preRemoveSideEffects(pos, held.state());
+        }
     }
 }
