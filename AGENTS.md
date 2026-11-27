@@ -41,6 +41,11 @@ blocks, with future vanilla-compatible cross-layer redstone and pistons.
     hoppers need vanilla's. Check what is
     drawn by comparing screenshot pixels, and look at the screenshots
     (build/run/clientGameTest*/screenshots) before calling a visual change done.
+- Only hidden chunks that hold something load and tick (HiddenChunks, an
+  index saved per hidden dimension; docs/ARCHITECTURE.md). The GameTest
+  harness lists the chunks under each test's structure; a test that uses
+  hidden chunks elsewhere gets them listed by putting a block there, and
+  must allow a few ticks for them to start ticking.
 - A GameTest starts only once the hidden chunks under its structure tick
   (GameTestInfoHiddenChunksMixin, test mod): they start some ticks after the
   visible ones, by chance, which made rare late or stalled hidden steps
