@@ -20,12 +20,15 @@ import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RedstoneLampBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.storage.SavedDataStorage;
+import net.minecraft.world.phys.AABB;
 
 /**
  * In-game tests for the hidden layer, run by {@code ./gradlew runGameTest}.
@@ -43,6 +46,31 @@ public class PhaseLayerGameTests {
             .setValue(BlockStateProperties.DELAY, 3);
     private static final BlockState OBSIDIAN = Blocks.OBSIDIAN.defaultBlockState();
     private static final BlockState AIR = Blocks.AIR.defaultBlockState();
+
+    /**
+     * When a test starts, the hidden chunks under its structure tick (scheduled ticks, block entities, entities),
+     * as its visible chunks do. They would not by themselves: a hidden chunk starts ticking some ticks after its
+     * visible twin, and until then a hidden shifter or repeater placed by the test does its first move and then
+     * waits (issue #3). GameTestInfoHiddenChunksMixin holds every test back until they do.
+     */
+    @GameTest
+    public void hiddenChunksTickWhenATestStarts(GameTestHelper helper) {
+        assertHiddenChunksTick(helper);
+        helper.succeed();
+    }
+
+    static void assertHiddenChunksTick(GameTestHelper helper) {
+        ServerLevel hidden = HiddenLayer.of(helper.getLevel()).level();
+        AABB bounds = helper.getBounds();
+        BoundingBox box = BoundingBox.fromCorners(BlockPos.containing(bounds.minX, bounds.minY, bounds.minZ),
+                BlockPos.containing(bounds.maxX - 1, bounds.maxY - 1, bounds.maxZ - 1));
+        for (ChunkPos chunk : box.intersectingChunks().toList()) {
+            helper.assertTrue(hidden.isPositionTickingWithEntitiesLoaded(chunk.pack()),
+                    "hidden chunk " + chunk + " does not tick blocks at the start of the test");
+            helper.assertTrue(hidden.areEntitiesActuallyLoadedAndTicking(chunk),
+                    "hidden chunk " + chunk + " does not tick entities at the start of the test");
+        }
+    }
 
     /** A hidden-layer block and an overworld block can coexist at the same XYZ. */
     @GameTest

@@ -181,6 +181,17 @@ public class AreaShifterGameTests {
                 .thenSucceed();
     }
 
+    /**
+     * The same as {@link PhaseLayerGameTests#hiddenChunksTickWhenATestStarts}, in this class's own batch and with
+     * its structure, which lies over several chunks: the turned-around test here once saw every step after the first
+     * a tick late, as its hidden chunk started ticking eight ticks into the test (issue #3).
+     */
+    @GameTest(structure = STRUCTURE, environment = RULE_ON)
+    public void hiddenChunksTickWhenATestStarts(GameTestHelper helper) {
+        PhaseLayerGameTests.assertHiddenChunksTick(helper);
+        helper.succeed();
+    }
+
     /** The game rule is off by default: both corners powered, nothing moves. */
     @GameTest(structure = STRUCTURE, maxTicks = 100)
     public void offByDefault(GameTestHelper helper) {
