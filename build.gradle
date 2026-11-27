@@ -136,8 +136,12 @@ loom {
             vmArgs offlineTestArgs
         }
         gameTest {
-            vmArgs gameTestArgs('gametest', 'phasecraft-test:*_game_tests_*')
+            // -PgameTestFilter=phasecraft-test:line_shifter_game_tests_* runs only some tests;
+            // -PgameTestVmArgs="-Dname=value ..." passes switches to the test server (see
+            // GameTestInfoHiddenChunksMixin and HiddenChunkDelayMixin in the test mod).
+            vmArgs gameTestArgs('gametest', (findProperty('gameTestFilter') ?: 'phasecraft-test:*_game_tests_*').toString())
             vmArgs offlineTestArgs
+            vmArgs((findProperty('gameTestVmArgs') ?: '').toString().split(' ').findAll { it })
         }
         clientGameTestVulkan {
             inherit clientGameTest

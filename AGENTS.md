@@ -38,6 +38,11 @@ blocks, with future vanilla-compatible cross-layer redstone and pistons.
     Xvfb virtual display. Check what is
     drawn by comparing screenshot pixels, and look at the screenshots
     (build/run/clientGameTest*/screenshots) before calling a visual change done.
+- A GameTest starts only once the hidden chunks under its structure tick
+  (GameTestInfoHiddenChunksMixin, test mod): they start some ticks after the
+  visible ones, by chance, which made rare late or stalled hidden steps
+  (issue #3). To see it: `./gradlew runGameTest -PgameTestVmArgs="-Dphasecraft.test.waitForHiddenChunks=false
+  -Dphasecraft.test.hiddenChunkDelay=40"`; `-PgameTestFilter=...` picks tests.
 - Client-only code lives in src/client (split source sets); src/main must not
   reference client classes.
 - Test games never talk to Mojang or Microsoft (2026-11-22: dozens of test
