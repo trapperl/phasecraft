@@ -11,7 +11,8 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "dev.phasecraft.PhaseCraft"
+      "dev.phasecraft.PhaseCraft",
+      "dev.phasecraft.compat.ProtectionAdapters"
     ],
     "client": [
       "dev.phasecraft.client.PhaseCraftClient"

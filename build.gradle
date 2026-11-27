@@ -31,6 +31,9 @@ configurations {
     // Lithium (Modrinth) rewrites hopper, redstone and block-ticking code and
     // is on most servers; runGameTestLithium runs the server GameTests with it.
     lithium { transitive = false }
+    // Open Parties and Claims (Modrinth; LGPL-3.0, compiled against and run in a test, never shipped) with
+    // the Forge Config API Port it needs (MPL-2.0): runGameTestOpac runs the OPAC claim GameTests with them.
+    opac { transitive = false }
 }
 
 dependencies {
@@ -44,6 +47,11 @@ dependencies {
     implementation include("eu.pb4:common-protection-api:${project.common_protection_api_version}")
     sodium "maven.modrinth:sodium:${project.sodium_version}"
     lithium "maven.modrinth:lithium:${project.lithium_version}"
+    // dev.phasecraft.compat.OpacProtection answers the Common Protection API from OPAC's claims, through
+    // OPAC's own API: compiled against it, loaded only when OPAC is installed, never part of the jar.
+    compileOnly "maven.modrinth:open-parties-and-claims:${project.opac_version}"
+    opac "maven.modrinth:open-parties-and-claims:${project.opac_version}"
+    opac "maven.modrinth:forge-config-api-port:${project.forge_config_api_port_version}"
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -96,6 +104,8 @@ tasks.named('check') { dependsOn tasks.named('mcbTest') }
 // @GameTests, writes a JUnit-style report and exits non-zero on failure.
 //
 //   ./gradlew runGameTest   ordinary tests: classes named *GameTests
+//   ./gradlew runGameTestOpac  the claim tests that need Open Parties and Claims
+//                           (classes named Opac*Checks), with that mod loaded
 //   ./gradlew restartTest   two server processes on one world folder:
 //                           PhaseLayerRestartPhases write, then verify
 //   ./gradlew clientTest    client GameTests (src/gametest/.../client): a real
@@ -113,6 +123,11 @@ fabricApi {
         // EULA accepted (https://aka.ms/MinecraftEULA); the project owner has.
         eula = true
     }
+}
+
+// The OPAC claim GameTests make their claims through OPAC's API.
+dependencies {
+    gametestCompileOnly "maven.modrinth:open-parties-and-claims:${project.opac_version}"
 }
 
 def gameTestArgs = { String report, String filter ->
@@ -157,6 +172,16 @@ loom {
             configName = 'GameTest: with Lithium'
             runDir = 'build/run/gameTestLithium'
             vmArgs gameTestArgs('gametest-lithium', 'phasecraft-test:*_game_tests_*')
+            vmArgs offlineTestArgs
+        }
+        // The OPAC claim GameTests (classes named Opac*Checks, which the ordinary filter leaves out: they
+        // need the real Open Parties and Claims mod), with OPAC loaded (./gradlew runGameTestOpac, part of
+        // build). OPAC's settings: build/run/gameTestOpac/config and world/serverconfig.
+        gameTestOpac {
+            inherit gameTest
+            configName = 'GameTest: with Open Parties and Claims'
+            runDir = 'build/run/gameTestOpac'
+            vmArgs gameTestArgs('gametest-opac', 'phasecraft-test:opac_*')
             vmArgs offlineTestArgs
         }
         gameTest {
@@ -342,8 +367,27 @@ tasks.named('runGameTestLithium') { task ->
         task.jvmArgs "-Dfabric.addMods=${lithiumJars.singleFile.absolutePath}"
     }
 }
+tasks.named('runGameTestOpac') { task ->
+    def opacJars = configurations.opac
+    inputs.files(opacJars)
+    def world = file('build/run/gameTestOpac/world')
+    def report = layout.buildDirectory.file('reports/gametest/TEST-gametest-opac.xml').get().asFile
+    doFirst {
+        // A fresh world every run: OPAC keeps its claims in it.
+        project.delete(world)
+        report.delete()
+        task.jvmArgs "-Dfabric.addMods=${opacJars.files.collect { it.absolutePath }.join(File.pathSeparator)}"
+    }
+    // A filter that matches nothing passes; this run exists for these tests.
+    doLast {
+        def ran = report.exists() ? (report.text =~ /<testcase /).size() : 0
+        if (ran < 3) {
+            throw new GradleException("runGameTestOpac ran ${ran} OPAC GameTests, expected at least 3 (see ${report})")
+        }
+    }
+}
 tasks.named('check') {
-    dependsOn 'runGameTest', 'runGameTestLithium', 'restartTest', 'clientTest'
+    dependsOn 'runGameTest', 'runGameTestLithium', 'runGameTestOpac', 'restartTest', 'clientTest'
 }
 
 processResources {
