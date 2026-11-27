@@ -89,6 +89,19 @@ public class InsideViewGameTests {
         }
     }
 
+    /**
+     * Loads the visible chunks an inside player at this chunk is to be sent, and their neighbours, at once. The
+     * player's ticket loads them anyway, but in its own time, on other threads; the GameTest server runs ticks
+     * as fast as it can, so a test counting ticks cannot wait for that.
+     */
+    private static void loadAround(ServerLevel visible, ChunkPos home) {
+        for (int x = home.x() - InsideView.RADIUS_CHUNKS - 1; x <= home.x() + InsideView.RADIUS_CHUNKS + 1; x++) {
+            for (int z = home.z() - InsideView.RADIUS_CHUNKS - 1; z <= home.z() + InsideView.RADIUS_CHUNKS + 1; z++) {
+                visible.getChunk(x, z);
+            }
+        }
+    }
+
     private static void moveTo(ServerPlayer player, ServerLevel level, Vec3 spot) {
         player.teleport(new TeleportTransition(level, spot, Vec3.ZERO, 0, 0, TeleportTransition.DO_NOTHING));
     }
@@ -174,6 +187,8 @@ public class InsideViewGameTests {
                     helper.assertTrue(player.position().distanceTo(spot) < 0.01, "the key moved the player: " + player.position());
                     visible.setBlockAndUpdate(far, Blocks.GOLD_BLOCK.defaultBlockState());
                 })
+                .thenIdle(2)
+                .thenExecute(() -> loadAround(visible, home))
                 .thenWaitUntil(() -> helper.assertValueEqual(InsideView.chunksSentTo(player), all, "chunks sent"))
                 .thenExecute(() -> {
                     client.take(TestPlayers.sent(player));
@@ -271,6 +286,8 @@ public class InsideViewGameTests {
         helper.assertTrue(InsideView.shows(spectator), "a Spectator in the hidden layer is not shown the inside view");
         Client seen = new Client();
         helper.startSequence()
+                .thenIdle(2)
+                .thenExecute(() -> loadAround(helper.getLevel(), chunkOf(BlockPos.containing(spot))))
                 .thenWaitUntil(() -> {
                     seen.take(TestPlayers.sent(spectator));
                     helper.assertTrue(seen.has(helper.absolutePos(CENTRE.above())), "the Spectator was not sent the cube");
@@ -290,6 +307,49 @@ public class InsideViewGameTests {
                         TestPlayers.leave(helper, player);
                     }
                 })
+                .thenSucceed();
+    }
+
+    /**
+     * Two players inside in the same chunk share one ticket on the visible world (vanilla keeps one per chunk and
+     * radius): when one leaves, the other's visible world stays loaded, and what they move to is still sent.
+     */
+    @GameTest(maxTicks = 600)
+    public void oneLeavingDoesNotUnloadTheOthersVisibleWorld(GameTestHelper helper) {
+        ServerLevel visible = helper.getLevel();
+        ServerLevel hidden = HiddenLayer.of(visible).level();
+        // Far from every test structure, so that nothing else keeps these chunks loaded.
+        BlockPos base = helper.absolutePos(BlockPos.ZERO);
+        Vec3 spot = new Vec3(base.getX() + 0.5, visible.getMaxY() - 20, base.getZ() - 4000.5);
+        ChunkPos home = chunkOf(BlockPos.containing(spot));
+        ServerPlayer first = TestPlayers.joinWithMod(helper, GameType.CREATIVE, INSIDE_TYPES);
+        ServerPlayer second = TestPlayers.joinWithMod(helper, GameType.SPECTATOR, INSIDE_TYPES);
+        moveTo(first, hidden, spot);
+        moveTo(second, hidden, spot);
+        int all = (2 * InsideView.RADIUS_CHUNKS + 1) * (2 * InsideView.RADIUS_CHUNKS + 1);
+        helper.startSequence()
+                .thenIdle(2)
+                .thenExecute(() -> {
+                    helper.assertValueEqual(InsideView.ticketHolders(visible, home), 2, "players holding the ticket");
+                    loadAround(visible, home);
+                })
+                .thenWaitUntil(() -> {
+                    helper.assertValueEqual(InsideView.chunksSentTo(first), all, "chunks sent to the first player");
+                    helper.assertValueEqual(InsideView.chunksSentTo(second), all, "chunks sent to the second player");
+                })
+                .thenExecute(() -> TestPlayers.leave(helper, second))
+                // Longer than chunks without a ticket stay loaded.
+                .thenIdle(100)
+                .thenExecute(() -> {
+                    helper.assertValueEqual(InsideView.ticketHolders(visible, home), 1, "players holding the ticket after one left");
+                    helper.assertTrue(visible.getChunkSource().getChunkNow(home.x(), home.z()) != null,
+                            "the visible chunk under the player still inside was unloaded when the other left");
+                    helper.assertTrue(visible.getChunkSource().getChunkNow(home.x() + InsideView.RADIUS_CHUNKS, home.z()) != null,
+                            "the edge of the player's visible square was unloaded when the other left");
+                    TestPlayers.leave(helper, first);
+                })
+                .thenIdle(2)
+                .thenExecute(() -> helper.assertValueEqual(InsideView.ticketHolders(visible, home), 0, "players holding the ticket after both left"))
                 .thenSucceed();
     }
 
