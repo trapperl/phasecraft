@@ -21,7 +21,8 @@ import net.minecraft.world.phys.Vec3;
  * <p>Going in is for Creative and Spectator players only, whoever asks and however: the hidden layer has no ground,
  * and {@link HiddenLayerGuard} would move anyone else straight out again. The key needs no cheats and no operator
  * level: a Creative player may build anywhere already, and what a Spectator could see there the overlay shows them
- * anyway. Going out is always allowed.</p>
+ * anyway. Where the visible world is protected from a player (a claim, spawn protection), so is the hidden layer
+ * they stand in ({@code InsideProtection}). Going out is always allowed.</p>
  */
 public final class LayerSwitch {
     private LayerSwitch() {}

@@ -3,6 +3,7 @@ package dev.phasecraft.overlay;
 import dev.phasecraft.layer.Access;
 import dev.phasecraft.layer.HiddenDimensions;
 import dev.phasecraft.layer.HiddenLayerGuard;
+import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.LongIterator;
@@ -57,8 +58,9 @@ import org.jspecify.annotations.Nullable;
  *       those seven spots are looked at again, at the end of the tick, and sent to the players who hold that
  *       chunk.</li>
  *   <li><b>Loading:</b> nobody may be in the visible world there, so each inside player holds a ticket on the visible
- *       level around their spot ({@link #TICKET}): the visible world near them stays loaded and ticking, as if
- *       they stood in it, and their hidden machinery can be tried against it.</li>
+ *       level around their spot ({@link #TICKET}, shared and counted when two stand in one chunk): the visible
+ *       world near them stays loaded and ticking, as if they stood in it, and their hidden machinery can be tried
+ *       against it.</li>
  * </ul>
  */
 public final class InsideView {
@@ -82,6 +84,11 @@ public final class InsideView {
     private static final Map<UUID, Watch> WATCHES = new HashMap<>();
     /** Visible dimensions somebody watches from inside, with how many do. */
     private static final Map<ResourceKey<Level>, Integer> WATCHED = new HashMap<>();
+    /**
+     * How many inside players hold the ticket at each chunk, per visible dimension. Vanilla keeps one ticket per
+     * type, chunk and radius: two players inside in the same chunk share it, and it must stay until both are gone.
+     */
+    private static final Map<ResourceKey<Level>, Long2IntOpenHashMap> TICKETS = new HashMap<>();
     /** Visible block changes this tick, per visible dimension, by packed position. */
     private static final Map<ResourceKey<Level>, LongLinkedOpenHashSet> PENDING = new HashMap<>();
     private InsideView() {}
@@ -105,6 +112,7 @@ public final class InsideView {
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
             WATCHES.clear();
             WATCHED.clear();
+            TICKETS.clear();
             PENDING.clear();
         });
     }
@@ -138,6 +146,14 @@ public final class InsideView {
         }
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             update(server, player);
+        }
+        if (!WATCHES.isEmpty()) {
+            // Whoever is gone without a disconnect being told (it is, normally) must not keep a ticket.
+            for (UUID id : List.copyOf(WATCHES.keySet())) {
+                if (server.getPlayerList().getPlayer(id) == null) {
+                    drop(server, id);
+                }
+            }
         }
     }
 
@@ -199,9 +215,9 @@ public final class InsideView {
 
         ChunkPos center = player.chunkPosition();
         if (!center.equals(watch.ticket)) {
-            visible.getChunkSource().addTicketWithRadius(TICKET, center, TICKET_RADIUS);
+            holdTicket(visible, center);
             if (watch.ticket != null) {
-                visible.getChunkSource().removeTicketWithRadius(TICKET, watch.ticket, TICKET_RADIUS);
+                releaseTicket(visible, watch.ticket);
             }
             watch.ticket = center;
         }
@@ -259,7 +275,21 @@ public final class InsideView {
         }
         ServerLevel visible = server.getLevel(watch.visible);
         if (visible != null && watch.ticket != null) {
-            visible.getChunkSource().removeTicketWithRadius(TICKET, watch.ticket, TICKET_RADIUS);
+            releaseTicket(visible, watch.ticket);
+        }
+    }
+
+    private static void holdTicket(ServerLevel visible, ChunkPos chunk) {
+        if (TICKETS.computeIfAbsent(visible.dimension(), key -> new Long2IntOpenHashMap()).addTo(chunk.pack(), 1) == 0) {
+            visible.getChunkSource().addTicketWithRadius(TICKET, chunk, TICKET_RADIUS);
+        }
+    }
+
+    private static void releaseTicket(ServerLevel visible, ChunkPos chunk) {
+        Long2IntOpenHashMap held = TICKETS.get(visible.dimension());
+        if (held != null && held.addTo(chunk.pack(), -1) <= 1) {
+            held.remove(chunk.pack());
+            visible.getChunkSource().removeTicketWithRadius(TICKET, chunk, TICKET_RADIUS);
         }
     }
 
@@ -411,6 +441,12 @@ public final class InsideView {
             }
         }
         return faces == 0 ? nothing : new OverlayPayloads.Surface(at, state, (byte) faces);
+    }
+
+    /** For tests: how many inside players hold the ticket on the visible level at this chunk. */
+    public static int ticketHolders(ServerLevel visible, ChunkPos chunk) {
+        Long2IntOpenHashMap held = TICKETS.get(visible.dimension());
+        return held == null ? 0 : held.get(chunk.pack());
     }
 
     /** For tests: how many chunks of the visible world a player inside holds. */

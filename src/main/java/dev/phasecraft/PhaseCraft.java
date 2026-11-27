@@ -35,6 +35,7 @@ public final class PhaseCraft implements ModInitializer {
         OverlaySync.register();
         InsideView.register();
         LayerSwitch.register();
+        dev.phasecraft.edit.InsideProtection.register();
         HiddenEditing.register();
         MachineOwners.register();
         AimCheck.register();
