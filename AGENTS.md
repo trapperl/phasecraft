@@ -59,6 +59,13 @@ blocks, with future vanilla-compatible cross-layer redstone and pistons.
   test dedicated servers run with `online-mode=false`, and a test mixin skips
   the blocked-servers download. NoMojangTrafficGameTests guards the settings;
   any new test run configuration must add `offlineTestArgs`.
+- Whatever a player does to the hidden layer is checked against the visible
+  world's protection at that spot first: `mayInteract` (spawn protection,
+  world border) and `dev.phasecraft.edit.Protection` (claim mods, through
+  the Common Protection API, jar-in-jar). Never fire Fabric's use/attack/
+  break events for a block nobody clicked. Known gaps (mods not answering
+  the API; shifters and phased hoppers acting with no player): "Claims hold
+  for the hidden layer" in docs/ARCHITECTURE.md.
 - New behaviour needs a GameTest, and a new test should be shown to fail when
   the behaviour is broken (break the code on purpose, run, restore).
 - `./gradlew installToMinecraft` installs a passing build into the local
@@ -181,7 +188,8 @@ transparent layer, not a separate world.
       Block). Cheaper fallback if needed: a copper ingot instead of the
       shard. Entering the hidden layer stays Creative/Spectator only.
       Servers can turn the rule off (on a public server Survival editing
-      can build inside other people's walls, past claim mods).
+      can build inside other people's walls, past claim mods that do not
+      answer the Common Protection API).
    d. Overlay performance for large hidden builds (done: per-chunk geometry
       cache, about 10x less CPU per frame).
    e. Flying machine (done, the person's option A; see the flying machine

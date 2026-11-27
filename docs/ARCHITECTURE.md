@@ -300,7 +300,7 @@ visible is broken, placed or used. Clicks are sent to the server as
 within reach, hit point on the block, and the visible level's `mayInteract`
 at that spot: spawn protection and the world border hold for the hidden
 layer too, since a hidden shifter or phased hopper acts on the visible
-block there; `EditingSecurityGameTests`), then:
+block there; `EditingSecurityGameTests`; and claims, see below), then:
 
 - *use*: vanilla's `ServerPlayerGameMode.useItemOn` steps, carried out in the
   hidden level (vanilla's would take the player's own, visible level): the
@@ -324,6 +324,67 @@ pours into the clicked spot when nothing is hidden there, into a
 waterloggable hidden block, or next to the hidden block clicked; an empty
 one scoops hidden fluid up. Fish buckets are refused (the fish would be let
 out in the hidden layer).
+
+### Claims hold for the hidden layer: `Protection` (the person, 2026-11-27: fix it)
+
+Claim and anti-grief mods guard the visible world: they listen to vanilla's
+clicks there and never see a hidden edit. So without a check a Survival
+player could hide a phase shifter, or a phased hopper or dropper, inside
+someone's claim and take their blocks or empty their chests. Editing mode
+therefore asks first, for the player's own (visible) level and the spot,
+whether a protection mod would refuse the same action on the visible block
+there, and refuses the hidden edit if so (action bar: "This spot is
+protected"):
+
+| Hidden edit | Question, at |
+| --- | --- |
+| using a hidden block (lever, repeater, chest) | `canInteractBlock`, the clicked spot; refused, the whole click is |
+| placing a block | `canPlaceBlock`, where vanilla would put it (the clicked spot, or the one beside it) |
+| another item (flint and steel, bone meal...) | `canPlaceBlock`, the clicked spot and the one beside it |
+| pouring a bucket | `canPlaceBlock`, where the fluid goes |
+| scooping with a bucket, mining, breaking | `canBreakBlock`, the block's spot |
+
+Every player is asked about, Creative and operators too: who passes is the
+protection mod's business. Picking (middle click) only reads, and is not
+asked about.
+
+The questions go through Patbox's **Common Protection API**
+(`eu.pb4:common-protection-api` 2.0.0, MIT, 7 kB, shipped inside the
+PhaseCraft jar as the claim mods ship it). Chosen because it only asks:
+nothing is clicked, placed or broken. Read in the mods' sources on
+2026-11-27 (not run with them): Flan and Get Off My Lawn answer it
+themselves, FTB Chunks with FTB XMod Compat installed, ItsOurs too; with no
+such mod every answer is yes. The alternative, firing Fabric's
+`UseBlockCallback` / `AttackBlockCallback` / `PlayerBlockBreakEvents.BEFORE`
+for the visible block, was rejected: other listeners act on those events
+(PhaseCraft's own `PhasedInput.use` is one; loggers, harvest and vein-mining
+mods are others), they would see a click on the wrong block, and several
+mods guard placing in a `BlockItem.place` mixin that no event reaches.
+`ClaimProtectionGameTests` (a test claim mod, `TestClaims`, answers the API).
+
+**Known gaps** (tell server admins; `survival_access` off closes both for
+Survival players):
+
+1. *Mods that do not answer the API.* Open Parties and Claims, Yet Another
+   World Protector and Leukocyte do not (2026-11-27), nor FTB Chunks
+   without FTB XMod Compat: their claims do not stop hidden edits. A fix:
+   optional adapters calling each mod's own check (OPAC's
+   `IChunkProtectionAPI.onBlockInteraction` / `onEntityPlaceBlock`, FTB
+   Chunks' `shouldPreventInteraction`), compiled against the mod and used
+   only when it is loaded, each tested with the real mod in a GameTest run
+   as Lithium is.
+2. *Hidden blocks act with no player.* A shifter, line or area shifter, or
+   phased hopper, dropper or dispenser placed outside a claim acts on the
+   visible world like a piston or hopper: an area shifter's box or a line
+   shifter's line can reach across a claim's border, as can a phase piston
+   pushing visible blocks. Claim mods stop vanilla pistons and hoppers at
+   borders with their own mixins, which do not cover PhaseCraft's blocks. A
+   fix: remember who placed each such block, and ask `canBreakBlock` /
+   `canPlaceBlock` with that profile and no player (the API allows it;
+   `CommonProtection.UNKNOWN` when nobody is known) for every visible spot
+   it is about to change; or, with no owner kept, ask `isProtected` for the
+   acting block's spot and for the target, and refuse when only the target
+   is protected.
 
 ### Decision: a click on a visible block places at that same spot (decided by the agent, 2026-11-22; open to change)
 
@@ -476,7 +537,8 @@ staircase stacks pistons with no room for one).
 Creative always; Spectator may see (overlay), not edit; Survival while the
 game rule `phasecraft:survival_access` is on (default on; servers can turn
 it off: Survival editing can build inside other people's walls, past claim
-mods); Adventure never. Each client is told whether it may edit, so J can
+mods that do not answer the Common Protection API, see "Claims hold for the
+hidden layer"); Adventure never. Each client is told whether it may edit, so J can
 say why not. Survival edits by Survival rules (`HiddenEditing`): placing
 uses the item (Creative's count is restored); breaking needs a start
 message and then the block's mining time by vanilla's own measure

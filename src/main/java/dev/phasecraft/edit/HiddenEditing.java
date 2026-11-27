@@ -36,6 +36,7 @@ import net.minecraft.world.item.MobBucketItem;
 import net.minecraft.world.level.block.BucketPickup;
 import net.minecraft.world.level.block.LiquidBlockContainer;
 import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -72,8 +73,10 @@ import org.slf4j.Logger;
  *       hand, as vanilla's pick does for visible blocks.</li>
  * </ul>
  * <p>Requests are checked as vanilla checks clicks: allowed to edit, within reach,
- * hit point on the block, in a visible dimension with a hidden twin, and not
- * where the server protects the visible world ({@link #mayInteract}). The
+ * hit point on the block, in a visible dimension with a hidden twin, not
+ * where the server protects the visible world ({@link #mayInteract}), and not
+ * where a claim mod would refuse the same action on the visible block at
+ * that spot ({@link Protection}). The
  * client is never trusted: a modified one can send any of these with any
  * values.</p>
  */
@@ -204,6 +207,10 @@ public final class HiddenEditing {
         BlockState state = hidden.getBlockState(pos);
         boolean holdingSomething = !player.getMainHandItem().isEmpty() || !player.getOffhandItem().isEmpty();
         if (!(player.isSecondaryUseActive() && holdingSomething)) {
+            // A hidden block is clicked (hidden air does nothing when used): a claim there refuses the whole click.
+            if (!state.isAir() && !Protection.mayUse(player, pos)) {
+                return InteractionResult.PASS;
+            }
             InteractionResult itemOnBlock = state.useItemOn(stack, hidden, player, hand, hit);
             if (itemOnBlock.consumesAction()) {
                 return itemOnBlock;
@@ -221,8 +228,12 @@ public final class HiddenEditing {
         if (stack.getItem() instanceof BucketItem bucket) {
             return useBucket(player, hand, hidden, bucket, stack, pos, hit);
         }
+        UseOnContext context = new UseOnContext(hidden, player, hand, stack, hit);
+        if (!mayUseItem(player, stack, context)) {
+            return InteractionResult.PASS;
+        }
         int count = stack.getCount();
-        InteractionResult result = stack.useOn(new UseOnContext(hidden, player, hand, stack, hit));
+        InteractionResult result = stack.useOn(context);
         if (player.hasInfiniteMaterials()) {
             stack.setCount(count); // Creative: infinite materials; Survival uses the item up
         }
@@ -232,6 +243,20 @@ public final class HiddenEditing {
             playPlaceSound(player, hidden.getBlockState(placed), placed);
         }
         return result;
+    }
+
+    /**
+     * Whether claim mods let the player use this item here. A block goes where vanilla would put it (the
+     * clicked spot if what is hidden there can be replaced, else the spot beside it): that spot is asked.
+     * Other items (flint and steel, bone meal, a hoe...) may change the clicked block or the one beside
+     * it: both are asked.
+     */
+    private static boolean mayUseItem(ServerPlayer player, ItemStack stack, UseOnContext context) {
+        BlockPos pos = context.getClickedPos();
+        if (stack.getItem() instanceof BlockItem) {
+            return Protection.mayPlace(player, new BlockPlaceContext(context).getClickedPos());
+        }
+        return Protection.mayPlace(player, pos) && Protection.mayPlace(player, pos.relative(context.getClickedFace()));
     }
 
     /**
@@ -250,7 +275,7 @@ public final class HiddenEditing {
         }
         BlockState state = hidden.getBlockState(pos);
         if (bucket.getContent() == Fluids.EMPTY) {
-            if (state.getBlock() instanceof BucketPickup pickup) {
+            if (state.getBlock() instanceof BucketPickup pickup && Protection.mayBreak(player, pos)) {
                 ItemStack filled = pickup.pickupBlock(player, hidden, pos, state);
                 if (!filled.isEmpty()) {
                     player.awardStat(Stats.ITEM_USED.get(bucket));
@@ -263,7 +288,7 @@ public final class HiddenEditing {
         }
         boolean intoBlock = state.getBlock() instanceof LiquidBlockContainer && bucket.getContent() == Fluids.WATER;
         BlockPos target = state.isAir() || intoBlock ? pos : pos.relative(hit.getDirection());
-        if (!bucket.emptyContents(player, hidden, target, hit)) {
+        if (!Protection.mayPlace(player, target) || !bucket.emptyContents(player, hidden, target, hit)) {
             return InteractionResult.FAIL;
         }
         player.awardStat(Stats.ITEM_USED.get(bucket));
@@ -276,7 +301,8 @@ public final class HiddenEditing {
     /** Survival: the player started mining a hidden block; breaking it is allowed once its mining time has passed. */
     public static void startBreaking(ServerPlayer player, BlockPos pos) {
         ServerLevel hidden = editableHiddenLevel(player);
-        if (hidden != null && player.isWithinBlockInteractionRange(pos, 1.0) && mayInteractOrTell(player, pos)) {
+        if (hidden != null && player.isWithinBlockInteractionRange(pos, 1.0) && mayInteractOrTell(player, pos)
+                && Protection.mayBreak(player, pos)) {
             MINING.put(player.getUUID(), new Mining(pos.immutable(), player.level().getServer().getTickCount()));
         }
     }
@@ -309,7 +335,7 @@ public final class HiddenEditing {
             return false;
         }
         BlockState state = hidden.getBlockState(pos);
-        if (state.isAir()) {
+        if (state.isAir() || !Protection.mayBreak(player, pos)) {
             return false;
         }
         if (state.getBlock() instanceof GameMasterBlock && !player.canUseGameMasterBlocks()) {

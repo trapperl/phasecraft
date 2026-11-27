@@ -132,10 +132,29 @@ Survival rules (each PhaseCraft item's tooltip says what it does):
 - middle click selects a matching item you carry; it never makes one;
 - going into the hidden layer itself stays Creative/Spectator only.
 
-`/gamerule phasecraft:survival_access false` turns it off: on a public
-server, Survival editing lets players build inside other people's walls
-(claim mods only watch the visible world; the server's own spawn protection
-does cover the hidden layer). Adventure players never can.
+`/gamerule phasecraft:survival_access false` turns it off. Adventure players
+never can.
+
+**Server admins: claims and the hidden layer.** A hidden block acts on the
+visible block at its spot (a phase shifter takes it, a phased hopper empties
+the chest above), so hidden edits are refused where the visible world is
+protected:
+
+- the server's own spawn protection and the world border: always;
+- claims of mods that answer the Common Protection API (shipped inside
+  PhaseCraft, nothing to install): **Flan**, **Get Off My Lawn**,
+  **FTB Chunks** with FTB XMod Compat, ItsOurs. Placing, breaking and using
+  hidden blocks is refused for whoever the claim refuses.
+
+Not covered yet:
+
+- claims of mods that do not answer that API: **Open Parties and Claims**,
+  Yet Another World Protector, Leukocyte, FTB Chunks without FTB XMod
+  Compat. With one of these, keep `phasecraft:survival_access` off on a
+  public server;
+- hidden machines that reach across a claim's border from outside it (a
+  shifter piston's line, an area shifter's box, a phase piston): claim mods
+  stop vanilla pistons there, not PhaseCraft's.
 
 Recipes (a starting point for balancing):
 
