@@ -1,5 +1,6 @@
 package dev.phasecraft.shifter;
 
+import dev.phasecraft.edit.MachineRights;
 import dev.phasecraft.layer.HiddenDimensions;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -35,6 +36,9 @@ import org.jspecify.annotations.Nullable;
  *       or player standing there onto the block; it waits, retrying every
  *       tick, while the block there is unbreakable or the mob has no room
  *       above.</li>
+ *   <li>Where a claim guards its spot, it acts with the rights of whoever
+ *       placed it ({@link MachineRights}): refused, it takes nothing, and
+ *       waits to put back.</li>
  *   <li>Removed while holding a block, it puts the block back if the spot is
  *       free, or drops it there as an item, with its contents: never lost,
  *       never doubled.</li>
@@ -106,7 +110,7 @@ public class PhaseShifterBlock extends Block implements EntityBlock {
         if (visible == null || entity.holding() != null) {
             return;
         }
-        Shifting.Held held = Shifting.take(visible, pos);
+        Shifting.Held held = Shifting.take(visible, pos, MachineRights.of(hidden, pos));
         if (held != null) {
             entity.setHeld(held);
         }
@@ -116,7 +120,7 @@ public class PhaseShifterBlock extends Block implements EntityBlock {
     private static boolean putBack(ServerLevel hidden, BlockPos pos, PhaseShifterBlockEntity entity) {
         ServerLevel visible = Shifting.visibleOf(hidden);
         Shifting.Held held = entity.holding();
-        if (visible == null || held == null || !Shifting.putBack(visible, pos, held)) {
+        if (visible == null || held == null || !Shifting.putBack(visible, pos, held, MachineRights.of(hidden, pos))) {
             return false;
         }
         entity.setHeld(null);
@@ -132,7 +136,7 @@ public class PhaseShifterBlock extends Block implements EntityBlock {
         entity.setHeld(null);
         ServerLevel visible = Shifting.visibleOf(hidden);
         if (visible != null) {
-            Shifting.putBackOrDrop(visible, entity.getBlockPos(), held);
+            Shifting.putBackOrDrop(visible, entity.getBlockPos(), held, MachineRights.of(hidden, entity.getBlockPos()));
         }
     }
 }

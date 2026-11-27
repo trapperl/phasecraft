@@ -1,11 +1,13 @@
 package dev.phasecraft.test;
 
 import dev.phasecraft.PhaseCraftBlocks;
+import dev.phasecraft.edit.MachineOwners;
 import dev.phasecraft.layer.Access;
 import dev.phasecraft.layer.HiddenLayer;
 import dev.phasecraft.link.HiddenChunks;
 import dev.phasecraft.layer.PhaseLayerData;
 import java.util.List;
+import java.util.UUID;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import dev.phasecraft.PhaseCraftBlocks;
 import dev.phasecraft.link.PhasePortBlock;
@@ -22,6 +24,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.players.NameAndId;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Blocks;
@@ -54,6 +57,8 @@ public class PhaseLayerRestartPhases {
     private static final BlockPos PHASED_LIGHT = new BlockPos(10, 70, 30);
     /** A phase shifter holding a visible gold block across the restart. */
     private static final BlockPos SHIFTED = new BlockPos(10, 70, 40);
+    /** Whose that shifter is (see MachineOwners): still theirs after the restart. */
+    private static final NameAndId SHIFTER_OWNER = new NameAndId(UUID.fromString("5a1f0c1e-7b1d-4c58-9a57-0d3c2b6e9f41"), "shifter-owner");
     /** A phase shifter holding a visible chest with seven diamonds in it across the restart. */
     private static final BlockPos SHIFTED_CHEST = SHIFTED.east(2);
     /**
@@ -139,6 +144,7 @@ public class PhaseLayerRestartPhases {
         layer.setBlock(SHIFTED, PhaseCraftBlocks.PHASE_SHIFTER.defaultBlockState());
         layer.setBlock(SHIFTED.above(), Blocks.REDSTONE_BLOCK.defaultBlockState());
         helper.assertValueEqual(overworld.getBlockState(SHIFTED).getBlock(), Blocks.AIR, "visible gold taken by the shifter before restart");
+        MachineOwners.setOwner(layer.level(), SHIFTED, SHIFTER_OWNER);
         overworld.setBlock(SHIFTED_CHEST, Blocks.CHEST.defaultBlockState(), Block.UPDATE_ALL);
         ((ChestBlockEntity) overworld.getBlockEntity(SHIFTED_CHEST)).setItem(4, new ItemStack(Items.DIAMOND, 7));
         layer.setBlock(SHIFTED_CHEST, PhaseCraftBlocks.PHASE_SHIFTER.defaultBlockState());
@@ -290,6 +296,8 @@ public class PhaseLayerRestartPhases {
         helper.assertTrue(server.getGameRules().get(Access.SURVIVAL_ACCESS), "the admin's survival_access setting was undone by a restart");
         HiddenLayer layer = HiddenLayer.of(overworld);
         helper.assertValueEqual(overworld.getBlockState(SHIFTED).getBlock(), Blocks.AIR, "visible spot of the shifted gold after restart");
+        ClaimMachineGameTests.assertOwner(helper, SHIFTED, SHIFTER_OWNER, "the shifter's owner after restart");
+        ClaimMachineGameTests.assertOwner(helper, SHIFTED_CHEST, null, "the owner of a machine nobody placed, after restart");
         helper.assertTrue(layer.level().getBlockEntity(SHIFTED) instanceof PhaseShifterBlockEntity entity
                 && entity.held() != null && entity.held().is(Blocks.GOLD_BLOCK), "the shifter still holds the gold after restart");
         layer.removeBlock(SHIFTED.above());

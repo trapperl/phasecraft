@@ -2,6 +2,7 @@ package dev.phasecraft.shifter;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import dev.phasecraft.edit.MachineRights;
 import dev.phasecraft.layer.HiddenDimensions;
 import dev.phasecraft.phased.PhasedItems;
 import java.util.List;
@@ -81,13 +82,16 @@ public final class Shifting {
         return HiddenDimensions.visibleOf(hidden.dimension()).map(key -> hidden.getServer().getLevel(key)).orElse(null);
     }
 
-    /** Takes the visible block at pos if a shifter may (see {@link #reaction}): what it took, or null. */
-    public static @Nullable Held take(ServerLevel visible, BlockPos pos) {
+    /**
+     * Takes the visible block at pos if a shifter may (see {@link #reaction}), and a claim there lets the shifter
+     * break it (see {@link MachineRights}): what it took, or null.
+     */
+    public static @Nullable Held take(ServerLevel visible, BlockPos pos, MachineRights rights) {
         if (!visible.isLoaded(pos)) {
             return null;
         }
         BlockState state = visible.getBlockState(pos);
-        if (reaction(visible, pos, state) != Reaction.TAKE) {
+        if (reaction(visible, pos, state) != Reaction.TAKE || !rights.mayBreak(visible, pos)) {
             return null;
         }
         BlockEntity contents = visible.getBlockEntity(pos);
@@ -102,14 +106,19 @@ public final class Shifting {
      * should break the main world block"): it drops as if broken with no tool, contents included, silently. A mob or
      * player in the way is lifted to stand on it, as a piston pushing up would move them (the person, 2026-11-26,
      * choosing this over waiting). Returns false, changing nothing, while one in the way has no room above, the block
-     * there is unbreakable (bedrock, a moving piston...) or the spot is not loaded: the caller waits and tries again.
+     * there is unbreakable (bedrock, a moving piston...), the spot is not loaded, or a claim there refuses the
+     * shifter (placing its block, or breaking the one in the spot; see {@link MachineRights}): the caller waits and
+     * tries again.
      */
-    public static boolean putBack(ServerLevel visible, BlockPos pos, Held held) {
+    public static boolean putBack(ServerLevel visible, BlockPos pos, Held held, MachineRights rights) {
         if (!visible.isLoaded(pos)) {
             return false;
         }
         BlockState there = visible.getBlockState(pos);
         if (!there.canBeReplaced() && there.getDestroySpeed(visible, pos) < 0.0F) {
+            return false;
+        }
+        if (!rights.mayPlace(visible, pos) || (!there.canBeReplaced() && !rights.mayBreak(visible, pos))) {
             return false;
         }
         // As placed: connected to its neighbours (a fence's arms), which is the shape a mob must be lifted clear of.
@@ -182,9 +191,9 @@ public final class Shifting {
         return true;
     }
 
-    /** Puts a held block back at pos, or, if it cannot, drops it there as an item with its contents. */
-    public static void putBackOrDrop(ServerLevel visible, BlockPos pos, Held held) {
-        if (putBack(visible, pos, held)) {
+    /** Puts a held block back at pos, or, if it cannot (or a claim refuses), drops it there as an item with its contents. */
+    public static void putBackOrDrop(ServerLevel visible, BlockPos pos, Held held, MachineRights rights) {
+        if (putBack(visible, pos, held, rights)) {
             return;
         }
         BlockEntity contents = null;

@@ -1,5 +1,6 @@
 package dev.phasecraft.shifter;
 
+import dev.phasecraft.edit.MachineRights;
 import dev.phasecraft.layer.HiddenDimensions;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -47,6 +48,8 @@ import org.jspecify.annotations.Nullable;
  *   <li>Removed, it puts back everything it holds, or drops what cannot go back: never lost, never doubled.</li>
  *   <li>A comparator behind it reads how many blocks it holds (0 to 12), as it reads how full a chest is, so a
  *       build can wait for a line to be all gone, or all back, before the next part moves.</li>
+ *   <li>Where claims guard the line, it acts with the rights of whoever placed it ({@link MachineRights}): a block
+ *       it may not take is an immovable block to it (nothing moves), and it waits to put back where it may not.</li>
  *   <li>Passes no power on, as a piston does not. Silent in the visible world; placed in the visible layer it does
  *       nothing.</li>
  * </ul>
@@ -141,7 +144,8 @@ public class LineShifterBlock extends Block implements EntityBlock {
         BlockState now = state.setValue(POWERED, powered);
         hidden.setBlock(pos, now, Block.UPDATE_CLIENTS);
         ServerLevel visible = Shifting.visibleOf(hidden);
-        entity.setTodo(powered && visible != null ? line(visible, pos, now.getValue(FACING), entity) : 0);
+        entity.setTodo(powered && visible != null
+                ? line(visible, pos, now.getValue(FACING), entity, MachineRights.of(hidden, pos)) : 0);
         step(hidden, pos, now, entity);
     }
 
@@ -149,9 +153,9 @@ public class LineShifterBlock extends Block implements EntityBlock {
      * How far the line in front reaches (the farthest distance to take), as a piston would see it: up to the first
      * air or fragile block, stopping before a spot it already holds a block for. 0 if there is nothing to take, or if
      * a piston would refuse: more than {@link LineShifterBlockEntity#MAX} blocks counting those it holds, an
-     * immovable block, or a spot not loaded.
+     * immovable block, a block a claim does not let it take (see {@link MachineRights}), or a spot not loaded.
      */
-    static int line(ServerLevel visible, BlockPos pos, Direction facing, LineShifterBlockEntity entity) {
+    static int line(ServerLevel visible, BlockPos pos, Direction facing, LineShifterBlockEntity entity, MachineRights rights) {
         int count = entity.holding();
         int far = 0;
         for (int d = 1; d <= LineShifterBlockEntity.MAX + 1; d++) {
@@ -166,7 +170,7 @@ public class LineShifterBlock extends Block implements EntityBlock {
             if (reaction == Shifting.Reaction.NONE || reaction == Shifting.Reaction.FRAGILE) {
                 break;
             }
-            if (reaction == Shifting.Reaction.IMMOVABLE || ++count > LineShifterBlockEntity.MAX) {
+            if (reaction == Shifting.Reaction.IMMOVABLE || !rights.mayBreak(visible, at) || ++count > LineShifterBlockEntity.MAX) {
                 return 0;
             }
             far = d;
@@ -198,7 +202,7 @@ public class LineShifterBlock extends Block implements EntityBlock {
             int d = entity.todo();
             if (entity.heldAt(d) == null) {
                 // A block changed since the line was seen (broken, or now immovable) is left where it is.
-                Shifting.Held held = Shifting.take(visible, pos.relative(facing, d));
+                Shifting.Held held = Shifting.take(visible, pos.relative(facing, d), MachineRights.of(hidden, pos));
                 if (held != null) {
                     entity.setHeld(d, held);
                 }
@@ -210,7 +214,7 @@ public class LineShifterBlock extends Block implements EntityBlock {
             }
         } else {
             int d = entity.nearestHeld();
-            if (Shifting.putBack(visible, pos.relative(facing, d), entity.heldAt(d))) {
+            if (Shifting.putBack(visible, pos.relative(facing, d), entity.heldAt(d), MachineRights.of(hidden, pos))) {
                 entity.setHeld(d, null);
                 entity.setNextStep(time + every);
                 if (entity.nearestHeld() != 0) {
@@ -228,12 +232,13 @@ public class LineShifterBlock extends Block implements EntityBlock {
             return;
         }
         ServerLevel visible = Shifting.visibleOf(hidden);
+        MachineRights rights = MachineRights.of(hidden, entity.getBlockPos());
         for (int d = 1; d <= LineShifterBlockEntity.MAX; d++) {
             Shifting.Held held = entity.heldAt(d);
             if (held != null) {
                 entity.setHeld(d, null);
                 if (visible != null) {
-                    Shifting.putBackOrDrop(visible, entity.getBlockPos().relative(state.getValue(FACING), d), held);
+                    Shifting.putBackOrDrop(visible, entity.getBlockPos().relative(state.getValue(FACING), d), held, rights);
                 }
             }
         }

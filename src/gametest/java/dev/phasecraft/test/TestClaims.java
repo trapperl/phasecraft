@@ -19,7 +19,8 @@ import org.jspecify.annotations.Nullable;
  * as Flan or Get Off My Lawn do: the spots a test claims belong to one player, and nobody else may
  * place, break or use blocks there (whichever the test picks). As a real claim mod, it knows only
  * claims in the Overworld (where its players made them) and nothing of any hidden dimension: asked
- * about one, it says yes.
+ * about one, it says yes. It answers by the profile asked about, whether or not a player comes with it:
+ * a hidden machine asks with its owner's profile and no player (ClaimMachineGameTests).
  */
 public final class TestClaims implements ProtectionProvider {
     /** What a claim refuses to everyone but its owner. */

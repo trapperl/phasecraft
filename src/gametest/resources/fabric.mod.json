@@ -52,6 +52,7 @@
       "dev.phasecraft.test.EditingSecurityGameTests",
       "dev.phasecraft.test.ClaimProtectionGameTests",
       "dev.phasecraft.test.OpacClaimChecks",
+      "dev.phasecraft.test.ClaimMachineGameTests",
       "dev.phasecraft.test.KeepOutGameTests",
       "dev.phasecraft.test.NoMojangTrafficGameTests",
       "dev.phasecraft.test.PhaseLayerRestartPhases"

@@ -2,6 +2,7 @@ package dev.phasecraft.piston;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import dev.phasecraft.edit.MachineRights;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -26,8 +27,8 @@ import net.minecraft.world.level.redstone.Orientation;
  * Moves blocks in the <em>visible</em> level for a phase piston whose body is
  * in the hidden level at the same coordinates.
  *
- * <p>This is vanilla's {@code PistonBaseBlock.moveBlocks} (26.3) with one
- * change: no piston arm is placed. Which blocks move, push limits, immovable
+ * <p>This is vanilla's {@code PistonBaseBlock.moveBlocks} (26.3) with two
+ * changes: no piston arm is placed, and claims are asked first. Which blocks move, push limits, immovable
  * blocks, slime/honey, drops and animation all come from vanilla's
  * {@link PistonStructureResolver} and moving-block entities, run on the
  * visible level. Re-check against vanilla when updating Minecraft.</p>
@@ -35,14 +36,42 @@ import net.minecraft.world.level.redstone.Orientation;
 final class PhasePistonMover {
     private PhasePistonMover() {}
 
-    /** Whether vanilla rules would let a piston at pistonPos push (extending) or pull (retracting) in this level. */
-    static boolean canMove(Level level, BlockPos pistonPos, Direction direction, boolean extending) {
-        return new PistonStructureResolver(level, pistonPos, direction, extending).resolve();
+    /**
+     * Whether vanilla rules would let a piston at pistonPos push (extending) or pull (retracting) in this level,
+     * and claims there let this phase piston (see {@link #allowed}).
+     */
+    static boolean canMove(Level level, BlockPos pistonPos, Direction direction, boolean extending, MachineRights rights) {
+        PistonStructureResolver resolver = new PistonStructureResolver(level, pistonPos, direction, extending);
+        return resolver.resolve() && allowed(level, resolver, direction, extending, rights);
     }
 
-    static boolean moveBlocks(Level level, BlockPos pistonPos, Direction direction, boolean extending) {
+    /**
+     * Whether claims let the phase piston make the move vanilla's rules worked out (see {@link MachineRights}): take
+     * each moved block from its spot and put it into the next, and break each block the move breaks. One refusal
+     * and nothing moves, as with one immovable block.
+     */
+    private static boolean allowed(Level level, PistonStructureResolver resolver, Direction direction, boolean extending,
+            MachineRights rights) {
+        if (!(level instanceof ServerLevel visible)) {
+            return true;
+        }
+        Direction pushDirection = extending ? direction : direction.getOpposite();
+        for (BlockPos pos : resolver.getToPush()) {
+            if (!rights.mayBreak(visible, pos) || !rights.mayPlace(visible, pos.relative(pushDirection))) {
+                return false;
+            }
+        }
+        for (BlockPos pos : resolver.getToDestroy()) {
+            if (!rights.mayBreak(visible, pos)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static boolean moveBlocks(Level level, BlockPos pistonPos, Direction direction, boolean extending, MachineRights rights) {
         PistonStructureResolver resolver = new PistonStructureResolver(level, pistonPos, direction, extending);
-        if (!resolver.resolve()) {
+        if (!resolver.resolve() || !allowed(level, resolver, direction, extending, rights)) {
             return false;
         }
 

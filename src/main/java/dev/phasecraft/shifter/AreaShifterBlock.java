@@ -1,6 +1,7 @@
 package dev.phasecraft.shifter;
 
 import dev.phasecraft.PhaseCraft;
+import dev.phasecraft.edit.MachineRights;
 import dev.phasecraft.layer.HiddenDimensions;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,6 +49,8 @@ import org.jspecify.annotations.Nullable;
  *       the layers above wait for it.</li>
  *   <li>The leader (the corner whose position sorts first) holds the blocks; removing it puts them all back at
  *       once, or drops what cannot go back; removing the other corner makes the leader put them back.</li>
+ *   <li>Where claims guard the box, each corner acts with the rights of whoever placed it, and the box changes
+ *       only the spots both may ({@link MachineRights}); the others stay, as immovable blocks do.</li>
  *   <li>Passes no power on; silent in the visible world; placed in the visible layer it does nothing.</li>
  * </ul>
  */
@@ -215,14 +218,15 @@ public class AreaShifterBlock extends Block implements EntityBlock {
             hidden.scheduleTick(pos, this, (int) (leader.nextStep() - time));
             return;
         }
+        MachineRights rights = rights(hidden, pos, partner);
         int layers = CAP + 1;                                  // at most one box's worth of layers in one tick
         do {
             if (taking) {
-                if (!takeLayer(visible, min, max, leader)) {
+                if (!takeLayer(visible, min, max, leader, rights)) {
                     return;
                 }
             } else {
-                int left = putBackLayer(visible, leader);
+                int left = putBackLayer(visible, leader, rights);
                 if (left < 0) {
                     leader.setPartner(null);
                     if (hidden.getBlockEntity(partner) instanceof AreaShifterBlockEntity other) {
@@ -249,15 +253,27 @@ public class AreaShifterBlock extends Block implements EntityBlock {
     }
 
     /**
-     * Takes the highest layer at or below the cursor that has something to take; false if there was none (the move
-     * is done).
+     * What the box's corners may do where claims guard the visible world: each corner acts with the rights of
+     * whoever placed it, and the box changes only the spots both may (see {@link MachineRights}). A corner that is
+     * gone has no say: what is held goes back by the leader's rights.
      */
-    private static boolean takeLayer(ServerLevel visible, BlockPos min, BlockPos max, AreaShifterBlockEntity leader) {
+    private static MachineRights rights(ServerLevel hidden, BlockPos leader, @Nullable BlockPos partner) {
+        return partner != null && hidden.getBlockState(partner).getBlock() instanceof AreaShifterBlock
+                ? MachineRights.of(hidden, leader, partner) : MachineRights.of(hidden, leader);
+    }
+
+    /**
+     * Takes the highest layer at or below the cursor that has something to take; false if there was none (the move
+     * is done). A block a claim does not let the corners take stays, as an immovable one does.
+     */
+    private static boolean takeLayer(ServerLevel visible, BlockPos min, BlockPos max, AreaShifterBlockEntity leader,
+            MachineRights rights) {
         for (int y = Math.min(leader.cursor(), max.getY()); y >= min.getY(); y--) {
             List<BlockPos> layer = new ArrayList<>();
             for (BlockPos at : BlockPos.betweenClosed(new BlockPos(min.getX(), y, min.getZ()), new BlockPos(max.getX(), y, max.getZ()))) {
                 if (leader.held(at) == null && visible.isLoaded(at)
-                        && Shifting.reaction(visible, at, visible.getBlockState(at)) == Shifting.Reaction.TAKE) {
+                        && Shifting.reaction(visible, at, visible.getBlockState(at)) == Shifting.Reaction.TAKE
+                        && rights.mayBreak(visible, at)) {
                     layer.add(at.immutable());
                 }
             }
@@ -265,7 +281,7 @@ public class AreaShifterBlock extends Block implements EntityBlock {
                 continue;
             }
             for (BlockPos at : layer) {
-                Shifting.Held held = Shifting.take(visible, at);
+                Shifting.Held held = Shifting.take(visible, at, rights);
                 if (held != null) {
                     leader.hold(at, held);
                 }
@@ -278,7 +294,7 @@ public class AreaShifterBlock extends Block implements EntityBlock {
     }
 
     /** Puts back the lowest layer it holds: how many of that layer could not go back yet, or -1 if none is held. */
-    private static int putBackLayer(ServerLevel visible, AreaShifterBlockEntity leader) {
+    private static int putBackLayer(ServerLevel visible, AreaShifterBlockEntity leader, MachineRights rights) {
         Map<BlockPos, Shifting.Held> held = leader.heldMap();
         if (held.isEmpty()) {
             return -1;
@@ -289,7 +305,7 @@ public class AreaShifterBlock extends Block implements EntityBlock {
             if (at.getY() != y) {
                 break;
             }
-            if (Shifting.putBack(visible, at, held.get(at))) {
+            if (Shifting.putBack(visible, at, held.get(at), rights)) {
                 leader.hold(at, null);
             } else {
                 left++;
@@ -308,10 +324,11 @@ public class AreaShifterBlock extends Block implements EntityBlock {
         }
         if (entity.partner() != null) {
             ServerLevel visible = Shifting.visibleOf(hidden);
+            MachineRights rights = rights(hidden, entity.getBlockPos(), entity.partner());
             for (Map.Entry<BlockPos, Shifting.Held> e : new ArrayList<>(entity.heldMap().entrySet())) {
                 entity.hold(e.getKey(), null);
                 if (visible != null) {
-                    Shifting.putBackOrDrop(visible, e.getKey(), e.getValue());
+                    Shifting.putBackOrDrop(visible, e.getKey(), e.getValue(), rights);
                 }
             }
             if (hidden.getBlockEntity(entity.partner()) instanceof AreaShifterBlockEntity other) {

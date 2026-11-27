@@ -1,5 +1,6 @@
 package dev.phasecraft.mixin;
 
+import dev.phasecraft.edit.MachineOwners;
 import dev.phasecraft.link.HiddenChunks;
 import dev.phasecraft.link.PhaseLink;
 import dev.phasecraft.overlay.OverlaySync;
@@ -32,5 +33,6 @@ abstract class ServerLevelPhaseLinkMixin {
         PhasedInput.onBlockChanged(level, pos, oldState, newState);
         PhasedLights.onBlockChanged(level, pos, oldState, newState);
         PhasedWatchers.onBlockChanged(level, pos);
+        MachineOwners.onBlockChanged(level, pos, oldState, newState);
     }
 }
