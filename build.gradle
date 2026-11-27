@@ -140,7 +140,7 @@ loom {
             vmArgs offlineTestArgs
         }
         // The ordinary GameTests again, with the Lithium mod loaded
-        // (./gradlew runGameTestLithium; not part of check yet). Lithium's
+        // (./gradlew runGameTestLithium, part of build). Lithium's
         // settings: build/run/gameTestLithium/config/lithium.properties.
         gameTestLithium {
             inherit gameTest
@@ -270,7 +270,7 @@ tasks.named('runGameTestLithium') { task ->
     }
 }
 tasks.named('check') {
-    dependsOn 'runGameTest', 'restartTest', 'clientTest'
+    dependsOn 'runGameTest', 'runGameTestLithium', 'restartTest', 'clientTest'
 }
 
 processResources {

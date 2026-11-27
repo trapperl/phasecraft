@@ -29,5 +29,10 @@
       "config": "phasecraft.client.mixins.json",
       "environment": "client"
     }
-  ]
+  ],
+  "custom": {
+    "lithium:options": {
+      "mixin.block.hopper": false
+    }
+  }
 }
