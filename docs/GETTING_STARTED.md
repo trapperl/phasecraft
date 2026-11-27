@@ -115,7 +115,8 @@ Press J again to go back to normal building. The overlay is shown while you
 edit, even if H turned it off. Buckets work too: a full bucket pours hidden
 water or lava (at the spot you aim at, or next to the hidden block you
 aim at), an empty one scoops hidden water or lava up. Fish buckets are
-refused.
+refused. Hidden beds and respawn anchors are for show: you can place them,
+but not sleep in them, set your respawn point with them or charge them.
 
 ![Editing mode: a hidden lamp placed at the spot of a visible stone block, outlined in purple](images/editing.png)
 

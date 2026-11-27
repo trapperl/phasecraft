@@ -39,7 +39,11 @@ import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.block.AbstractBedBlock;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.RespawnAnchorBlock;
 import net.minecraft.world.level.block.GameMasterBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -64,7 +68,8 @@ import org.slf4j.Logger;
  * <ul>
  *   <li>{@link Use}: right click. The click is carried out in the hidden
  *       level, by vanilla rules: on a hidden block it uses that block (flips a
- *       lever, sets a repeater) or places against it; aimed at a visible block
+ *       lever, sets a repeater; never a bed or a respawn anchor, see
+ *       {@link #setsRespawn}) or places against it; aimed at a visible block
  *       with nothing hidden there, the hidden block goes at that same spot
  *       (hidden air is replaceable), overlapping the visible block.</li>
  *   <li>{@link Break}: left click on a hidden block removes it. Visible blocks
@@ -186,6 +191,19 @@ public final class HiddenEditing {
         return mayInteract(player, pos);
     }
 
+    /**
+     * Beds and respawn anchors: placed for show, never used. Used from editing
+     * mode, a hidden bed would set the player's respawn point in the visible
+     * world at its spot (vanilla takes the dimension from where the player
+     * stands), with no bed there and maybe inside a wall, and put them to sleep
+     * there; in the Nether or the End it would blow up instead, and so would a
+     * charged anchor outside the Nether, breaking hidden blocks around it
+     * whoever built them.
+     */
+    private static boolean setsRespawn(BlockState state) {
+        return state.getBlock() instanceof AbstractBedBlock || state.getBlock() instanceof RespawnAnchorBlock;
+    }
+
     /** Right click in editing mode. Returns the result of the hidden click (PASS if refused). */
     public static InteractionResult use(ServerPlayer player, InteractionHand hand, BlockHitResult hit) {
         ServerLevel hidden = editableHiddenLevel(player);
@@ -207,6 +225,10 @@ public final class HiddenEditing {
         BlockState state = hidden.getBlockState(pos);
         boolean holdingSomething = !player.getMainHandItem().isEmpty() || !player.getOffhandItem().isEmpty();
         if (!(player.isSecondaryUseActive() && holdingSomething)) {
+            if (setsRespawn(state)) {
+                player.sendOverlayMessage(Component.translatable("phasecraft.edit.no_beds").withStyle(ChatFormatting.RED));
+                return InteractionResult.PASS;
+            }
             // A hidden block is clicked (hidden air does nothing when used): a claim there refuses the whole click.
             if (!state.isAir() && !Protection.mayUse(player, pos)) {
                 return InteractionResult.PASS;

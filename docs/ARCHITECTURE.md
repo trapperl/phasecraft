@@ -305,7 +305,13 @@ block there; `EditingSecurityGameTests`; and claims, see below), then:
 - *use*: vanilla's `ServerPlayerGameMode.useItemOn` steps, carried out in the
   hidden level (vanilla's would take the player's own, visible level): the
   hidden block's own use first (levers, repeaters), then the held item with a
-  context in the hidden level. Aimed at a visible block with nothing hidden
+  context in the hidden level. Beds and respawn anchors are not used (a
+  red line says so; the person, 2026-11-27): vanilla's bed sets the respawn
+  point in the dimension the player stands in, so a hidden bed set it in
+  the visible world at its spot, with no bed there and maybe inside a wall,
+  and put the player to sleep there; in the Nether and the End it blew up
+  instead, and a charged anchor did outside the Nether, breaking hidden
+  blocks around it whoever built them. They can still be placed, for show. Aimed at a visible block with nothing hidden
   there, the clicked spot is hidden air, which is replaceable, so by vanilla's
   placement rules the new block goes at that same spot.
 - *break*: removes the hidden block as Creative breaking does
@@ -560,7 +566,8 @@ point for balancing; each unlocks in the recipe book from amethyst shards
   and the same rule applies.
 - **No respawn point in the hidden layer.** Beds and respawn anchors used
   there do not set your spawn (`ServerPlayerRespawnMixin`), so a death never
-  brings you back over the void.
+  brings you back over the void. From editing mode they are not used at all
+  (see `HiddenEditing`).
 - **Portals in the hidden layer do nothing** (`EntityPortalMixin`, on
   `Entity.setAsInsidePortal`, which every portal block goes through). They
   would lead into the real Nether or End and build a visible portal there.
