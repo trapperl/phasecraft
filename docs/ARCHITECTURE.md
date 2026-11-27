@@ -370,8 +370,22 @@ player could hide a phase shifter, or a phased hopper or dropper, inside
 someone's claim and take their blocks or empty their chests. Editing mode
 therefore asks first, for the player's own (visible) level and the spot,
 whether a protection mod would refuse the same action on the visible block
-there, and refuses the hidden edit if so (action bar: "This spot is
-protected"):
+there, and refuses the hidden edit if so (action bar: "Protected by a
+claim", and a dispenser's failing click only that player hears:
+`AimCheck.tellRefused`, which spawn protection and the world border use
+too).
+
+Shown before the click (`AimCheck`; the person, 2026-11-27, asked for
+"something better than the protector message"): while editing, the client
+asks the server about the spot it aims at whenever its aim moves to another
+spot, and again every 2 seconds (`AimCheck.Aim`); the server answers, at
+most once a tick per player and only for players who may edit, about spots
+within reach, what would refuse an edit there (`AimCheck.Answer`: a claim,
+asked as `canBreakBlock` for a hidden block aimed at and `canPlaceBlock`
+for a visible spot; spawn protection; the world border). The client draws
+the target's outline red instead of purple and ends the readout with the
+reason. Asking only asks. `AimCheckGameTests` checks the answers,
+`EditingClientGameTest` the red outline (screenshot pixels) and the readout.
 
 | Hidden edit | Question, at |
 | --- | --- |

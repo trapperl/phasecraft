@@ -2,7 +2,6 @@ package dev.phasecraft.edit;
 
 import eu.pb4.common.protection.api.CommonProtection;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
@@ -13,18 +12,19 @@ import net.minecraft.server.level.ServerPlayer;
  * edit is refused wherever the same action on the visible block at that spot
  * would be: PhaseCraft asks, for the player's own (visible) level and the
  * spot, through Patbox's Common Protection API, which claim mods answer (Flan,
- * Get Off My Lawn, FTB Chunks with FTB XMod Compat...). The questions only
+ * Get Off My Lawn, FTB Chunks with FTB XMod Compat...; Open Parties and Claims
+ * through PhaseCraft's own adapter, dev.phasecraft.compat). The questions only
  * ask: nothing is clicked, placed or broken in the visible world. With no such
  * mod installed every answer is yes.
  *
  * <p>Asked for every player, Creative and operators too: who may pass is the
  * protection mod's decision. Not covered: mods that do not answer the API
- * (see docs/ARCHITECTURE.md). Hidden machines, which act with no player, ask
+ * and have no adapter (see docs/ARCHITECTURE.md). A refusal is told by
+ * {@link AimCheck#tellRefused}; editing mode shows it before the click
+ * ({@link AimCheck}). Hidden machines, which act with no player, ask
  * through {@link MachineRights}, with the rights of whoever placed them.</p>
  */
 public final class Protection {
-    public static final String REFUSED = "phasecraft.edit.protected";
-
     private Protection() {}
 
     /** Whether the player may put a hidden block (or fluid) at this spot. */
@@ -45,7 +45,7 @@ public final class Protection {
     /** Tells the player when not, in the action bar: the hidden layer shows no reason of its own. */
     private static boolean allowed(ServerPlayer player, boolean allowed) {
         if (!allowed) {
-            player.sendSystemMessage(Component.translatable(REFUSED), true);
+            AimCheck.tellRefused(player, AimCheck.CLAIM);
         }
         return allowed;
     }

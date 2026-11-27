@@ -1,6 +1,7 @@
 package dev.phasecraft;
 
 import dev.phasecraft.command.PhaseCraftCommands;
+import dev.phasecraft.edit.AimCheck;
 import dev.phasecraft.edit.HiddenEditing;
 import dev.phasecraft.edit.MachineOwners;
 import dev.phasecraft.layer.Access;
@@ -32,6 +33,7 @@ public final class PhaseCraft implements ModInitializer {
         OverlaySync.register();
         HiddenEditing.register();
         MachineOwners.register();
+        AimCheck.register();
         HiddenLayerGuard.register();
         Access.register();
         PhasedInput.register();
