@@ -1138,6 +1138,18 @@ All of these run on every `./gradlew build`, locally and in CI:
   `LevelRenderEvents`, phased light goes through vanilla's light engine,
   which Sodium reads, and the piston animation uses vanilla moving-piston
   block entities.
+- **Lithium** (`./gradlew runGameTestLithium`, part of `build`): the server
+  GameTests again with Lithium, the most used server performance mod, loaded
+  the same way (pinned by `lithium_version`). Lithium's hopper optimization
+  breaks phased hoppers twice over: it swaps the item lookup inside
+  `suckInItems` for one that reads the hopper's own level (the hidden one,
+  where no items lie), and it puts idle hoppers to sleep until something
+  changes in their own level, so a phased hopper never wakes for items landing
+  in the visible world. That option has no finer switch, so PhaseCraft's
+  fabric.mod.json turns it off (`"custom": {"lithium:options":
+  {"mixin.block.hopper": false}}`, Lithium's own way for a mod to do this);
+  without it `PhasedItemGameTests` and `SkeletonFarmGameTests` fail. The rest
+  of Lithium stays on and every test passes with it.
   - screenshots with the overlay on, off, and at higher opacity, compared
     pixel by pixel where each test block appears: a ghost floating in the air,
     a ghost tinting the visible block at its own spot, a ghost inside the
