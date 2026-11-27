@@ -55,7 +55,9 @@ completion: `redstone_wire`, `minecraft:redstone_wire` and
 (Creative or Spectator only: it has no ground; switch to Survival there and
 you are put back in the visible world), where you can see and build
 hidden circuits with normal blocks and commands; `layer visible` brings you
-back. Hidden redstone runs by vanilla rules.
+back. The key **K** does the same without a command, and inside, the
+visible world is drawn see-through around you (see "Building from inside
+the hidden layer" below). Hidden redstone runs by vanilla rules.
 
 To connect the layers, put a phase port in the hidden layer. It works both
 ways at its spot, and nothing shows in the visible world: visible power at its
