@@ -2,6 +2,7 @@ package dev.phasecraft.client;
 
 import dev.phasecraft.overlay.OverlayPayloads;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
@@ -23,6 +24,8 @@ public final class GhostLayer {
 
     private final Long2ObjectOpenHashMap<Long2ObjectOpenHashMap<BlockState>> chunks = new Long2ObjectOpenHashMap<>();
     private int size;
+    /** What hidden shifters hold, by packed position, where the server said it is not 0. */
+    private final Long2IntOpenHashMap holding = new Long2IntOpenHashMap();
     /**
      * Chunks whose drawn ghosts may have changed since {@link #takeChangedChunks}: where
      * blocks changed, and the neighbouring chunk when a change is on the border (faces
@@ -43,6 +46,9 @@ public final class GhostLayer {
             long chunkKey = ChunkPos.pack(ghost.pos());
             long posKey = ghost.pos().asLong();
             markChanged(ghost.pos());
+            if (!get(ghost.pos()).is(ghost.state().getBlock())) {
+                holding.remove(posKey); // another block now (a new shifter holds nothing yet)
+            }
             if (ghost.state().isAir()) {
                 Long2ObjectOpenHashMap<BlockState> blocks = chunks.get(chunkKey);
                 if (blocks != null && blocks.remove(posKey) != null) {
@@ -58,6 +64,7 @@ public final class GhostLayer {
     }
 
     public void forget(ChunkPos chunk) {
+        holding.keySet().removeIf(pos -> ChunkPos.pack(BlockPos.of(pos)) == chunk.pack());
         Long2ObjectOpenHashMap<BlockState> blocks = chunks.remove(chunk.pack());
         if (blocks != null) {
             size -= blocks.size();
@@ -71,6 +78,7 @@ public final class GhostLayer {
 
     public void clear() {
         chunks.clear();
+        holding.clear();
         size = 0;
         changedChunks.clear();
         allChanged = true;
@@ -128,6 +136,20 @@ public final class GhostLayer {
     public BlockState get(BlockPos pos) {
         Long2ObjectOpenHashMap<BlockState> blocks = chunks.get(ChunkPos.pack(pos));
         return blocks == null ? AIR : blocks.getOrDefault(pos.asLong(), AIR);
+    }
+
+    /** A hidden shifter's held count, as the server sent it. */
+    public void setHolding(BlockPos pos, int count) {
+        if (count == 0) {
+            holding.remove(pos.asLong());
+        } else {
+            holding.put(pos.asLong(), count);
+        }
+    }
+
+    /** How many visible blocks the hidden shifter at pos holds (0 if the server said nothing). */
+    public int holding(BlockPos pos) {
+        return holding.get(pos.asLong());
     }
 
     public int size() {

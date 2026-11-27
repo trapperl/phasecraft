@@ -55,6 +55,24 @@ public final class OverlayPayloads {
         }
     }
 
+    /** How many visible blocks a hidden shifter holds (for the editing readout). */
+    public record Count(BlockPos pos, int count) {
+        public static final StreamCodec<RegistryFriendlyByteBuf, Count> STREAM_CODEC = StreamCodec.composite(
+                BlockPos.STREAM_CODEC, Count::pos, ByteBufCodecs.VAR_INT, Count::count, Count::new);
+    }
+
+    /** What hidden shifters hold, in chunks the client has: sent with a chunk, then whenever it changes. */
+    public record Holding(List<Count> counts) implements CustomPacketPayload {
+        public static final Type<Holding> TYPE = new Type<>(id("hidden_holding"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, Holding> STREAM_CODEC =
+                Count.STREAM_CODEC.apply(ByteBufCodecs.list()).map(Holding::new, Holding::counts);
+
+        @Override
+        public Type<Holding> type() {
+            return TYPE;
+        }
+    }
+
     /** The client should drop one chunk: it is now out of range. */
     public record Forget(ChunkPos chunk) implements CustomPacketPayload {
         public static final Type<Forget> TYPE = new Type<>(id("hidden_forget"));
@@ -88,5 +106,6 @@ public final class OverlayPayloads {
         clientbound.register(Blocks.TYPE, Blocks.STREAM_CODEC);
         clientbound.register(Forget.TYPE, Forget.STREAM_CODEC);
         clientbound.register(Reset.TYPE, Reset.STREAM_CODEC);
+        clientbound.register(Holding.TYPE, Holding.STREAM_CODEC);
     }
 }

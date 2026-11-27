@@ -14,7 +14,7 @@ import org.jspecify.annotations.Nullable;
  * What a line shifter holds: the visible blocks it has taken out of its line, by distance (1 is the block right in
  * front of it), and how far the move it is making still has to go.
  */
-public class LineShifterBlockEntity extends BlockEntity {
+public class LineShifterBlockEntity extends BlockEntity implements HoldsBlocks {
     /** The longest line a piston can push, and so the longest a line shifter takes. */
     public static final int MAX = 12;
 
@@ -30,6 +30,19 @@ public class LineShifterBlockEntity extends BlockEntity {
 
     public LineShifterBlockEntity(BlockPos pos, BlockState state) {
         super(PhaseCraftBlocks.LINE_SHIFTER_ENTITY, pos, state);
+    }
+
+    @Override
+    public int heldCount() {
+        return holding();
+    }
+
+    @Override
+    public void setChanged() {
+        super.setChanged();
+        if (level instanceof net.minecraft.server.level.ServerLevel server) {
+            dev.phasecraft.overlay.OverlaySync.onHoldingChanged(server, worldPosition, heldCount());
+        }
     }
 
     /** The block held from the given distance (1 to {@link #MAX}), if any. */

@@ -2,6 +2,7 @@ package dev.phasecraft.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.phasecraft.edit.HiddenEditing;
+import dev.phasecraft.shifter.HoldsBlocks;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
@@ -260,8 +261,8 @@ public final class ClientEditing {
 
     /**
      * The hidden block aimed at, for the HUD: its name and the parts of its state a builder needs ("Shifter Piston ·
-     * facing up · delay 2 · powered"); null when no hidden block is aimed at. Booleans show only when true, and a wire's
-     * sides not at all (they follow from its neighbours).
+     * delay 2 · facing up · powered · holding 3", a shifter's held blocks last); null when no hidden block is aimed
+     * at. Booleans show only when true, and a wire's sides not at all (they follow from its neighbours).
      */
     public static @Nullable Component readout() {
         Target current = target;
@@ -282,6 +283,9 @@ public final class ClientEditing {
             } else if (!(value instanceof RedstoneSide)) {
                 out.append(" · " + property.getName() + " " + valueName(property, value));
             }
+        }
+        if (HoldsBlocks.isShifter(state.getBlock())) {
+            out.append(" · holding " + PhaseCraftClient.layer().holding(current.hit().getBlockPos()));
         }
         return out;
     }

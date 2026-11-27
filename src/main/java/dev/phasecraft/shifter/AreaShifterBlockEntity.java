@@ -19,7 +19,7 @@ import org.jspecify.annotations.Nullable;
  * they are out of the visible world, with the other corner and how far down a move has taken; the other corner only
  * remembers its leader, so that removing it tells the leader.
  */
-public class AreaShifterBlockEntity extends BlockEntity {
+public class AreaShifterBlockEntity extends BlockEntity implements HoldsBlocks {
     /** The box's blocks out of the visible world, by position (ordered, so a layer goes back in a fixed order). */
     private final Map<BlockPos, Shifting.Held> held = new TreeMap<>();
     /** Leader: the other corner while a box is taken or moving; null when nothing is held. */
@@ -33,6 +33,19 @@ public class AreaShifterBlockEntity extends BlockEntity {
 
     public AreaShifterBlockEntity(BlockPos pos, BlockState state) {
         super(PhaseCraftBlocks.AREA_SHIFTER_ENTITY, pos, state);
+    }
+
+    @Override
+    public int heldCount() {
+        return holding();
+    }
+
+    @Override
+    public void setChanged() {
+        super.setChanged();
+        if (level instanceof net.minecraft.server.level.ServerLevel server) {
+            dev.phasecraft.overlay.OverlaySync.onHoldingChanged(server, worldPosition, heldCount());
+        }
     }
 
     /** How many blocks of its box it holds. */

@@ -65,9 +65,25 @@ public class EditingClientGameTest implements FabricClientGameTest {
             // The readout names the hidden block aimed at and the parts of its state a builder needs.
             server.runCommand("phasecraft set 0 -60 3 phasecraft:line_shifter[delay=3,facing=up]");
             waitUntil(context, "the readout shows the shifter piston",
-                    minecraft -> ClientEditing.readout() != null
-                            && "Shifter Piston · delay 3 · facing up".equals(ClientEditing.readout().getString()));
+                    minecraft -> readoutIs("Shifter Piston · delay 3 · facing up · holding 0"));
+            // Powered (a hidden redstone block beside it), it takes the visible block above it: the readout counts it.
+            server.runCommand("setblock 0 -59 3 minecraft:gold_block");
+            server.runCommand("phasecraft set 1 -60 3 minecraft:redstone_block");
+            waitUntil(context, "the readout counts the held block",
+                    minecraft -> readoutIs("Shifter Piston · delay 3 · facing up · powered · holding 1"));
             context.takeScreenshot("editing_readout");
+            // Out of range and back: the chunk is sent again, with what its shifters hold.
+            server.runCommand("tp @a 1000.5 -60 0.5");
+            waitUntil(context, "the hidden blocks around the shifter forgotten", minecraft -> PhaseCraftClient.layer().get(STONE).isAir());
+            server.runCommand("tp @a 0.5 -60 0.5 0 0");
+            world.getConnection().waitForChunksRender();
+            context.getInput().lookAt(STONE);
+            waitUntil(context, "the readout counts the held block after the chunk came back",
+                    minecraft -> readoutIs("Shifter Piston · delay 3 · facing up · powered · holding 1"));
+            server.runCommand("phasecraft set 1 -60 3 minecraft:air");
+            waitUntil(context, "the shifter puts the block back",
+                    minecraft -> readoutIs("Shifter Piston · delay 3 · facing up · holding 0"));
+            server.runCommand("setblock 0 -59 3 minecraft:air");
             server.runCommand("phasecraft set 0 -60 3 minecraft:redstone_lamp");
             waitForGhost(context, STONE, Blocks.REDSTONE_LAMP);
             // Middle click picks the hidden block, not the visible stone at the same spot.
@@ -121,6 +137,10 @@ public class EditingClientGameTest implements FabricClientGameTest {
             assertTrue(!context.computeOnClient(minecraft -> ClientEditing.editing()), "survival player (rule off) turned editing on");
             server.runCommand("gamerule phasecraft:survival_access true");
         }
+    }
+
+    private static boolean readoutIs(String expected) {
+        return ClientEditing.readout() != null && expected.equals(ClientEditing.readout().getString());
     }
 
     private static String readout(ClientGameTestContext context) {
