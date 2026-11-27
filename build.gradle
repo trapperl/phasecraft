@@ -16,6 +16,11 @@ repositories {
         forRepository { maven { url = 'https://api.modrinth.com/maven' } }
         filter { includeGroup 'maven.modrinth' }
     }
+    // Patbox's Common Protection API (MIT), shipped inside the PhaseCraft jar: see dependencies.
+    exclusiveContent {
+        forRepository { maven { url = 'https://maven.nucleoid.xyz/' } }
+        filter { includeGroup 'eu.pb4' }
+    }
 }
 
 // Sodium (Modrinth) replaces Minecraft's chunk renderer and is in most
@@ -32,6 +37,11 @@ dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+    // Claim mods (Flan, Get Off My Lawn, FTB Chunks with FTB XMod Compat, ItsOurs...) answer "may this player
+    // place / break / use here?" through it; editing mode asks before touching the hidden layer
+    // (dev.phasecraft.edit.Protection). A 7 kB library with no Minecraft version of its own; jar-in-jar, as
+    // those mods ship it, so nothing extra to install.
+    implementation include("eu.pb4:common-protection-api:${project.common_protection_api_version}")
     sodium "maven.modrinth:sodium:${project.sodium_version}"
     lithium "maven.modrinth:lithium:${project.lithium_version}"
 

@@ -48,6 +48,7 @@
       "dev.phasecraft.test.PhasedItemGameTests",
       "dev.phasecraft.test.HiddenEditingGameTests",
       "dev.phasecraft.test.EditingSecurityGameTests",
+      "dev.phasecraft.test.ClaimProtectionGameTests",
       "dev.phasecraft.test.KeepOutGameTests",
       "dev.phasecraft.test.NoMojangTrafficGameTests",
       "dev.phasecraft.test.PhaseLayerRestartPhases"
