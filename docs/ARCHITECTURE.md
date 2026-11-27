@@ -293,7 +293,10 @@ visible is broken, placed or used. Clicks are sent to the server as
 `phasecraft:edit_use` (hand + hit) and `phasecraft:edit_break` (position).
 
 **Server: `HiddenEditing`.** Checks as vanilla checks a click (Creative,
-within reach, hit point on the block), then:
+within reach, hit point on the block, and the visible level's `mayInteract`
+at that spot: spawn protection and the world border hold for the hidden
+layer too, since a hidden shifter or phased hopper acts on the visible
+block there; `EditingSecurityGameTests`), then:
 
 - *use*: vanilla's `ServerPlayerGameMode.useItemOn` steps, carried out in the
   hidden level (vanilla's would take the player's own, visible level): the

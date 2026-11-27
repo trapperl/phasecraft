@@ -39,6 +39,7 @@ import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.GameMasterBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -71,7 +72,10 @@ import org.slf4j.Logger;
  *       hand, as vanilla's pick does for visible blocks.</li>
  * </ul>
  * <p>Requests are checked as vanilla checks clicks: allowed to edit, within reach,
- * hit point on the block, in a visible dimension with a hidden twin.</p>
+ * hit point on the block, in a visible dimension with a hidden twin, and not
+ * where the server protects the visible world ({@link #mayInteract}). The
+ * client is never trusted: a modified one can send any of these with any
+ * values.</p>
  */
 public final class HiddenEditing {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -157,6 +161,28 @@ public final class HiddenEditing {
         return hidden.map(key -> player.level().getServer().getLevel(key)).orElse(null);
     }
 
+    /**
+     * Whether the server lets this player change blocks at a spot of the visible
+     * world: outside spawn protection (operators excepted) and inside the world
+     * border. The hidden layer is protected where the visible world is: a hidden
+     * block acts on the visible one at its spot (a shifter takes it, a phased
+     * hopper empties the chest above). Asked of the visible level: spawn
+     * protection covers only the dimension players respawn in, so the hidden
+     * level would always say yes.
+     */
+    private static boolean mayInteract(ServerPlayer player, BlockPos pos) {
+        return player.level().mayInteract(player, pos);
+    }
+
+    /** As {@link #mayInteract}, telling the player when spawn protection is why not, as vanilla does. */
+    private static boolean mayInteractOrTell(ServerPlayer player, BlockPos pos) {
+        if (player.level().getServer().isUnderSpawnProtection(player.level(), pos, player)) {
+            player.sendSpawnProtectionMessage(pos);
+            return false;
+        }
+        return mayInteract(player, pos);
+    }
+
     /** Right click in editing mode. Returns the result of the hidden click (PASS if refused). */
     public static InteractionResult use(ServerPlayer player, InteractionHand hand, BlockHitResult hit) {
         ServerLevel hidden = editableHiddenLevel(player);
@@ -165,7 +191,9 @@ public final class HiddenEditing {
             return InteractionResult.PASS;
         }
         Vec3 offset = hit.getLocation().subtract(Vec3.atCenterOf(pos));
-        if (Math.abs(offset.x()) >= 1.0000001 || Math.abs(offset.y()) >= 1.0000001 || Math.abs(offset.z()) >= 1.0000001) {
+        // Written as vanilla writes it: a hit point that is not a number fails every comparison, so is refused.
+        boolean onTheBlock = Math.abs(offset.x()) < 1.0000001 && Math.abs(offset.y()) < 1.0000001 && Math.abs(offset.z()) < 1.0000001;
+        if (!onTheBlock || !mayInteractOrTell(player, pos)) {
             return InteractionResult.PASS;
         }
         player.resetLastActionTime();
@@ -248,7 +276,7 @@ public final class HiddenEditing {
     /** Survival: the player started mining a hidden block; breaking it is allowed once its mining time has passed. */
     public static void startBreaking(ServerPlayer player, BlockPos pos) {
         ServerLevel hidden = editableHiddenLevel(player);
-        if (hidden != null && player.isWithinBlockInteractionRange(pos, 1.0)) {
+        if (hidden != null && player.isWithinBlockInteractionRange(pos, 1.0) && mayInteractOrTell(player, pos)) {
             MINING.put(player.getUUID(), new Mining(pos.immutable(), player.level().getServer().getTickCount()));
         }
     }
@@ -277,12 +305,15 @@ public final class HiddenEditing {
      */
     public static boolean breakBlock(ServerPlayer player, BlockPos pos) {
         ServerLevel hidden = editableHiddenLevel(player);
-        if (hidden == null || !player.isWithinBlockInteractionRange(pos, 1.0)) {
+        if (hidden == null || !player.isWithinBlockInteractionRange(pos, 1.0) || !mayInteract(player, pos)) {
             return false;
         }
         BlockState state = hidden.getBlockState(pos);
         if (state.isAir()) {
             return false;
+        }
+        if (state.getBlock() instanceof GameMasterBlock && !player.canUseGameMasterBlocks()) {
+            return false; // command blocks and the like: operators only, as in the visible world
         }
         boolean survival = !player.hasInfiniteMaterials();
         if (survival && !minedLongEnough(player, hidden, pos, state)) {
