@@ -6,12 +6,14 @@ import dev.phasecraft.layer.PhaseLayerData;
 import java.util.List;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import dev.phasecraft.PhaseCraftBlocks;
+import dev.phasecraft.link.PhasePortBlock;
 import dev.phasecraft.shifter.AreaShifterBlock;
 import dev.phasecraft.shifter.AreaShifterBlockEntity;
 import dev.phasecraft.shifter.LineShifterBlock;
 import dev.phasecraft.shifter.LineShifterBlockEntity;
 import dev.phasecraft.shifter.PhaseShifterBlockEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -58,6 +60,13 @@ public class PhaseLayerRestartPhases {
      */
     private static final BlockPos LINE = SHIFTED.south(3);
     private static final Block[] LINE_BLOCKS = {Blocks.STONE, Blocks.GOLD_BLOCK, Blocks.BRICKS, Blocks.OAK_PLANKS};
+
+    /**
+     * A hidden phase port whose saved power is stale: a visible redstone block stands at its spot, but the port was
+     * saved unpowered, as when the visible power changed before its hidden chunk had loaded. Loading the chunk after
+     * the restart must bring it up to date (issue #17).
+     */
+    private static final BlockPos STALE_PORT = new BlockPos(20, 70, 30);
 
     /** Same XYZ in every dimension, plus a cell far outside any loaded chunk. */
     /**
@@ -145,6 +154,40 @@ public class PhaseLayerRestartPhases {
             helper.assertTrue(overworld.getBlockState(at).isAir(), "the area box taken before restart at " + at.toShortString());
         }
         helper.succeed();
+    }
+
+    @GameTest
+    public void writeAStalePort(GameTestHelper helper) {
+        ServerLevel overworld = helper.getLevel().getServer().overworld();
+        ServerLevel hidden = HiddenLayer.of(overworld).level();
+        helper.startSequence()
+                .thenExecute(() -> overworld.setBlock(STALE_PORT, Blocks.REDSTONE_BLOCK.defaultBlockState(), Block.UPDATE_ALL))
+                .thenIdle(2)
+                // Unpowered, with no updates and no onPlace: nothing tells the port about the power at its spot.
+                .thenExecute(() -> hidden.setBlock(STALE_PORT, PhaseCraftBlocks.PHASE_PORT.defaultBlockState(),
+                        Block.UPDATE_CLIENTS | Block.UPDATE_SKIP_ON_PLACE))
+                .thenIdle(5)
+                .thenExecute(() -> helper.assertValueEqual(hidden.getBlockState(STALE_PORT).getValue(PhasePortBlock.POWER), 0,
+                        "the stale port's power before the restart"))
+                .thenSucceed();
+    }
+
+    @GameTest(maxTicks = 200)
+    public void verifyTheStalePortCaughtUp(GameTestHelper helper) {
+        ServerLevel overworld = helper.getLevel().getServer().overworld();
+        ServerLevel hidden = HiddenLayer.of(overworld).level();
+        int chunkX = SectionPos.blockToSectionCoord(STALE_PORT.getX());
+        int chunkZ = SectionPos.blockToSectionCoord(STALE_PORT.getZ());
+        // As in play: the visible chunk ticks (here forced), and its hidden twin loads after it. Reading the port
+        // before then would load the hidden chunk on its own.
+        overworld.setChunkForced(chunkX, chunkZ, true);
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(hidden.getChunkSource().getChunkNow(chunkX, chunkZ) != null,
+                        "the port's hidden chunk loaded after its visible twin"))
+                .thenWaitUntil(() -> helper.assertValueEqual(hidden.getBlockState(STALE_PORT).getValue(PhasePortBlock.POWER), 15,
+                        "the port's power after its chunk loaded (the visible redstone block at its spot)"))
+                .thenExecute(() -> overworld.setChunkForced(chunkX, chunkZ, false))
+                .thenSucceed();
     }
 
     @GameTest(maxTicks = 2400)
