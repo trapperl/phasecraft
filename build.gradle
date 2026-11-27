@@ -23,6 +23,9 @@ repositories {
 // that one run only, with Fabric Loader's fabric.addMods.
 configurations {
     sodium { transitive = false }
+    // Lithium (Modrinth) rewrites hopper, redstone and block-ticking code and
+    // is on most servers; runGameTestLithium runs the server GameTests with it.
+    lithium { transitive = false }
 }
 
 dependencies {
@@ -30,6 +33,7 @@ dependencies {
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
     sodium "maven.modrinth:sodium:${project.sodium_version}"
+    lithium "maven.modrinth:lithium:${project.lithium_version}"
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -133,6 +137,16 @@ loom {
             configName = 'GameTest: restart, verify phase'
             runDir = restartRunDir
             vmArgs gameTestArgs('restart-verify', 'phasecraft-test:phase_layer_restart_phases_verify*')
+            vmArgs offlineTestArgs
+        }
+        // The ordinary GameTests again, with the Lithium mod loaded
+        // (./gradlew runGameTestLithium; not part of check yet). Lithium's
+        // settings: build/run/gameTestLithium/config/lithium.properties.
+        gameTestLithium {
+            inherit gameTest
+            configName = 'GameTest: with Lithium'
+            runDir = 'build/run/gameTestLithium'
+            vmArgs gameTestArgs('gametest-lithium', 'phasecraft-test:*_game_tests_*')
             vmArgs offlineTestArgs
         }
         gameTest {
@@ -246,6 +260,13 @@ tasks.named('runClientGameTestSodium') { task ->
     inputs.files(sodiumJars)
     doFirst {
         task.jvmArgs "-Dfabric.addMods=${sodiumJars.singleFile.absolutePath}"
+    }
+}
+tasks.named('runGameTestLithium') { task ->
+    def lithiumJars = configurations.lithium
+    inputs.files(lithiumJars)
+    doFirst {
+        task.jvmArgs "-Dfabric.addMods=${lithiumJars.singleFile.absolutePath}"
     }
 }
 tasks.named('check') {
