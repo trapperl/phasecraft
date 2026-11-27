@@ -185,6 +185,7 @@ loom {
 // PhaseCraft's part, writes build/perf/results.md and stops. Never shipped, and not part of build or check (only
 // compiled there, so it cannot rot): it takes many minutes and its numbers mean nothing on a busy CI runner.
 //   -Pperf.scenarios=wire,twins   only scenarios whose name contains one of these
+//   -Pperf.variants=as_shipped,hooks_off   only variants with exactly these names
 //   -Pperf.rounds=3 -Pperf.ticks=300 -Pperf.rate=20 (ticks a second) -Pperf.jfr=true (profile each measurement)
 sourceSets {
     perf {
@@ -209,10 +210,11 @@ loom {
             runDir = perfRunDir
             programArgs 'nogui'
             vmArgs offlineTestArgs
-            vmArgs '-Xms4G', '-Xmx4G'
+            // The second pair: profiler samples name the method they are in, not the nearest safepoint's.
+            vmArgs '-Xms4G', '-Xmx4G', '-XX:+UnlockDiagnosticVMOptions', '-XX:+DebugNonSafepoints'
             vmArgs "-Dphasecraft.perf.out=${layout.buildDirectory.dir(perfTag).get().asFile}",
                     "-Dphasecraft.perf.contraptions=${file('src/gametest/resources/contraptions')}"
-            ['scenarios', 'rounds', 'ticks', 'rate', 'jfr'].each { name ->
+            ['scenarios', 'variants', 'rounds', 'ticks', 'rate', 'jfr'].each { name ->
                 if (findProperty("perf.${name}") != null) {
                     vmArg "-Dphasecraft.perf.${name}=${findProperty("perf.${name}")}"
                 }

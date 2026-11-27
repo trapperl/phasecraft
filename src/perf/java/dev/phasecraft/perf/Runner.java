@@ -102,13 +102,17 @@ final class Runner {
     private static void started(MinecraftServer server) {
         String only = System.getProperty("phasecraft.perf.scenarios", "");
         List<String> wanted = only.isBlank() ? List.of() : Arrays.asList(only.split(","));
+        String onlyVariants = System.getProperty("phasecraft.perf.variants", "");
+        List<String> wantedVariants = onlyVariants.isBlank() ? List.of() : Arrays.asList(onlyVariants.split(","));
         for (Scenario scenario : Scenarios.all()) {
             if (!wanted.isEmpty() && wanted.stream().noneMatch(scenario.name::contains)) {
                 continue;
             }
             for (int round = 1; round <= ROUNDS; round++) {
                 for (Scenario.Variant variant : scenario.variants) {
-                    JOBS.add(new Job(scenario, variant, round));
+                    if (wantedVariants.isEmpty() || wantedVariants.contains(variant.name())) {
+                        JOBS.add(new Job(scenario, variant, round));
+                    }
                 }
             }
         }
@@ -346,8 +350,14 @@ final class Runner {
             java.lang.reflect.Field field = dev.phasecraft.phased.PhasedInput.class.getDeclaredField("PLATES");
             field.setAccessible(true);
             long total = 0;
-            for (Object set : ((Map<?, ?>) field.get(null)).values()) {
-                total += ((java.util.Collection<?>) set).size();
+            for (Object perDimension : ((Map<?, ?>) field.get(null)).values()) {
+                if (perDimension instanceof Map<?, ?> chunks) {
+                    for (Object set : chunks.values()) {
+                        total += ((java.util.Collection<?>) set).size();
+                    }
+                } else {
+                    total += ((java.util.Collection<?>) perDimension).size();
+                }
             }
             return total;
         } catch (ReflectiveOperationException e) {

@@ -7,6 +7,8 @@ nothing on a busy machine or a CI runner.
 ```
 ./gradlew runPerf                                   # everything: 3 rounds, 300 ticks, 20 ticks a second (about an hour)
 ./gradlew runPerf -Pperf.scenarios=wire,twins       # only scenarios whose name contains one of these
+./gradlew runPerf -Pperf.variants=as_shipped        # only variants with exactly these names
+python3 tools/perf_compare.py build/perf-a/results.jsonl build/perf-b/results.jsonl   # two runs side by side
 ./gradlew runPerf -Pperf.rounds=1 -Pperf.ticks=150 -Pperf.rate=200     # a quick look (a few minutes)
 ./gradlew runPerf -Pperf.jfr=true -Pperf.rate=1000 -Pperf.ticks=600 -Pperf.rounds=1   # profile every measurement
 ./gradlew runPerf -Pperf.tag=b -Pperf.port=25598    # a second run beside another (build/perf-b, build/run/perf-b)
