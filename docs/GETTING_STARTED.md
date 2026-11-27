@@ -182,7 +182,11 @@ its side, is *phased*: it reacts to the visible world at its own spot.
   visible world press them. Put the hidden phase block in the floor (at the
   same spot as a visible floor block) and the hidden plate on it.
 - **Light sources** (glowstone, lamps, torches, lanterns...): they light the
-  visible world at their spot, by vanilla's light rules, for every player.
+  visible world at their spot, by vanilla's light rules, for every player
+  in any game mode. `/gamerule phasecraft:phased_lights false` turns this
+  off for the whole server (on by default; it is separate from
+  `phasecraft:survival_access`). Each player's game is told where the
+  phased lights near them are, never the rest of the world's.
   A hidden lamp inside a wall, on a phase block, lights the room in front of
   it; hidden redstone switches it. A wall torch counts as hanging on the
   block behind it, a hanging lantern on the block above.
