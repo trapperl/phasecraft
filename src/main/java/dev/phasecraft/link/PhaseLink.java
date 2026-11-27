@@ -7,6 +7,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Registry;
+import net.minecraft.core.SectionPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -17,6 +18,7 @@ import net.minecraft.server.level.TicketType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.LevelChunkSection;
 
 /**
  * The link between a visible dimension and its hidden layer.
@@ -31,6 +33,13 @@ import net.minecraft.world.level.chunk.LevelChunk;
  *       both layers therefore advance one hop per tick instead of recursing.</li>
  *   <li><b>Hidden chunks tick where the visible world ticks:</b> a chunk ticket
  *       in the hidden layer follows each visible chunk's ticking status.</li>
+ *   <li><b>Ports catch up when a chunk starts ticking:</b> a refresh for a
+ *       port whose chunk is not loaded is dropped (a hidden chunk loads a few
+ *       ticks after its visible twin, so the visible power at a port can
+ *       change before then), and a port reads 0 from the other layer where
+ *       that is not loaded. So when a chunk starts ticking, the ports in it,
+ *       and in the other layer's chunk at the same place, are refreshed
+ *       (issue #17).</li>
  * </ul>
  */
 public final class PhaseLink {
@@ -65,6 +74,52 @@ public final class PhaseLink {
     public static void register() {
         ServerTickEvents.END_SERVER_TICK.register(PhaseLink::deliver);
         ServerChunkEvents.FULL_CHUNK_STATUS_CHANGE.register(PhaseLink::followTicking);
+        ServerChunkEvents.FULL_CHUNK_STATUS_CHANGE.register(PhaseLink::refreshPortsWhenTicking);
+    }
+
+    /**
+     * A chunk started ticking: refresh, at the end of the tick, the ports in it and in the other layer's chunk at the
+     * same place. (Not on load: a chunk kept in memory comes back without loading again, and a hidden chunk can load
+     * on its own before its visible twin, when something reads it.) A hidden chunk ticks only once its visible twin
+     * does, so by then both are there to read.
+     */
+    private static void refreshPortsWhenTicking(ServerLevel level, LevelChunk chunk, FullChunkStatus oldStatus,
+            FullChunkStatus newStatus) {
+        if (oldStatus.isOrAfter(FullChunkStatus.BLOCK_TICKING) || !newStatus.isOrAfter(FullChunkStatus.BLOCK_TICKING)) {
+            return;
+        }
+        ResourceKey<Level> otherKey = otherLayer(level.dimension()).orElse(null);
+        if (otherKey == null) {
+            return;
+        }
+        queuePorts(level.dimension(), chunk);
+        ServerLevel other = level.getServer().getLevel(otherKey);
+        LevelChunk twin = other == null ? null : other.getChunkSource().getChunkNow(chunk.getPos().x(), chunk.getPos().z());
+        if (twin != null) {
+            queuePorts(otherKey, twin);
+        }
+    }
+
+    private static void queuePorts(ResourceKey<Level> dimension, LevelChunk chunk) {
+        LevelChunkSection[] sections = chunk.getSections();
+        for (int index = 0; index < sections.length; index++) {
+            LevelChunkSection section = sections[index];
+            if (section.hasOnlyAir() || !section.maybeHas(PhaseLink::isPort)) {
+                continue;
+            }
+            int baseY = SectionPos.sectionToBlockCoord(chunk.getSectionYFromSectionIndex(index));
+            for (int y = 0; y < 16; y++) {
+                for (int z = 0; z < 16; z++) {
+                    for (int x = 0; x < 16; x++) {
+                        if (isPort(section.getBlockState(x, y, z))) {
+                            QUEUE.add(new Refresh(dimension, new BlockPos(chunk.getPos().getMinBlockX() + x, baseY + y,
+                                    chunk.getPos().getMinBlockZ() + z)));
+                            queued++;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private static Optional<ResourceKey<Level>> otherLayer(ResourceKey<Level> dimension) {

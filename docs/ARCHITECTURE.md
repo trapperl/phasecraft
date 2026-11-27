@@ -58,6 +58,14 @@ the examples no longer use one.
   advances one hop per tick, like a clock, instead of recursing.
 - A change counts if a signal source or conductor changes within two blocks
   (direct power, or power through a conductor).
+- **Ports catch up when their chunk starts ticking.** A refresh for a port
+  whose chunk is not loaded is dropped, and a hidden chunk loads a few ticks
+  after its visible twin, so the visible power at a port can change before
+  then (issue #17). When a chunk starts ticking, the ports in it and in the
+  other layer's chunk at the same place are refreshed. Not on load: a chunk
+  kept in memory comes back without loading again, and a hidden chunk read
+  early loads before its visible twin. `PhaseLayerRestartPhases` saves a
+  port with stale power and checks it is right after the restart.
 
 **Hidden chunks tick with the visible world.** A chunk ticket (`phasecraft:phase_link`)
 in the hidden layer follows each visible chunk's ticking status, so hidden
