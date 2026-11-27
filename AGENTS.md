@@ -61,6 +61,10 @@ blocks, with future vanilla-compatible cross-layer redstone and pistons.
   visible ones, by chance, which made rare late or stalled hidden steps
   (issue #3). To see it: `./gradlew runGameTest -PgameTestVmArgs="-Dphasecraft.test.waitForHiddenChunks=false
   -Dphasecraft.test.hiddenChunkDelay=40"`; `-PgameTestFilter=...` picks tests.
+- The GameTest server runs ticks as fast as it can, but chunks a ticket asks
+  for load in their own time on other threads: a test that waits a number
+  of ticks for such chunks passes or fails by luck. Load them in the test
+  (`level.getChunk(x, z)`), as InsideViewGameTests does.
 - `./gradlew runPerf` measures server tick cost with and without PhaseCraft's
   parts (src/perf, a mod never shipped; method and options in
   src/perf/README.md); not part of build. Rerun it after a change on a hot
@@ -277,6 +281,9 @@ view" in docs/ARCHITECTURE.md, with what it costs). The agent's defaults,
 open to change: the key, the look (22% opaque, both sides of each surface,
 48 blocks), coming out at the same spot even inside a block. Inside, the
 player is a real entity there: hidden plates feel them, visible ones do not.
+Their clicks in there are checked against the visible world's protection at
+the spot, as editing mode's are (InsideProtection; the key lets non-operators
+in, the command never did).
 Each PhaseCraft item's tooltip says what it does (TooltipGameTests); in
 editing mode the HUD names the hidden block aimed at and its state (and,
 for shifters, how many blocks they hold: OverlayPayloads.Holding).

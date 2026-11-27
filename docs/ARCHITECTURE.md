@@ -370,7 +370,8 @@ client:
 - **The visible world stays loaded.** Nobody may be standing in it there, so
   each inside player holds a ticket on the visible level around their spot
   (`phasecraft:inside_view`, radius 6: the 9x9 square ticks entities too, and
-  one ring more is loaded for the scan). Without it the visible world there
+  one ring more is loaded for the scan; two players in one chunk share the
+  ticket, counted, as vanilla keeps one per chunk and radius). Without it the visible world there
   would unload a few seconds after its last player went inside, and the
   machine they went in to work on would have nothing to act on. It also
   means flying around inside generates visible terrain, as flying around
@@ -415,6 +416,27 @@ draw distance of 48 blocks. No cap on blocks per chunk was needed: the
 largest chunk fits one message (4,096 blocks; a larger one is split, as for
 the overlay).
 
+**Claims and spawn protection hold inside: `InsideProtection`.** Before the
+key, only operators could get in (the command). Now any Creative player
+can, and in there they place and break with vanilla's own clicks, in a
+dimension no claim mod knows and vanilla's spawn protection does not cover.
+So what editing mode asks before a hidden edit (`Protection`, "Claims hold
+for the hidden layer" below) is asked for these clicks too, about the
+visible twin level at the same spot: breaking asks `canBreakBlock`;
+clicking a hidden block asks `canInteractBlock` at its spot and, with
+something in hand, `canPlaceBlock` there and at the spot beside it; a
+bucket asks `canBreakBlock` and `canPlaceBlock` where it is aimed; and all
+of them the world border and spawn protection. A refused click does
+nothing and says why, as in editing mode. They are heard through Fabric's
+events for the player's own clicks in their own level
+(`PlayerBlockBreakEvents.BEFORE`, `UseBlockCallback`, `UseItemCallback`);
+nothing is fired for a block nobody clicked. Machines placed inside have
+their placer as owner, as before (`MachineOwners`). Not covered: what a
+player inside does without clicking a block (a mod's area tool, entities
+such as a minecart with TNT placed in there), and the same known gap as
+editing mode for claim mods that do not answer the API.
+`InsideProtectionGameTests`.
+
 **Inside, the player is really there.** A hidden pressure plate under them
 is pressed by them; a visible one at the same spot is not (they are not in
 the visible world, and a phased plate watches the visible world). Visible
@@ -429,7 +451,8 @@ look (22%, both sides, 48 blocks); block entities' contents and entities of
 the visible world are not shown.
 
 Tests: `InsideViewGameTests` (what is scanned, what a Creative player inside
-is really sent and when, who is sent nothing, who the key lets in),
+is really sent and when, who is sent nothing, who the key lets in, one of
+two players leaving), `InsideProtectionGameTests`,
 `InsideViewClientGameTest` (K, the faint wall and ground in screenshots
 against H off, a real hidden block behind them, changes, out of range and
 back, improved transparency, K again), `InsideViewTerrainClientGameTest`
