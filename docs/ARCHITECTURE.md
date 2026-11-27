@@ -376,9 +376,13 @@ changes what is phased.
 - **Pressure plates:** every plate's signal goes through vanilla's
   `getEntityCount`; for a phased plate `BasePressurePlateMixin` counts the
   visible level's entities in the same box. No entity ever touches a hidden
-  plate, so `PhasedInput` keeps a list of the plates in loaded hidden chunks
-  (block changes and chunk loads) and checks the released ones every tick;
-  once pressed, the plate's own scheduled ticks keep counting.
+  plate, so `PhasedInput` keeps a list of the plates in loaded hidden chunks,
+  by chunk (block changes and chunk loads; a chunk's are dropped when it
+  unloads), and checks the released ones every tick in the chunks that tick
+  blocks; once pressed, the plate's own scheduled ticks keep counting.
+  (Checking every plate ever seen, wherever it was, read its block every
+  tick, which kept hidden chunks with plates from ever unloading:
+  `src/perf`, plates_unloaded.)
 - **Watchers** (`PhasedWatchers`; the third step, as the person approved
   it, 2026-11-23):
   - A phased **observer** watches the visible block in front of it. Every

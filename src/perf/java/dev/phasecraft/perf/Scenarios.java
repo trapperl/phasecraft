@@ -51,8 +51,8 @@ final class Scenarios {
         all.add(overlayMoving());
         all.add(overlayChanges("overlay_changes_1p", 1));
         all.add(overlayChanges("overlay_changes_10p", 10));
-        // Last: PhasedInput never forgets a plate it has seen (see plates_unloaded), so every measurement after
-        // these would carry their plates' cost in all its variants.
+        // Last: when these were first measured PhasedInput never forgot a plate it had seen (see plates_unloaded),
+        // so every measurement after them carried their plates' cost in all its variants.
         all.add(plates("plates_256", 16, 0));
         all.add(plates("plates_4096", 64, 0));
         all.add(plates("plates_4096_stands", 64, 200));
@@ -62,10 +62,10 @@ final class Scenarios {
 
     private static Scenario platesUnloaded() {
         Scenario s = new Scenario("plates_unloaded", "Nothing here; 4,096 phased pressure plates built 640 blocks away in chunks "
-                + "that nothing keeps loaded (gone from memory by the time of measuring: see hiddenChunks of the area, which "
-                + "counts only this one's), plus every plate of the measurements before this one (in a full run: 3 rounds "
-                + "of 2 x 256 + 4 x 4,096). PhasedInput keeps every plate it has seen and looks each up every tick. "
-                + "`input_tick_off`: PhasedInput.tick does nothing.").chunks(1, 1);
+                + "that nothing keeps loaded, and whatever plates the measurements before this one left behind: what plates "
+                + "cost where nothing ticks. knownPlates: how many PhasedInput holds; farPlatesLoadedPerTick: the share of "
+                + "measured ticks in which the far plates' chunk was still in memory (absent: none, it was unloaded, as it "
+                + "should be 20 seconds after the last use). `input_tick_off`: PhasedInput.tick does nothing.").chunks(1, 1);
         s.settle = 400;
         s.variant("as_shipped", AS_SHIPPED, c -> plateFloor(new Ctx(c.server, c.visible, c.hidden, c.origin.offset(640, 0, 0)), 64, 0),
                 Scenarios::farLoaded);

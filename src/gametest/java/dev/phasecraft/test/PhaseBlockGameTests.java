@@ -2,6 +2,9 @@ package dev.phasecraft.test;
 
 import dev.phasecraft.PhaseCraftBlocks;
 import dev.phasecraft.layer.HiddenLayer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.IntSupplier;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -13,6 +16,7 @@ import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.animal.pig.Pig;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ButtonBlock;
@@ -184,6 +188,32 @@ public class PhaseBlockGameTests {
                 .thenExecute(() -> helper.spawnWithNoFreeWill(EntityTypes.PIG, SECRET))
                 .thenIdle(20)
                 .thenExecute(() -> helper.assertFalse(powered(hidden, helper, SECRET), "unphased hidden plate pressed by a visible pig"))
+                .thenSucceed();
+    }
+
+    /**
+     * Phased plates far from anything that ticks do not keep their hidden chunks in memory: the chunks are unloaded
+     * like any others. (Checking every known plate every tick read its block, and reading a block of a chunk
+     * that is not among the last few read renews its hold on memory: with plates or tripwire in more than a
+     * handful of hidden chunks, none of those chunks was ever unloaded again.) Eight chunks in a row, a plate in each.
+     */
+    @GameTest(maxTicks = 600)
+    public void phasedPlatesDoNotKeepTheirHiddenChunksLoaded(GameTestHelper helper) {
+        HiddenLayer hidden = HiddenLayer.of(helper.getLevel());
+        BlockPos first = helper.absolutePos(SECRET).offset(0, 0, 100_000);
+        List<BlockPos> plates = new ArrayList<>();
+        for (int i = 0; i < 8; i++) {
+            BlockPos far = first.offset(16 * i, 0, 0);
+            hidden.setBlock(far.below(), PhaseCraftBlocks.PHASE_BLOCK.defaultBlockState());
+            hidden.setBlock(far, Blocks.STONE_PRESSURE_PLATE.defaultBlockState());
+            plates.add(far);
+        }
+        IntSupplier loaded = () -> (int) plates.stream().map(ChunkPos::containing)
+                .filter(chunk -> hidden.level().getChunkSource().getChunkNow(chunk.x(), chunk.z()) != null).count();
+        helper.startSequence()
+                .thenIdle(40)
+                .thenWaitUntil(() -> helper.assertValueEqual(loaded.getAsInt(), 0, "hidden chunks with a plate still loaded"))
+                .thenExecute(() -> helper.assertTrue(hidden.getBlock(first).is(Blocks.STONE_PRESSURE_PLATE), "the plate was not saved"))
                 .thenSucceed();
     }
 
