@@ -534,7 +534,12 @@ line or area shifter's takes). No per-tick scan was added; a shifter that
 waits to put back, and a phased hopper, ask on the ticks they already run.
 
 `ClaimMachineGameTests`: each machine built four times, a stranger's, the
-claim owner's, nobody's outside the claim and nobody's inside it.
+claim owner's, nobody's outside the claim and nobody's inside it. With the
+real Open Parties and Claims (`OpacClaimChecks`, `runGameTestOpac`): a
+stranger's line shifter beside a claimed chunk takes nothing across the
+border, the claim owner's does. OPAC answers for a profile with no player
+by that player's standing in the claim (see above): the owner and those
+the claim gives full or block access to, not per-block exceptions.
 
 **Known limits:**
 

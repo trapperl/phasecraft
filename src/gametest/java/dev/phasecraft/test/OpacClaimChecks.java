@@ -3,7 +3,10 @@ package dev.phasecraft.test;
 import dev.phasecraft.PhaseCraftBlocks;
 import dev.phasecraft.compat.ProtectionAdapters;
 import dev.phasecraft.edit.HiddenEditing;
+import dev.phasecraft.edit.MachineOwners;
 import dev.phasecraft.layer.HiddenLayer;
+import dev.phasecraft.shifter.LineShifterBlock;
+import dev.phasecraft.shifter.LineShifterBlockEntity;
 import eu.pb4.common.protection.api.CommonProtection;
 import java.util.UUID;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
@@ -214,5 +217,55 @@ public class OpacClaimChecks {
         OpacClaims.disband(level, owner.id());
         helper.assertFalse(CommonProtection.canBreakBlock(level, spots.claimed(), member, null), "breaking in the claim, after the party was disbanded");
         finish(helper, spots);
+    }
+
+    /**
+     * A hidden machine with the real mod (see ClaimMachineGameTests for every kind of machine): a line shifter
+     * in the unclaimed chunk faces west across the border into two blocks of the claim. A stranger's takes
+     * nothing; once it is the claim owner's, who is not online, it takes both.
+     */
+    @GameTest(environment = "phasecraft-test:opac_machine", maxTicks = 200)
+    public void opacClaimStopsAStrangersLineShifterAtItsBorder(GameTestHelper helper) {
+        needsOpac(helper);
+        ServerLevel level = helper.getLevel();
+        HiddenLayer hidden = HiddenLayer.of(level);
+        Spots spots = Spots.of(helper);
+        NameAndId owner = new NameAndId(UUID.randomUUID(), "phasecraft-owner");
+        NameAndId stranger = new NameAndId(UUID.randomUUID(), "phasecraft-stranger");
+        // The first block of the unclaimed chunk; west of it the claim.
+        BlockPos shifter = spots.free().west(2);
+        BlockPos[] line = {shifter.west(), shifter.west(2)};
+        for (BlockPos at : line) {
+            level.setBlockAndUpdate(at, Blocks.STONE.defaultBlockState());
+        }
+        OpacClaims.claim(level, spots.claimed(), owner.id());
+        helper.assertTrue(CommonProtection.isProtected(level, line[0]) && !CommonProtection.isProtected(level, shifter),
+                "the line is not in the claim, or the shifter is");
+        hidden.setBlock(shifter, PhaseCraftBlocks.LINE_SHIFTER.defaultBlockState().setValue(LineShifterBlock.FACING, Direction.WEST));
+        MachineOwners.setOwner(hidden.level(), shifter, stranger);
+        helper.startSequence()
+                .thenIdle(20) // the hidden chunk east of the test's own starts ticking
+                .thenExecute(() -> hidden.setBlock(shifter.east(), Blocks.REDSTONE_BLOCK.defaultBlockState()))
+                .thenIdle(20)
+                .thenExecute(() -> {
+                    helper.assertTrue(hidden.getBlock(shifter).getValue(LineShifterBlock.POWERED), "the line shifter is not powered");
+                    for (BlockPos at : line) {
+                        helper.assertValueEqual(level.getBlockState(at).getBlock(), Blocks.STONE, "the claimed block at " + at.toShortString());
+                    }
+                    hidden.removeBlock(shifter.east());
+                    MachineOwners.setOwner(hidden.level(), shifter, owner);
+                })
+                .thenIdle(4)
+                .thenExecute(() -> hidden.setBlock(shifter.east(), Blocks.REDSTONE_BLOCK.defaultBlockState()))
+                .thenWaitUntil(() -> helper.assertTrue(hidden.level().getBlockEntity(shifter) instanceof LineShifterBlockEntity entity
+                        && entity.holding() == 2, "the owner's line shifter did not take the line"))
+                .thenExecute(() -> {
+                    hidden.removeBlock(shifter.east());
+                    hidden.removeBlock(shifter); // puts the line back
+                    for (BlockPos at : line) {
+                        level.setBlockAndUpdate(at, Blocks.AIR.defaultBlockState());
+                    }
+                    finish(helper, spots);
+                });
     }
 }
