@@ -120,6 +120,9 @@ water or lava (at the spot you aim at, or next to the hidden block you
 aim at), an empty one scoops hidden water or lava up. Fish buckets are
 refused. Hidden beds and respawn anchors are for show: you can place them,
 but not sleep in them, set your respawn point with them or charge them.
+No mob is ever born in the hidden layer: a hidden spawner stays idle, and
+spawn eggs, breeding and buckets of fish make nothing there, even from
+inside it (K). `/summon` still works there.
 
 Where you may not edit, you see it before you click: the outline turns
 **red** and the line under the label says why ("Redstone Lamp · Protected by

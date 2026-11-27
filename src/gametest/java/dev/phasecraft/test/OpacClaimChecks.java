@@ -4,6 +4,7 @@ import dev.phasecraft.PhaseCraftBlocks;
 import dev.phasecraft.compat.ProtectionAdapters;
 import dev.phasecraft.edit.HiddenEditing;
 import dev.phasecraft.edit.MachineOwners;
+import dev.phasecraft.edit.MachineRights;
 import dev.phasecraft.layer.HiddenLayer;
 import dev.phasecraft.shifter.LineShifterBlock;
 import dev.phasecraft.shifter.LineShifterBlockEntity;
@@ -264,8 +265,9 @@ public class OpacClaimChecks {
                 })
                 .thenIdle(4)
                 .thenExecute(() -> hidden.setBlock(shifter.east(), Blocks.REDSTONE_BLOCK.defaultBlockState()))
+                // Rare under a busy build (once in many runs): the message says which part did not happen.
                 .thenWaitUntil(() -> helper.assertTrue(hidden.level().getBlockEntity(shifter) instanceof LineShifterBlockEntity entity
-                        && entity.holding() == 2, "the owner's line shifter did not take the line"))
+                        && entity.holding() == 2, "the owner's line shifter did not take the line: " + lineShifterState(level, hidden, shifter, line)))
                 .thenExecute(() -> {
                     hidden.removeBlock(shifter.east());
                     hidden.removeBlock(shifter); // puts the line back
@@ -274,5 +276,21 @@ public class OpacClaimChecks {
                     }
                     finish(helper, spots);
                 });
+    }
+
+    /** What a stalled line shifter test needs to know: power, what it holds, whether its chunk ticks, its rights. */
+    private static String lineShifterState(ServerLevel level, HiddenLayer hidden, BlockPos shifter, BlockPos[] line) {
+        long chunk = new ChunkPos(shifter.getX() >> 4, shifter.getZ() >> 4).pack();
+        MachineRights rights = MachineRights.of(hidden.level(), shifter);
+        StringBuilder out = new StringBuilder();
+        out.append("powered=").append(hidden.getBlock(shifter).getOptionalValue(LineShifterBlock.POWERED).orElse(null));
+        out.append(" holding=").append(hidden.level().getBlockEntity(shifter) instanceof LineShifterBlockEntity e ? e.holding() : -1);
+        out.append(" hiddenTicking=").append(hidden.level().isPositionTickingWithEntitiesLoaded(chunk));
+        out.append(" owner=").append(java.util.Optional.ofNullable(MachineOwners.owner(hidden.level(), shifter)).map(NameAndId::name).orElse(null));
+        for (BlockPos at : line) {
+            out.append(' ').append(at.toShortString()).append('=').append(level.getBlockState(at).getBlock())
+                    .append(rights.mayBreak(level, at) ? " may" : " refused");
+        }
+        return out.toString();
     }
 }
