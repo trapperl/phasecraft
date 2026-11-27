@@ -2,6 +2,7 @@ package dev.phasecraft.overlay;
 
 import dev.phasecraft.layer.Access;
 import dev.phasecraft.layer.HiddenDimensions;
+import dev.phasecraft.link.HiddenChunks;
 import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.LongIterator;
@@ -192,6 +193,10 @@ public final class OverlaySync {
                 LevelChunk chunk = hidden.getChunkSource().getChunkNow(x, z);
                 if (chunk != null) {
                     sendChunk(player, chunk);
+                    watch.chunks.add(key);
+                } else if (!HiddenChunks.mayHold(hidden, x, z)) {
+                    // Empty, so never loaded for its twin (HiddenChunks): nothing to show, and changes from now on.
+                    ServerPlayNetworking.send(player, new OverlayPayloads.Chunk(new ChunkPos(x, z), List.of()));
                     watch.chunks.add(key);
                 }
             }

@@ -1,6 +1,7 @@
 package dev.phasecraft.perf;
 
 import dev.phasecraft.layer.HiddenDimensions;
+import dev.phasecraft.link.HiddenChunks;
 import dev.phasecraft.link.PhaseLink;
 import dev.phasecraft.shifter.AreaShifterBlock;
 import java.io.IOException;
@@ -197,7 +198,9 @@ final class Runner {
             case WAIT -> {
                 count++;
                 boolean ready = forced.stream().allMatch(chunk -> ctx.visible.isPositionTickingWithEntitiesLoaded(chunk.pack())
-                        && (!Switches.followTicking || ctx.hidden.isPositionTickingWithEntitiesLoaded(chunk.pack())));
+                        && (!Switches.followTicking || ctx.hidden.isPositionTickingWithEntitiesLoaded(chunk.pack())
+                                // An empty hidden chunk is never loaded for its twin (HiddenChunks).
+                                || !HiddenChunks.mayHold(ctx.hidden, chunk.x(), chunk.z())));
                 if (ready || count > 2400) {
                     if (!ready) {
                         LOGGER.warn("{}: chunks not all ticking after {} ticks; going on", label(job), count);

@@ -8,6 +8,7 @@ import dev.phasecraft.phased.PhasedInput;
 import dev.phasecraft.phased.PhasedLights;
 import dev.phasecraft.piston.PhasePistonAnimation;
 import dev.phasecraft.layer.LegacyLayerMigration;
+import dev.phasecraft.link.HiddenChunks;
 import dev.phasecraft.link.PhaseLink;
 import dev.phasecraft.overlay.OverlaySync;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -26,6 +27,7 @@ public final class PhaseCraft implements ModInitializer {
         PhaseCraftCommands.register();
         ServerLifecycleEvents.SERVER_STARTED.register(LegacyLayerMigration::migrateAll);
         PhaseLink.register();
+        HiddenChunks.register();
         OverlaySync.register();
         HiddenEditing.register();
         HiddenLayerGuard.register();

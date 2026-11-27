@@ -8,6 +8,7 @@
   "entrypoints": {
     "fabric-gametest": [
       "dev.phasecraft.test.PhaseLayerGameTests",
+      "dev.phasecraft.test.HiddenChunkGameTests",
       "dev.phasecraft.test.PhaseCraftCommandGameTests",
       "dev.phasecraft.test.PhaseCraftLayerSwitchGameTests",
       "dev.phasecraft.test.PhaseCraftCrossLayerGameTests",
