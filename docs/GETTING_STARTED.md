@@ -89,6 +89,8 @@ client as well as on the server.
 
 Press **J** (Creative, or Survival, see below) and "Editing: hidden layer" shows in the top left.
 Your clicks now go to the hidden layer; the visible world is not touched.
+Aim at a hidden block and the line under it names the block and its state, e.g.
+"Shifter Piston · delay 3 · facing up" (on/off properties show only when on).
 What a click acts on is outlined in purple:
 
 - **Aiming at a hidden block** (even one inside a wall, as the overlay shows
@@ -116,7 +118,7 @@ refused.
 
 PhaseCraft works in Survival. The game rule `phasecraft:survival_access`
 (on by default) lets Survival players use the overlay and editing mode, by
-Survival rules:
+Survival rules (each PhaseCraft item's tooltip says what it does):
 
 - placing a hidden block uses up the item;
 - breaking one takes its normal mining time with your tool (cracks show on

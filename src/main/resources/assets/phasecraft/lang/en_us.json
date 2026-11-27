@@ -19,5 +19,21 @@
   "block.phasecraft.phase_shifter": "Phase Shifter",
   "block.phasecraft.line_shifter": "Shifter Piston",
   "block.phasecraft.area_shifter": "Area Shifter",
-  "gamerule.phasecraft.area_shifters": "Area shifters work (two corners switch a box of the world off and on)"
+  "gamerule.phasecraft.area_shifters": "Area shifters work (two corners switch a box of the world off and on)",
+  "gamerule.phasecraft.survival_access": "Survival players can see and edit the hidden layer",
+  "phasecraft.tooltip.hidden": "Works in the hidden layer: place it in editing mode (J)",
+  "block.phasecraft.phase_port.tooltip.1": "Carries power both ways between the layers",
+  "block.phasecraft.phase_port.tooltip.2": "at its own spot",
+  "block.phasecraft.phase_piston.tooltip.1": "Pushes visible blocks, with no visible arm",
+  "block.phasecraft.sticky_phase_piston.tooltip.1": "Pushes and pulls visible blocks, with no visible arm",
+  "block.phasecraft.phase_block.tooltip.1": "A button, lever, plate, light, observer, comparator,",
+  "block.phasecraft.phase_block.tooltip.2": "tripwire hook, hopper or dropper on it works",
+  "block.phasecraft.phase_block.tooltip.3": "with the visible world at its own spot",
+  "block.phasecraft.phase_shifter.tooltip.1": "Powered: takes the visible block at its spot away",
+  "block.phasecraft.phase_shifter.tooltip.2": "Unpowered: puts it back",
+  "block.phasecraft.line_shifter.tooltip.1": "Powered: takes the line in front of it away, a block at a time",
+  "block.phasecraft.line_shifter.tooltip.2": "Unpowered: puts it back. Click it to change its speed",
+  "block.phasecraft.area_shifter.tooltip.1": "Two at opposite corners take a box of the world away",
+  "block.phasecraft.area_shifter.tooltip.2": "while both are powered. Click: speed",
+  "block.phasecraft.area_shifter.tooltip.3": "Needs the game rule phasecraft:area_shifters"
 }
