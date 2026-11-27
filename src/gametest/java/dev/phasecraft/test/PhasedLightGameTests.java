@@ -7,7 +7,11 @@ import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.level.portal.TeleportTransition;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
@@ -137,6 +141,53 @@ public class PhasedLightGameTests {
         helper.startSequence()
                 .thenWaitUntil(() -> assertLight(helper, high, 15, "visible light at a phased glowstone in empty sky"))
                 .thenWaitUntil(() -> assertLight(helper, high.east(), 14, "visible light next to it"))
+                .thenSucceed();
+    }
+
+    /**
+     * A phased light's position goes only to players tracking its chunk (the chunks vanilla sends them anyway),
+     * whatever their game mode: a player next to it is to hold it, a player beyond view distance is not. (Sent to
+     * everyone in the dimension, a modified client could list every hidden lamp on the server.)
+     */
+    @GameTest(maxTicks = 400)
+    public void lightIsSentOnlyToPlayersTrackingItsChunk(GameTestHelper helper) {
+        floor(helper);
+        HiddenLayer hidden = HiddenLayer.of(helper.getLevel());
+        BlockPos at = helper.absolutePos(SPOT);
+        hidden.setBlock(at.below(), PhaseCraftBlocks.PHASE_BLOCK.defaultBlockState());
+        hidden.setBlock(at, Blocks.GLOWSTONE.defaultBlockState());
+        PhasedLights.Light light = new PhasedLights.Light(at, 15);
+        ServerPlayer near = TestPlayers.join(helper, GameType.ADVENTURE);
+        ServerPlayer far = TestPlayers.join(helper, GameType.ADVENTURE);
+        // Past what the far player tracks: the view distance (at least 2) and vanilla's margin around it.
+        int blocksAway = (Math.max(2, helper.getLevel().getServer().getPlayerList().getViewDistance()) + 4) * 16;
+        near.teleport(new TeleportTransition(helper.getLevel(), Vec3.atBottomCenterOf(at.south(2)), Vec3.ZERO, 180, 0,
+                TeleportTransition.DO_NOTHING));
+        far.teleport(new TeleportTransition(helper.getLevel(), Vec3.atBottomCenterOf(at.east(blocksAway)), Vec3.ZERO, 180, 0,
+                TeleportTransition.DO_NOTHING));
+
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(PhasedLights.lightsFor(near).contains(light),
+                        "the player next to the phased light is not sent it: " + PhasedLights.lightsFor(near)))
+                .thenIdle(20)
+                .thenExecute(() -> {
+                    helper.assertTrue(far.getChunkTrackingView().contains(far.chunkPosition()), "the far player tracks no chunks");
+                    helper.assertFalse(PhasedLights.lightsFor(far).contains(light),
+                            "a player " + blocksAway + " blocks away is sent the phased light's position");
+                    // Walking up to it brings it; walking away takes it back.
+                    far.teleport(new TeleportTransition(helper.getLevel(), Vec3.atBottomCenterOf(at.north(2)), Vec3.ZERO, 0, 0,
+                            TeleportTransition.DO_NOTHING));
+                    near.teleport(new TeleportTransition(helper.getLevel(), Vec3.atBottomCenterOf(at.east(blocksAway)), Vec3.ZERO,
+                            180, 0, TeleportTransition.DO_NOTHING));
+                })
+                .thenWaitUntil(() -> {
+                    helper.assertTrue(PhasedLights.lightsFor(far).contains(light), "the player who came close is not sent the light");
+                    helper.assertFalse(PhasedLights.lightsFor(near).contains(light), "the player who left is still sent the light");
+                })
+                .thenExecute(() -> {
+                    TestPlayers.leave(helper, near);
+                    TestPlayers.leave(helper, far);
+                })
                 .thenSucceed();
     }
 }

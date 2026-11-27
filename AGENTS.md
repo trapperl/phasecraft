@@ -159,7 +159,12 @@ transparent layer, not a separate world.
       just don't react (list the supported ones in the docs). Built so the
       person can try it and reassess. First step done (station 13). Second step (the person, 2026-11-23:
       "lights would be cool"): phased light sources light the visible
-      world at their spot. Done (station 14). Third step (the person,
+      world at their spot. Done (station 14). They are for everyone, in
+      any game mode, with their own game rule, phasecraft:phased_lights,
+      on by default (the person, 2026-11-27: "make a separate light
+      enable, I wanted builds to be able to have atmospheric light"); a
+      client is sent only the lights of the chunks its player tracks (a
+      security review: the whole dimension's list gave bases away). Third step (the person,
       2026-11-23: "we can just move right into the other ones"):
       observers, comparators, tripwire; the person approved the agent's
       proposal (2026-11-23: "this seems reasonable the way that you have

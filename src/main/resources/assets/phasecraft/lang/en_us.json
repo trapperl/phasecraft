@@ -22,6 +22,7 @@
   "block.phasecraft.line_shifter": "Shifter Piston",
   "block.phasecraft.area_shifter": "Area Shifter",
   "gamerule.phasecraft.area_shifters": "Area shifters work (two corners switch a box of the world off and on)",
+  "gamerule.phasecraft.phased_lights": "Hidden lights on phase blocks light the visible world",
   "gamerule.phasecraft.survival_access": "Survival players can see and edit the hidden layer",
   "phasecraft.tooltip.hidden": "Works in the hidden layer: place it in editing mode (J)",
   "block.phasecraft.phase_port.tooltip.1": "Carries power both ways between the layers",

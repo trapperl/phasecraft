@@ -24,6 +24,7 @@
       "dev.phasecraft.test.CastleTowerGameTests",
       "dev.phasecraft.test.PhaseBlockGameTests",
       "dev.phasecraft.test.PhasedLightGameTests",
+      "dev.phasecraft.test.PhasedLightRuleGameTests",
       "dev.phasecraft.test.SurvivalPlayGameTests",
       "dev.phasecraft.test.RecipeGameTests",
       "dev.phasecraft.test.TooltipGameTests",

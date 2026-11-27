@@ -53,7 +53,7 @@ public class TooltipGameTests {
     @GameTest(maxTicks = 20)
     public void everyGameRuleIsNamed(GameTestHelper helper) {
         Language language = Language.getInstance();
-        for (String rule : List.of("survival_access", "area_shifters")) {
+        for (String rule : List.of("survival_access", "area_shifters", "phased_lights")) {
             String key = "gamerule.phasecraft." + rule;
             helper.assertTrue(language.has(key), "no name for the game rule phasecraft:" + rule + " (" + key + ")");
         }

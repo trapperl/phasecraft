@@ -513,10 +513,26 @@ changes what is phased.
   phased lights is not covered by a test: GameTest areas are never lit from
   scratch.) Clients: vanilla's light updates alone never showed
   the light on screen (tested), and clients relight by themselves when
-  nearby blocks change, so every player with PhaseCraft is sent the phased
-  lights of their dimension, and changes; the client's light engine uses
-  them through the same mixin. Players without PhaseCraft see what the
-  server sends, which can go stale.
+  nearby blocks change, so every player with PhaseCraft is sent phased
+  lights, and changes; the client's light engine uses them through the
+  same mixin. Players without PhaseCraft see what the server sends, which
+  can go stale. Which lights: those of the chunks the player is tracking
+  (vanilla's `ChunkTrackingView`, the chunks it sends them anyway), in any
+  game mode, since the light is there for everyone. When the view moves,
+  the client is sent the lights that came into it and told to drop
+  (light 0) those that left; a change goes to the players whose view holds
+  its chunk. Until 2026-11-27 everyone was sent the whole dimension's list
+  on joining: a modified client could read every hidden lamp on the server
+  off it, Adventure players and players far away included (found by a
+  security review).
+  The game rule `phasecraft:phased_lights` (on by default; the person,
+  2026-11-27: "make a separate light enable, I wanted builds to be able to
+  have atmospheric light") turns phased light off for the whole server,
+  apart from `phasecraft:survival_access`: the table is still kept, but
+  the mixin is given none of it and nothing is sent. `PhasedLights` reads
+  the rule every tick; on a change it has the light engine look at every
+  phased light's spot again (dark, or lit again) and clients are told to
+  forget theirs, or are sent their view afresh.
   Vanilla starts queued light work only when the server has spare time
   between ticks; GameTests run ticks back to back with none, so a phased
   light check could wait indefinitely (light tests failed at random, on CI
@@ -1198,7 +1214,11 @@ All of these run on every `./gradlew build`, locally and in CI:
     world (15, fading by vanilla's rules), also high in empty sky; without
     a phase block it does not; a phased lamp follows hidden redstone;
     removing the phase block takes the light away; a wall torch on a phase
-    block's side lights. A client
+    block's side lights; with the game rule phasecraft:phased_lights off
+    there is no light, and turning it on and off while the server runs
+    brings it and takes it away (`PhasedLightRuleGameTests`); a light's
+    position is for players tracking its chunk only, not for one beyond
+    view distance, and follows them as they come and go. A client
     sees a room lit by glowstone hidden in its wall, still lit after the
     wall block at the light's spot is swapped, and dark once the glowstone
     is removed (each shown to fail with its code removed: the mixin, the
