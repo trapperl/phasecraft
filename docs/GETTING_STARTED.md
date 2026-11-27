@@ -158,14 +158,17 @@ protected:
 - claims of mods that answer the Common Protection API (shipped inside
   PhaseCraft, nothing to install): **Flan**, **Get Off My Lawn**,
   **FTB Chunks** with FTB XMod Compat, ItsOurs. Placing, breaking and using
-  hidden blocks is refused for whoever the claim refuses.
+  hidden blocks is refused for whoever the claim refuses;
+- claims of **Open Parties and Claims**: PhaseCraft asks it directly when it
+  is installed (tested with version 0.33.0). The claim's owner, their party
+  and whoever else the claim's settings let build there may edit the hidden
+  layer in it; nobody else.
 
 Not covered yet:
 
-- claims of mods that do not answer that API: **Open Parties and Claims**,
-  Yet Another World Protector, Leukocyte, FTB Chunks without FTB XMod
-  Compat. With one of these, keep `phasecraft:survival_access` off on a
-  public server;
+- claims of mods that do not answer that API: Yet Another World Protector,
+  Leukocyte, FTB Chunks without FTB XMod Compat. With one of these, keep
+  `phasecraft:survival_access` off on a public server;
 - hidden machines that reach across a claim's border from outside it (a
   shifter piston's line, an area shifter's box, a phase piston): claim mods
   stop vanilla pistons there, not PhaseCraft's.
@@ -420,6 +423,7 @@ no migration path yet.
 | `./gradlew build` | Compiles, then runs **every** test below (CI runs this). |
 | `./gradlew runGameTest` | In-game tests: every class named `*GameTests` in `src/gametest`. |
 | `./gradlew runGameTestLithium` | The same in-game tests with the Lithium mod loaded. |
+| `./gradlew runGameTestOpac` | The claim tests that need the Open Parties and Claims mod, with it loaded. |
 | `./gradlew restartTest` | Full restart: one server writes hidden cells and shuts down, a second server process loads the same world and checks them. |
 | `./gradlew clientTest` | A real game client, with OpenGL, with Vulkan, and with OpenGL plus Sodium: the overlay's pictures (screenshots in `build/run/clientGameTest*/screenshots`), keys and syncing, singleplayer and on a dedicated server, and editing mode driven by real key presses and clicks. |
 | `./gradlew installToMinecraft` | `build`, then (only if everything passed) replaces PhaseCraft in your Minecraft mods folder. Restart Minecraft afterwards. |

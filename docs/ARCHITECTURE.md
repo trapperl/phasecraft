@@ -399,17 +399,75 @@ mods are others), they would see a click on the wrong block, and several
 mods guard placing in a `BlockItem.place` mixin that no event reaches.
 `ClaimProtectionGameTests` (a test claim mod, `TestClaims`, answers the API).
 
+**Open Parties and Claims** (OPAC; the person, 2026-11-27: "Yes, let's add
+the support") does not answer the API, so PhaseCraft answers it for OPAC:
+when OPAC is installed (`ProtectionAdapters`, an entrypoint of its own;
+mod id `openpartiesandclaims`), `dev.phasecraft.compat.OpacProtection` is
+registered as a Common Protection API provider backed by OPAC's server API
+(`OpenPACServerAPI.get(server)`; read in OPAC 0.33.0 for 26.3, LGPL-3.0,
+compiled against as `compileOnly`, never shipped, no class of it touched
+without the mod). `Protection` is unchanged, and any other mod asking the
+API hears OPAC's claims too. The questions, for the asked level's dimension
+(a hidden dimension is one of its own to OPAC: no claims there) and the
+spot's chunk:
+
+| Question | With a player | With a profile only (player `null`) |
+| --- | --- | --- |
+| `canPlaceBlock` | `IChunkProtectionAPI.onEntityPlaceBlock(player, level, pos)` | standing, blocks |
+| `canBreakBlock` | `onBlockInteraction(player, MAIN_HAND, null, level, pos, UP, true, false, true)` | standing, blocks |
+| `canInteractBlock` | the same with `breaking` false | standing, blocks |
+| `canInteractEntity`, `canDamageEntity` | `onEntityInteraction(null, player, entity, null, MAIN_HAND, attack, false, true)` | standing, full access only |
+| `isProtected`, `isAreaProtected` | | someone with no standing has no full access to the chunk (any chunk of the area) |
+| `canExplodeBlock` | the API's default: `canBreakBlock` | |
+
+*With a player* these are the checks OPAC's own handlers make for a click
+on the visible block (`CommonEvents.onDestroyBlock`, `onRightClickBlock`),
+with messages off: the owner, the party and allies as the claim's options
+say, admin and server-claim modes, per-block exceptions and item rules all
+count; nothing is clicked. The item is the main hand's, the face the top
+one (the API names neither). OPAC is not told which block is placed, so a
+claim's exception for using one particular item does not allow placing.
+OPAC may still tell a player who is over the claim limit so, and notes
+when it last let them through: its own bookkeeping, not switched off by
+"no messages".
+
+*With a profile only* (a hidden machine acting for whoever built it, who
+may be offline) OPAC has no check for an action, so the answer is that
+player's standing by UUID: `hasChunkAccess(uuid, dimension, chunkX,
+chunkZ)` (true with claims off, in an unprotected chunk, for the owner,
+and for the group the claim gives full access to: by default the owner's
+party), or, for blocks, `checkPlayerGroupExceptionOption(
+CLAIM_EXCEPTION_BLOCKS_BY_PLAYERS, config, uuid)` (the group the claim
+lets break and use blocks). On the careful side of what the player would
+get online: per-block, per-entity and per-item exceptions (a claim whose
+doors anyone may use) do not count, nor the modes a player switches on
+while online (admin mode, server claim mode, impersonation; non-ally mode
+would refuse more). Asked off the server thread, or before OPAC has loaded
+its data, a server level gets the careful answer (refused, protected); a
+client level is not OPAC's to answer for.
+
+Tested with the real mod, as Lithium is: `./gradlew runGameTestOpac` (part
+of `build`; OPAC and Forge Config API Port from Modrinth, `opac_version`
+and `forge_config_api_port_version` in gradle.properties, a fresh world
+each run, at least 3 tests or the task fails) runs `OpacClaimChecks`: a
+real claim made through OPAC's API (`OpacClaims`) refuses another player's
+hidden placing, breaking and using and allows the owner's and everything
+in the chunk beside it, and profiles with no player get the owner's, a
+party member's and a stranger's answers. The class is not named
+`*GameTests`, so runs without OPAC leave it out; each test has a test
+environment of its own, since claims cover whole chunks that neighbouring
+tests share. OPAC is never loaded into a client test (its client looks up
+a patron list online).
+
 **Known gaps** (tell server admins; `survival_access` off closes both for
 Survival players):
 
-1. *Mods that do not answer the API.* Open Parties and Claims, Yet Another
-   World Protector and Leukocyte do not (2026-11-27), nor FTB Chunks
-   without FTB XMod Compat: their claims do not stop hidden edits. A fix:
-   optional adapters calling each mod's own check (OPAC's
-   `IChunkProtectionAPI.onBlockInteraction` / `onEntityPlaceBlock`, FTB
-   Chunks' `shouldPreventInteraction`), compiled against the mod and used
-   only when it is loaded, each tested with the real mod in a GameTest run
-   as Lithium is.
+1. *Mods that do not answer the API.* Yet Another World Protector and
+   Leukocyte do not (2026-11-27), nor FTB Chunks without FTB XMod Compat:
+   their claims do not stop hidden edits. A fix: one more adapter each, as
+   for OPAC above (FTB Chunks' `shouldPreventInteraction`), compiled
+   against the mod and used only when it is loaded, tested with the real
+   mod in a GameTest run of its own.
 2. *Hidden blocks act with no player.* A shifter, line or area shifter, or
    phased hopper, dropper or dispenser placed outside a claim acts on the
    visible world like a piston or hopper: an area shifter's box or a line
@@ -1294,6 +1352,9 @@ All of these run on every `./gradlew build`, locally and in CI:
   `LevelRenderEvents`, phased light goes through vanilla's light engine,
   which Sodium reads, and the piston animation uses vanilla moving-piston
   block entities.
+- **Open Parties and Claims** (`./gradlew runGameTestOpac`, part of
+  `build`): the OPAC claim tests (`OpacClaimChecks`) with the real mod; see
+  "Claims hold for the hidden layer".
 - **Lithium** (`./gradlew runGameTestLithium`, part of `build`): the server
   GameTests again with Lithium, the most used server performance mod, loaded
   the same way (pinned by `lithium_version`). Lithium's hopper optimization

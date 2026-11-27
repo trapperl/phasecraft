@@ -38,7 +38,15 @@ blocks, with future vanilla-compatible cross-layer redstone and pistons.
     Xvfb virtual display. `runGameTestLithium` (part of build) runs the
     server GameTests with the Lithium mod (`lithium_version`); PhaseCraft
     turns off Lithium's hopper option in fabric.mod.json, as phased
-    hoppers need vanilla's. Check what is
+    hoppers need vanilla's. `runGameTestOpac` (part of build) runs the
+    claim tests that need the real Open Parties and Claims mod
+    (`opac_version`, `forge_config_api_port_version`): classes named
+    `Opac*Checks` (filter `phasecraft-test:opac_*`), which the other runs
+    leave out; each such test gets a test environment of its own (claims
+    cover whole chunks), and only its helper `OpacClaims` may name OPAC's
+    classes. PhaseCraft answers the Common Protection API for OPAC
+    (`dev.phasecraft.compat.OpacProtection`, loaded only with OPAC; compiled
+    against it, never shipped). Check what is
     drawn by comparing screenshot pixels, and look at the screenshots
     (build/run/clientGameTest*/screenshots) before calling a visual change done.
 - Only hidden chunks that hold something load and tick (HiddenChunks, an
