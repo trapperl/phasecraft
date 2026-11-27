@@ -26,6 +26,12 @@ import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.entity.animal.chicken.Chicken;
+import net.minecraft.world.entity.monster.Silverfish;
+import net.minecraft.world.level.block.FenceBlock;
+import net.minecraft.world.level.block.SlabBlock;
+import net.minecraft.world.level.block.state.properties.SlabType;
 
 /**
  * The phase shifter (the person's idea, 2026-11-23: "pulling blocks from the
@@ -373,6 +379,89 @@ public class PhaseShifterGameTests {
                     golem[0].discard();
                 })
                 .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.GOLD_BLOCK, high))
+                .thenSucceed();
+    }
+
+    /**
+     * The block in the spot is broken before the room above a lifted mob counts (issue #13): a bottom slab comes back
+     * where a top slab now hangs over a silverfish; the top slab goes, the silverfish stands on the bottom slab.
+     */
+    @GameTest(maxTicks = 100)
+    public void theBlockInTheSpotDoesNotCountAsACeiling(GameTestHelper helper) {
+        floor(helper);
+        helper.setBlock(SPOT, Blocks.STONE_SLAB);
+        shifter(helper, SPOT);
+        Silverfish[] silverfish = new Silverfish[1];
+        helper.startSequence()
+                .thenExecute(() -> power(helper, SPOT, true))
+                .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.AIR, SPOT))
+                .thenExecute(() -> {
+                    helper.setBlock(SPOT, Blocks.STONE_SLAB.defaultBlockState().setValue(SlabBlock.TYPE, SlabType.TOP));
+                    silverfish[0] = helper.spawnWithNoFreeWill(EntityTypes.SILVERFISH, SPOT);
+                    power(helper, SPOT, false);
+                })
+                .thenWaitUntil(() -> helper.assertBlockState(SPOT,
+                        state -> state.is(Blocks.STONE_SLAB) && state.getValue(SlabBlock.TYPE) == SlabType.BOTTOM,
+                        state -> Component.literal("a bottom slab, not " + state)))
+                .thenExecute(() -> helper.assertValueEqual(silverfish[0].getY(), helper.absolutePos(SPOT).getY() + 0.5,
+                        "the silverfish's feet"))
+                .thenSucceed();
+    }
+
+    /**
+     * A lift checks the whole way up, not only where it ends (issue #13): a silverfish half in the spot and half under
+     * a top slab next to it is not lifted through that slab; the block waits.
+     */
+    @GameTest(maxTicks = 100)
+    public void neverLiftsAMobThroughASlabBeside(GameTestHelper helper) {
+        floor(helper);
+        helper.setBlock(SPOT, Blocks.GOLD_BLOCK);
+        shifter(helper, SPOT);
+        Silverfish[] silverfish = new Silverfish[1];
+        helper.startSequence()
+                .thenExecute(() -> power(helper, SPOT, true))
+                .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.AIR, SPOT))
+                .thenExecute(() -> {
+                    helper.setBlock(SPOT.east(), Blocks.STONE_SLAB.defaultBlockState().setValue(SlabBlock.TYPE, SlabType.TOP));
+                    silverfish[0] = helper.spawnWithNoFreeWill(EntityTypes.SILVERFISH,
+                            new Vec3(SPOT.getX() + 1.0, SPOT.getY(), SPOT.getZ() + 0.5));
+                    power(helper, SPOT, false);
+                })
+                .thenIdle(20)
+                .thenExecute(() -> {
+                    helper.assertBlockPresent(Blocks.AIR, SPOT);
+                    helper.assertValueEqual(silverfish[0].getY(), (double) helper.absolutePos(SPOT).getY(), "the silverfish's feet");
+                    silverfish[0].discard();
+                })
+                .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.GOLD_BLOCK, SPOT))
+                .thenSucceed();
+    }
+
+    /**
+     * The lift goes by the block as it is placed, connected to its neighbours (issue #13): a fence taken on its own
+     * comes back next to stone, with an arm to it, and a baby chicken where the arm goes is lifted onto it.
+     */
+    @GameTest(maxTicks = 100)
+    public void liftsAMobWhereAReturningFenceReaches(GameTestHelper helper) {
+        floor(helper);
+        helper.setBlock(SPOT, Blocks.OAK_FENCE);
+        shifter(helper, SPOT);
+        Chicken[] chicken = new Chicken[1];
+        helper.startSequence()
+                .thenExecute(() -> power(helper, SPOT, true))
+                .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.AIR, SPOT))
+                .thenExecute(() -> {
+                    helper.setBlock(SPOT.east(), Blocks.STONE);
+                    chicken[0] = helper.spawnWithNoFreeWill(EntityTypes.CHICKEN,
+                            new Vec3(SPOT.getX() + 0.85, SPOT.getY(), SPOT.getZ() + 0.5));
+                    chicken[0].setBaby(true);
+                    power(helper, SPOT, false);
+                })
+                .thenWaitUntil(() -> helper.assertBlockState(SPOT,
+                        state -> state.is(Blocks.OAK_FENCE) && state.getValue(FenceBlock.EAST),
+                        state -> Component.literal("a fence with an arm east, not " + state)))
+                .thenExecute(() -> helper.assertValueEqual(chicken[0].getY(), helper.absolutePos(SPOT).getY() + 1.5,
+                        "the chicken's feet"))
                 .thenSucceed();
     }
 

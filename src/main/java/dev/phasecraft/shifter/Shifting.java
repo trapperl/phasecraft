@@ -112,13 +112,15 @@ public final class Shifting {
         if (!there.canBeReplaced() && there.getDestroySpeed(visible, pos) < 0.0F) {
             return false;
         }
-        if (!liftOutOfTheWay(visible, pos, held.state())) {
+        // As placed: connected to its neighbours (a fence's arms), which is the shape a mob must be lifted clear of.
+        BlockState placed = Block.updateFromNeighbourShapes(held.state(), visible, pos);
+        if (!liftOutOfTheWay(visible, pos, placed)) {
             return false;
         }
         if (!there.canBeReplaced()) {
             PhasedItems.silently(visible, () -> visible.destroyBlock(pos, true));
         }
-        visible.setBlock(pos, Block.updateFromNeighbourShapes(held.state(), visible, pos), Block.UPDATE_ALL);
+        visible.setBlock(pos, placed, Block.UPDATE_ALL);
         BlockEntity contents = visible.getBlockEntity(pos);
         if (held.data() != null && contents != null) {
             contents.loadWithComponents(TagValueInput.create(ProblemReporter.DISCARDING, visible.registryAccess(), held.data()));
@@ -127,11 +129,30 @@ public final class Shifting {
         return true;
     }
 
+    /** No block but the one at pos (to be broken) collides with the box an entity sweeps through on its way up. */
+    private static boolean clearWayUp(ServerLevel visible, BlockPos pos, Entity e, AABB way) {
+        VoxelShape box = Shapes.create(way);
+        CollisionContext context = CollisionContext.of(e);
+        for (BlockPos at : BlockPos.betweenClosed(BlockPos.containing(way.minX, way.minY, way.minZ),
+                BlockPos.containing(way.maxX, way.maxY, way.maxZ))) {
+            if (at.equals(pos)) {
+                continue;
+            }
+            VoxelShape shape = visible.getBlockState(at).getCollisionShape(visible, at, context);
+            if (!shape.isEmpty() && Shapes.joinIsNotEmpty(shape.move(at), box, BooleanOp.AND)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     /**
      * Lifts every mob or player (whatever blocks building, spectators aside, as {@code Level.isUnobstructed} counts
      * them) whose box meets the block's collision shape at pos, to stand on the shape's top. A rider is not lifted on
-     * its own: its vehicle, lifted, carries it. False, lifting none, if one would not fit there (a ceiling above it),
-     * or stands lower than the block, only its head in the spot: it is never lifted through the block.
+     * its own: its vehicle, lifted, carries it. False, lifting none, if one would not fit there (a ceiling above it,
+     * or anything on the way up: a slab over the next column it half stands in), or stands lower than the block, only
+     * its head in the spot: it is never lifted through the block. The block now in the spot does not count: it is
+     * broken first.
      */
     private static boolean liftOutOfTheWay(ServerLevel visible, BlockPos pos, BlockState state) {
         VoxelShape shape = state.getCollisionShape(visible, pos, CollisionContext.empty());
@@ -145,7 +166,9 @@ public final class Shifting {
                 && Shapes.joinIsNotEmpty(at, Shapes.create(e.getBoundingBox()), BooleanOp.AND));
         for (Entity e : inTheWay) {
             AABB lifted = e.getBoundingBox().move(0, top - e.getBoundingBox().minY, 0);
-            if (e.getBoundingBox().minY < at.min(Direction.Axis.Y) - 1.0E-7 || !visible.noCollision(e, lifted)) {
+            if (e.getBoundingBox().minY < at.min(Direction.Axis.Y) - 1.0E-7
+                    || !clearWayUp(visible, pos, e, e.getBoundingBox().minmax(lifted))
+                    || !visible.noEntityCollision(e, lifted) || !visible.noBorderCollision(e, lifted)) {
                 return false;
             }
         }
