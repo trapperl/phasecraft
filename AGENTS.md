@@ -210,6 +210,10 @@ transparent layer, not a separate world.
 3. Fish buckets stay refused in editing mode (the person, 2026-11-23:
    "let's not do anything"). Buckets work, and Ctrl + middle click copies a
    hidden chest's contents.
+4. Hidden beds and respawn anchors are not used in editing mode (the
+   person, 2026-11-27: "no beds in editing mode"; a security review found a
+   hidden bed set the respawn point in the visible world at its spot, and
+   anchors blew up hidden builds). Placing them stays allowed.
 
 Decided by the person: phase pistons show no visible arm; missing blocks
 are handled as vanilla does; Survival players may see and edit while the

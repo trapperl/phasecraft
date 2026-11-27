@@ -17,6 +17,7 @@
   "block.phasecraft.phase_block": "Phase Block",
   "phasecraft.edit.protected": "This spot is protected: you cannot edit the hidden layer here",
   "phasecraft.edit.not_allowed": "Editing the hidden layer needs Creative, or Survival with the game rule phasecraft:survival_access on",
+  "phasecraft.edit.no_beds": "Beds and respawn anchors cannot be used in the hidden layer",
   "block.phasecraft.phase_shifter": "Phase Shifter",
   "block.phasecraft.line_shifter": "Shifter Piston",
   "block.phasecraft.area_shifter": "Area Shifter",
