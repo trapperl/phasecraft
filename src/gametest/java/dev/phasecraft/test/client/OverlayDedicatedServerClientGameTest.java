@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.ServerSocket;
 import java.util.Properties;
+import dev.phasecraft.layer.Access;
 import dev.phasecraft.layer.HiddenLayer;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
@@ -19,8 +20,10 @@ import net.minecraft.world.level.block.Blocks;
 /**
  * The overlay over a real network connection to a dedicated server, as when
  * playing on the dev server: a Survival player (the server default) is sent
- * nothing while the game rule phasecraft:survival_access is off; in Creative,
- * or in Survival with the rule on, the hidden block in front of them arrives.
+ * nothing while the game rule phasecraft:survival_access is off, which it is
+ * on a dedicated server that was just set up, without anyone setting it; in
+ * Creative, or in Survival with the rule on, the hidden block in front of them
+ * arrives.
  */
 public class OverlayDedicatedServerClientGameTest implements FabricClientGameTest {
     @Override
@@ -31,7 +34,9 @@ public class OverlayDedicatedServerClientGameTest implements FabricClientGameTes
         properties.setProperty("online-mode", "false");
         try (TestDedicatedServerContext server = context.worldBuilder().createServer(properties);
                 TestDedicatedServerConnection connection = server.connect()) {
-            server.runCommand("gamerule phasecraft:survival_access false");
+            // Nobody set the rule: a dedicated server starts a new world with it off (Access.applyServerDefault).
+            assertTrue(!server.computeOnServer(minecraft -> minecraft.getGameRules().get(Access.SURVIVAL_ACCESS)),
+                    "a new dedicated server started with the game rule phasecraft:survival_access on");
             connection.waitForChunksRender();
             BlockPos ahead = server.computeOnServer(minecraft ->
                     minecraft.getPlayerList().getPlayers().getFirst().blockPosition().above().south(3));

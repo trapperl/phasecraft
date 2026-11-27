@@ -85,7 +85,8 @@ machinery inside a wall or under the floor still shows.
 | **]** / **[** | More opaque / more see-through (15% to 100%, in steps of 10) |
 
 The setting is kept in `config/phasecraft-client.properties`. Adventure
-players, and Survival players when the game rule is off, are sent nothing,
+players, and Survival players when the game rule is off (as on a dedicated
+server, unless an admin turned it on), are sent nothing,
 so hidden doors stay hidden from them. The overlay needs PhaseCraft on the
 client as well as on the server.
 
@@ -123,8 +124,9 @@ but not sleep in them, set your respawn point with them or charge them.
 ### Survival play
 
 PhaseCraft works in Survival. The game rule `phasecraft:survival_access`
-(on by default) lets Survival players use the overlay and editing mode, by
-Survival rules (each PhaseCraft item's tooltip says what it does):
+(on in single player and on LAN; off on a dedicated server until an admin
+turns it on, see below) lets Survival players use the overlay and editing
+mode, by Survival rules (each PhaseCraft item's tooltip says what it does):
 
 - placing a hidden block uses up the item;
 - breaking one takes its normal mining time with your tool (cracks show on
@@ -133,8 +135,19 @@ Survival rules (each PhaseCraft item's tooltip says what it does):
 - middle click selects a matching item you carry; it never makes one;
 - going into the hidden layer itself stays Creative/Spectator only.
 
-`/gamerule phasecraft:survival_access false` turns it off. Adventure players
-never can.
+**Dedicated servers start with it off.** With the rule on, every Survival
+player sees every hidden build within about 70 blocks, can open other
+people's hidden chests, and can build inside their walls (only some claim mods
+stop that, see below; the server's own spawn protection does cover the
+hidden layer). That is fine among friends and wrong on a public server, so
+the first time a dedicated server starts a world with this version of
+PhaseCraft, it sets the rule to false, once, and says so in the log. This
+also happens once to a world that an earlier version already ran on a
+dedicated server, even if you had left the rule on on purpose: the two
+cannot be told apart. After that the setting is yours and is not touched
+again: `/gamerule phasecraft:survival_access true` lets Survival players
+in, `false` shuts them out. Single player worlds, and ones opened to LAN,
+keep it on. Adventure players never can.
 
 **Server admins: claims and the hidden layer.** A hidden block acts on the
 visible block at its spot (a phase shifter takes it, a phased hopper empties

@@ -3,7 +3,15 @@ package dev.phasecraft.test;
 import dev.phasecraft.edit.HiddenEditing;
 import dev.phasecraft.layer.Access;
 import dev.phasecraft.layer.HiddenLayer;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Comparator;
+import java.util.stream.Stream;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.level.storage.SavedDataStorage;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -53,6 +61,53 @@ public class SurvivalPlayGameTests {
 
     private static void setRule(GameTestHelper helper, boolean value) {
         helper.getLevel().getGameRules().set(Access.SURVIVAL_ACCESS, value, helper.getLevel().getServer());
+    }
+
+    /**
+     * A dedicated server starts a world with the rule switched off, once: after that the admin's setting stays,
+     * and the world remembers across restarts (here: a second storage reading the same folder). Single player
+     * and LAN (not dedicated) are left on. So is the GameTest server, though Fabric's GameTest API makes it say it
+     * is a dedicated server: every other test runs with the rule on, as in single player.
+     */
+    @GameTest(maxTicks = 20)
+    public void dedicatedServerStartsWithTheRuleOffOnce(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        helper.assertTrue(server.isDedicatedServer(), "the GameTest server no longer says it is dedicated: drop the exception for it?");
+        helper.assertFalse(Access.isDedicatedForPlayers(server), "the GameTest server counts as a dedicated server: the rule is off in every test");
+        helper.assertTrue(server.getGameRules().get(Access.SURVIVAL_ACCESS), "the rule is on by default");
+        Path folder;
+        try {
+            folder = Files.createTempDirectory("phasecraft-server-defaults");
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        try {
+            SavedDataStorage storage = new SavedDataStorage(folder, server.getFixerUpper(), server.registryAccess());
+            helper.assertFalse(Access.applyServerDefault(server, false, storage), "the rule was changed on a server that is not dedicated");
+            helper.assertTrue(server.getGameRules().get(Access.SURVIVAL_ACCESS), "single player and LAN keep the rule on");
+
+            helper.assertTrue(Access.applyServerDefault(server, true, storage), "a dedicated server's first start did not set the rule");
+            helper.assertFalse(server.getGameRules().get(Access.SURVIVAL_ACCESS), "the rule is still on after a dedicated server's first start");
+
+            setRule(helper, true); // the admin turns it on
+            helper.assertFalse(Access.applyServerDefault(server, true, storage), "the rule was set a second time");
+            helper.assertTrue(server.getGameRules().get(Access.SURVIVAL_ACCESS), "the admin's setting was undone");
+
+            storage.saveAndJoin();
+            storage.close();
+            SavedDataStorage afterRestart = new SavedDataStorage(folder, server.getFixerUpper(), server.registryAccess());
+            helper.assertFalse(Access.applyServerDefault(server, true, afterRestart), "the rule was set again after a restart");
+            helper.assertTrue(server.getGameRules().get(Access.SURVIVAL_ACCESS), "the admin's setting was undone after a restart");
+            afterRestart.close();
+        } finally {
+            setRule(helper, true);
+            try (Stream<Path> files = Files.walk(folder)) {
+                files.sorted(Comparator.reverseOrder()).forEach(file -> file.toFile().delete());
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+        helper.succeed();
     }
 
     /** Who may see and edit: Creative always; Survival only with the rule on; Adventure never. */

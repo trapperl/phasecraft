@@ -557,10 +557,24 @@ staircase stacks pistons with no room for one).
 ### Who may see and edit: `Access` (Survival play, decided by the person, 2026-11-23)
 
 Creative always; Spectator may see (overlay), not edit; Survival while the
-game rule `phasecraft:survival_access` is on (default on; servers can turn
-it off: Survival editing can build inside other people's walls, past claim
+game rule `phasecraft:survival_access` is on; Adventure never. The rule is
+on in single player and on LAN, and off on a dedicated server until an
+admin turns it on (the person, 2026-11-27, after a security review: with
+it on, any Survival player sees every hidden build within 4 chunks, opens
+other people's hidden chests and builds inside their walls, past claim
 mods that do not answer the Common Protection API, see "Claims hold for the
-hidden layer"); Adventure never. Each client is told whether it may edit, so J can
+hidden layer"). A game rule has one default for every kind of server, so
+`Access.applyServerDefault` does it at `SERVER_STARTED`: on a dedicated
+server (`MinecraftServer.isDedicatedServer()`; an integrated server opened
+to LAN is not one; the GameTest server says it is one, because Fabric's
+GameTest API makes it, and is left out by class, so tests run with the
+rule on as single player does) whose world has no mark yet, it sets the rule to false, marks the world (saved data
+`phasecraft:server_defaults` in the overworld's storage) and logs one line
+with the command to turn it on. A marked world is left alone, so the
+admin's setting holds. Worlds that an earlier version ran on a dedicated
+server are switched off once too: a rule left at its default cannot be
+told from one set on purpose. The dev server is a dedicated server;
+`tools/examples.py` turns the rule on there. Each client is told whether it may edit, so J can
 say why not. Survival edits by Survival rules (`HiddenEditing`): placing
 uses the item (Creative's count is restored); breaking needs a start
 message and then the block's mining time by vanilla's own measure
@@ -1194,7 +1208,10 @@ All of these run on every `./gradlew build`, locally and in CI:
   - Survival play: who may see and edit (Creative, Survival with the rule
     on, never Adventure); Survival placing uses the item; breaking is
     refused before the mining time, then drops in the visible world and
-    wears the tool; with the rule off nothing is placed or broken; middle
+    wears the tool; with the rule off nothing is placed or broken; a
+    dedicated server's first start switches the rule off, once, and leaves
+    the admin's setting alone after that and after a restart, while single
+    player and the GameTest server keep it on; middle
     click never makes items; the recipes craft what they should (each
     shown to fail with its code removed);
   - the overlay's per-chunk geometry cache draws what drawing every ghost
@@ -1267,9 +1284,10 @@ All of these run on every `./gradlew build`, locally and in CI:
   - removing a hidden block removes the ghost; chunks out of range are
     forgotten and come back; Survival players and players inside the hidden
     layer are sent nothing;
-  - over a real network connection to a dedicated server: Survival gets
-    nothing, Creative gets the hidden block, and nothing from the previous
-    world is left over;
+  - over a real network connection to a dedicated server: the game rule
+    phasecraft:survival_access is off there without anyone setting it,
+    Survival gets nothing, Creative gets the hidden block, and nothing from
+    the previous world is left over;
   - a hidden chest (no ordinary model) and hidden lava are drawn;
   - editing mode by real key presses and mouse clicks: J, right click on a
     visible block puts a hidden block at its spot (the visible one stays),
@@ -1282,7 +1300,9 @@ All of these run on every `./gradlew build`, locally and in CI:
   dimensions (one far away and unloaded) and stores some cells the old way;
   the second checks every hidden block and that the old cells were migrated,
   and that a stored phased glowstone lights the visible world after the
-  restart (it hung the server before the next-tick chunk scan).
+  restart (it hung the server before the next-tick chunk scan), and that a
+  world a dedicated server switched survival_access off for is not switched
+  off again after the admin turned it on.
 
 Each test was checked by breaking the code on purpose and seeing it fail.
 
