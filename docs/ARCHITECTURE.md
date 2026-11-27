@@ -459,8 +459,8 @@ environment of its own, since claims cover whole chunks that neighbouring
 tests share. OPAC is never loaded into a client test (its client looks up
 a patron list online).
 
-**Known gaps** (tell server admins; `survival_access` off closes both for
-Survival players):
+**Known gaps** (tell server admins; `survival_access` off closes the first
+for Survival players):
 
 1. *Mods that do not answer the API.* Yet Another World Protector and
    Leukocyte do not (2026-11-27), nor FTB Chunks without FTB XMod Compat:
@@ -468,18 +468,105 @@ Survival players):
    for OPAC above (FTB Chunks' `shouldPreventInteraction`), compiled
    against the mod and used only when it is loaded, tested with the real
    mod in a GameTest run of its own.
-2. *Hidden blocks act with no player.* A shifter, line or area shifter, or
-   phased hopper, dropper or dispenser placed outside a claim acts on the
-   visible world like a piston or hopper: an area shifter's box or a line
-   shifter's line can reach across a claim's border, as can a phase piston
-   pushing visible blocks. Claim mods stop vanilla pistons and hoppers at
-   borders with their own mixins, which do not cover PhaseCraft's blocks. A
-   fix: remember who placed each such block, and ask `canBreakBlock` /
-   `canPlaceBlock` with that profile and no player (the API allows it;
-   `CommonProtection.UNKNOWN` when nobody is known) for every visible spot
-   it is about to change; or, with no owner kept, ask `isProtected` for the
-   acting block's spot and for the target, and refuse when only the target
-   is protected.
+2. *Hidden blocks act with no player.* Closed (the person, 2026-11-27:
+   "Let's close that gap"), see the next section; what is left of it is
+   listed there.
+
+### Claims hold against hidden machines: `MachineRights`, `MachineOwners`
+
+A hidden machine changes the visible world with no player acting: a phase
+shifter, a line shifter or an area shifter takes blocks and puts them back,
+a phase piston pushes and pulls them, a phased hopper empties a chest, a
+phased dropper or dispenser puts things out. Placed outside a claim, a line
+shifter's line, an area shifter's box or a phase piston's push reached
+across the border; claim mods stop vanilla pistons and hoppers there with
+their own mixins, which know nothing of PhaseCraft's blocks. So:
+
+**A machine acts with the rights of the player who placed it.**
+`MachineOwners` keeps the placer (UUID and name) of every machine block
+placed by a player in a hidden dimension, from editing mode or standing in
+the hidden layer (`BlockItemMixin`, on vanilla's `BlockItem.place`, which
+both go through), per hidden dimension, by position, in saved data
+`phasecraft:machine_owners` (it survives a restart: `PhaseLayerRestartPhases`).
+Machine blocks are the three shifters, both phase pistons, and hoppers,
+droppers and dispensers (phased or not: the phase block can come later).
+The entry is forgotten when the block at its spot becomes another block
+(`ServerLevelPhaseLinkMixin`, the block-change hook), not when only its
+state changes. A machine a hidden piston moves keeps its owner
+(`PistonBaseBlockMixin`; only phase pistons can be moved, the others have
+block entities): a flying machine's phase piston stays its builder's.
+
+**Every visible spot a machine is about to change is asked about first**
+(`MachineRights`), with the visible level, the owner's profile and no player
+(the owner may be offline), through the same Common Protection API:
+
+| Machine | Question, at | Refused |
+| --- | --- | --- |
+| phase shifter, taking | `canBreakBlock`, its own spot | it takes nothing |
+| phase shifter, putting back | `canPlaceBlock`, its own spot; and `canBreakBlock` there if a block that would be broken has taken the spot | it keeps holding the block and tries again every tick, as it waits for an unbreakable block |
+| line shifter, taking | `canBreakBlock`, each block of its line, when the line is worked out and again as each is taken | the block is an immovable block to it: nothing of the line moves, as with obsidian in it |
+| line shifter, putting back | as the phase shifter, each held spot | it waits there; the blocks behind wait their turn |
+| area shifter, taking | `canBreakBlock`, each block of the box, for both corners' owners | that block stays (the rest of the box goes), as an immovable block does |
+| area shifter, putting back | as the phase shifter, each held spot, both corners' owners (the leader's alone once the other corner is gone) | that block waits; the layers above wait for its layer |
+| a shifter removed while holding blocks | as putting back | the block is dropped at its spot as an item, with its contents, and what stands there is left alone |
+| phase piston, pushing or (sticky) pulling | `canBreakBlock` at each moved block's spot and `canPlaceBlock` at the spot it moves into; `canBreakBlock` at each block the move would break (a torch in the way) | nothing moves, as with an immovable block: it does not extend; a sticky one retracts and leaves the block |
+| phased hopper | `canInteractBlock`, the spot above it (a container there, or items lying there) | it pulls nothing |
+| phased dropper | `canInteractBlock`, the spot in front, if a container is there; otherwise `canPlaceBlock` there | it does nothing and keeps its items |
+| phased dispenser | `canPlaceBlock` and `canBreakBlock`, the spot in front (it places and pours, and also scoops up, shears, lights) | it does nothing and keeps its items |
+
+Nobody is told of a refusal: there is nobody to tell. The checks sit where
+the visible world is changed (`Shifting.take` and `putBack`, which every
+shifter goes through, `PhasePistonMover`, `PhasedItems.mayPull` and
+`mayPutOut`), so **a new machine, or a new way for one to change the
+visible world, must ask `MachineRights` for each visible spot**.
+
+**A machine with no owner** (placed by a command or a structure, or from
+before owners were kept: every machine built with an earlier version) may
+change a protected spot (`CommonProtection.isProtected`) only if its own
+spot is protected too: it was built inside. This is the nearest thing to
+claim mods' "a piston does not cross a claim's border" that the API allows.
+Outside any claim nothing changes for it.
+
+Cost: with no protection mod installed (`MachineRights.anyProtection`)
+nothing is looked up and every answer is yes; with one, a hash lookup for
+the owner per machine action and one question per changed spot (two for a
+line or area shifter's takes). No per-tick scan was added; a shifter that
+waits to put back, and a phased hopper, ask on the ticks they already run.
+
+`ClaimMachineGameTests`: each machine built four times, a stranger's, the
+claim owner's, nobody's outside the claim and nobody's inside it. With the
+real Open Parties and Claims (`OpacClaimChecks`, `runGameTestOpac`): a
+stranger's line shifter beside a claimed chunk takes nothing across the
+border, the claim owner's does. OPAC answers for a profile with no player
+by that player's standing in the claim (see above): the owner and those
+the claim gives full or block access to, not per-block exceptions.
+
+**Known limits:**
+
+1. *Two claims side by side.* The API cannot say whether two spots are in
+   the same claim, so a machine with no owner standing in one claim can
+   reach into the claim next to it. (A machine with an owner cannot: its
+   owner is asked about.)
+2. *A machine with no owner pushed into a claim.* A hidden piston outside a
+   claim could push an ownerless phase piston onto a protected spot, where
+   it would count as built inside. So an ownerless machine that a piston
+   moves from an unprotected spot onto a protected one gets
+   `CommonProtection.UNKNOWN` as its owner: nobody, whom claims refuse.
+   Side effect: a flying machine built by commands that flies into a claim
+   stops pushing visible blocks there; one built by hand keeps its
+   builder's rights.
+3. *A claim made over a working machine.* A stranger's shifter that holds a
+   block when the spot becomes someone's claim cannot put it back (the
+   claim refuses the placing): the block stays held until the claim's owner
+   lets them, or the shifter is removed and drops it.
+4. *Out of scope:* phased blocks that only read the visible world (pressure
+   plates, buttons and levers, observers, comparators, tripwire, lights),
+   and phase ports: redstone power crosses claim borders in vanilla too,
+   and claim mods do not stop it. A phased button in a claimed wall is
+   pressed by a click on the visible block, which the claim mod sees.
+5. *Items lying on the ground* above a phased hopper are asked about as the
+   container is (`canInteractBlock` at that spot): the API has no question
+   for picking items up.
 
 ### Decision: a click on a visible block places at that same spot (decided by the agent, 2026-11-22; open to change)
 

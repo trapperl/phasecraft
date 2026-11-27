@@ -19,7 +19,8 @@ import net.minecraft.server.level.ServerPlayer;
  *
  * <p>Asked for every player, Creative and operators too: who may pass is the
  * protection mod's decision. Not covered: mods that do not answer the API
- * (see docs/ARCHITECTURE.md), and hidden blocks acting with no player.</p>
+ * (see docs/ARCHITECTURE.md). Hidden machines, which act with no player, ask
+ * through {@link MachineRights}, with the rights of whoever placed them.</p>
  */
 public final class Protection {
     public static final String REFUSED = "phasecraft.edit.protected";

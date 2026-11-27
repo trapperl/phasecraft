@@ -38,7 +38,7 @@ public class ClaimProtectionGameTests {
     private static final UUID SOMEONE_ELSE = UUID.randomUUID();
 
     /** A player standing on a floor, two blocks south of the spot between CLAIMED and FREE. */
-    private static ServerPlayer player(GameTestHelper helper, GameType mode) {
+    static ServerPlayer player(GameTestHelper helper, GameType mode) {
         for (int x = 0; x <= 7; x++) {
             for (int z = 0; z <= 7; z++) {
                 helper.setBlock(new BlockPos(x, 1, z), Blocks.STONE);
@@ -51,11 +51,11 @@ public class ClaimProtectionGameTests {
         return player;
     }
 
-    private static BlockHitResult hit(BlockPos pos, Direction face) {
+    static BlockHitResult hit(BlockPos pos, Direction face) {
         return new BlockHitResult(Vec3.atCenterOf(pos).relative(face, 0.5), face, pos, false);
     }
 
-    private static void hold(ServerPlayer player, ItemStack stack) {
+    static void hold(ServerPlayer player, ItemStack stack) {
         player.setItemInHand(InteractionHand.MAIN_HAND, stack);
     }
 

@@ -1,9 +1,13 @@
 package dev.phasecraft.phased;
 
+import dev.phasecraft.edit.MachineRights;
 import dev.phasecraft.layer.HiddenDimensions;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.DispenserBlock;
+import net.minecraft.world.level.block.DropperBlock;
+import net.minecraft.world.level.block.entity.HopperBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.Nullable;
 
@@ -27,8 +31,11 @@ import org.jspecify.annotations.Nullable;
  *       2026-11-23), so sounds and level events in the visible level are
  *       dropped while it dispenses ({@code ServerLevelSilenceMixin}).</li>
  * </ul>
- * A sorter can then take from a visible chest, sort in the hidden layer, and
- * fill visible chests, with nothing showing.
+ * Where claims guard the visible world they act with the rights of whoever
+ * placed them ({@link #mayPull}, {@link #mayPutOut}).
+ *
+ * <p>A sorter can then take from a visible chest, sort in the hidden layer, and
+ * fill visible chests, with nothing showing.</p>
  */
 public final class PhasedItems {
     /** Set while a phased dropper or dispenser acts on the visible level: what it would make heard there is dropped. */
@@ -43,6 +50,33 @@ public final class PhasedItems {
             return null;
         }
         return HiddenDimensions.visibleOf(hidden.dimension()).map(hidden.getServer()::getLevel).orElse(null);
+    }
+
+    /**
+     * Whether claims let the phased hopper at pos pull from the visible spot above it (a container's items, or
+     * items lying there): what whoever placed it may use there (see {@link MachineRights}). If not, it pulls
+     * nothing.
+     */
+    public static boolean mayPull(ServerLevel hidden, BlockPos pos, ServerLevel visible) {
+        return !MachineRights.anyProtection() || MachineRights.of(hidden, pos).mayUse(visible, pos.above());
+    }
+
+    /**
+     * Whether claims let the phased dropper or dispenser at pos put out into the visible spot in front of it, by the
+     * rights of whoever placed it: a dropper facing a container may use it, otherwise it may place there; a
+     * dispenser may place and break there (it pours and scoops up water, plants, shears, lights...). If not, it
+     * does nothing, and keeps its items.
+     */
+    public static boolean mayPutOut(ServerLevel hidden, BlockPos pos, BlockState state, ServerLevel visible) {
+        if (!MachineRights.anyProtection()) {
+            return true;
+        }
+        MachineRights rights = MachineRights.of(hidden, pos);
+        BlockPos front = pos.relative(state.getValue(DispenserBlock.FACING));
+        if (state.getBlock() instanceof DropperBlock) {
+            return HopperBlockEntity.getContainerAt(visible, front) != null ? rights.mayUse(visible, front) : rights.mayPlace(visible, front);
+        }
+        return rights.mayPlace(visible, front) && rights.mayBreak(visible, front);
     }
 
     /** Runs a phased dispense into the visible level, silencing that level meanwhile. */

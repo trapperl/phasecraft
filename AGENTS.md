@@ -76,9 +76,20 @@ blocks, with future vanilla-compatible cross-layer redstone and pistons.
   world's protection at that spot first: `mayInteract` (spawn protection,
   world border) and `dev.phasecraft.edit.Protection` (claim mods, through
   the Common Protection API, jar-in-jar). Never fire Fabric's use/attack/
-  break events for a block nobody clicked. Known gaps (mods not answering
-  the API; shifters and phased hoppers acting with no player): "Claims hold
-  for the hidden layer" in docs/ARCHITECTURE.md.
+  break events for a block nobody clicked. Known gap (mods not answering
+  the API): "Claims hold for the hidden layer" in docs/ARCHITECTURE.md.
+- Whatever a hidden machine does to the visible world with no player acting
+  (shifters, phase pistons, phased hoppers, droppers, dispensers) is checked
+  too (the person, 2026-11-27: "Let's close that gap"): it acts with the
+  rights of whoever placed it (`MachineOwners`, saved per hidden dimension;
+  a machine block must be listed in `MachineOwners.isMachine`), and asks
+  `dev.phasecraft.edit.MachineRights` for every visible spot it is about to
+  change; a refused spot is an immovable block to it. Any new machine, or
+  new way to change the visible world from the hidden layer, must ask
+  there, with a `ClaimMachineGameTests` test. The agent's defaults, open to
+  change: a machine with no owner works in a claim only if its own spot is
+  protected; nobody is told of a refusal. See "Claims hold against hidden
+  machines" in docs/ARCHITECTURE.md.
 - New behaviour needs a GameTest, and a new test should be shown to fail when
   the behaviour is broken (break the code on purpose, run, restore).
 - `./gradlew installToMinecraft` installs a passing build into the local

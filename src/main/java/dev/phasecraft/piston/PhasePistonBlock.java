@@ -1,5 +1,6 @@
 package dev.phasecraft.piston;
 
+import dev.phasecraft.edit.MachineRights;
 import dev.phasecraft.layer.HiddenDimensions;
 import dev.phasecraft.layer.HiddenLayer;
 import net.minecraft.core.BlockPos;
@@ -39,6 +40,11 @@ import org.jspecify.annotations.Nullable;
  * would be, the visible space is left empty. A sticky phase piston pulls the
  * visible block back when it retracts. Placed in the visible layer, it does
  * nothing.</p>
+ *
+ * <p>Where claims guard the visible world it acts with the rights of whoever
+ * placed it ({@link MachineRights}): a block it may not take from its spot,
+ * or put into the next, is an immovable block to it: it does not extend, and
+ * a sticky one pulls nothing back.</p>
  */
 public class PhasePistonBlock extends DirectionalBlock {
     public static final BooleanProperty EXTENDED = BlockStateProperties.EXTENDED;
@@ -93,6 +99,11 @@ public class PhasePistonBlock extends DirectionalBlock {
         return HiddenLayer.of(serverLevel).visibleLevel();
     }
 
+    /** What this piston may change where claims guard the visible world: what whoever placed it may. */
+    private static MachineRights rights(Level hidden, BlockPos pos) {
+        return MachineRights.of((ServerLevel) hidden, pos);
+    }
+
     private void checkIfExtend(Level level, BlockPos pos, BlockState state) {
         ServerLevel visible = visibleLevel(level);
         if (visible == null) {
@@ -101,7 +112,7 @@ public class PhasePistonBlock extends DirectionalBlock {
         Direction direction = state.getValue(FACING);
         boolean powered = hasNeighborSignal(level, pos, direction);
         if (powered && !state.getValue(EXTENDED)) {
-            if (visible.isLoaded(pos.relative(direction)) && PhasePistonMover.canMove(visible, pos, direction, true)) {
+            if (visible.isLoaded(pos.relative(direction)) && PhasePistonMover.canMove(visible, pos, direction, true, rights(level, pos))) {
                 level.blockEvent(pos, this, EXTEND, direction.get3DDataValue());
             }
         } else if (!powered && state.getValue(EXTENDED)) {
@@ -137,7 +148,7 @@ public class PhasePistonBlock extends DirectionalBlock {
         Direction direction = state.getValue(FACING);
         boolean powered = hasNeighborSignal(level, pos, direction);
         if (event == EXTEND) {
-            if (!powered || !PhasePistonMover.moveBlocks(visible, pos, direction, true)) {
+            if (!powered || !PhasePistonMover.moveBlocks(visible, pos, direction, true, rights(level, pos))) {
                 return false;
             }
             level.setBlock(pos, state.setValue(EXTENDED, true), Block.UPDATE_ALL);
@@ -150,7 +161,7 @@ public class PhasePistonBlock extends DirectionalBlock {
             return false;
         }
         if (sticky) {
-            pullBack(visible, pos, direction);
+            pullBack(visible, pos, direction, rights(level, pos));
         }
         level.setBlock(pos, state.setValue(EXTENDED, false), Block.UPDATE_ALL);
         level.playSound(null, pos, SoundEvents.PISTON_CONTRACT, SoundSource.BLOCKS, 0.5F,
@@ -159,7 +170,7 @@ public class PhasePistonBlock extends DirectionalBlock {
     }
 
     /** Vanilla's sticky retraction rule, on the visible level: pull the block two in front back by one. */
-    private static void pullBack(ServerLevel visible, BlockPos pos, Direction direction) {
+    private static void pullBack(ServerLevel visible, BlockPos pos, Direction direction, MachineRights rights) {
         BlockPos twoAhead = pos.relative(direction, 2);
         BlockState there = visible.getBlockState(twoAhead);
         if (there.is(Blocks.MOVING_PISTON)
@@ -173,7 +184,7 @@ public class PhasePistonBlock extends DirectionalBlock {
         if (!there.isAir()
                 && PistonBaseBlock.isPushable(there, visible, twoAhead, direction.getOpposite(), false, direction)
                 && (there.getPistonPushReaction() == PushReaction.PUSH_PULL || there.is(Blocks.PISTON) || there.is(Blocks.STICKY_PISTON))) {
-            PhasePistonMover.moveBlocks(visible, pos, direction, false);
+            PhasePistonMover.moveBlocks(visible, pos, direction, false, rights);
         }
     }
 

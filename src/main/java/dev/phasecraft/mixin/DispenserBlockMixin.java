@@ -13,10 +13,21 @@ import net.minecraft.world.level.block.entity.DispenserBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /** A phased dispenser dispenses into the visible world in front of it, silently there (see PhasedItems). */
 @Mixin(DispenserBlock.class)
 abstract class DispenserBlockMixin {
+    /** Where a claim refuses it the spot in front, it does nothing (see PhasedItems.mayPutOut). */
+    @Inject(method = "dispenseFrom", at = @At("HEAD"), cancellable = true)
+    private void phasecraft$claimsHold(ServerLevel level, BlockState state, BlockPos pos, CallbackInfo ci) {
+        ServerLevel visible = PhasedItems.visibleFor(level, pos, state);
+        if (visible != null && !PhasedItems.mayPutOut(level, pos, state, visible)) {
+            ci.cancel();
+        }
+    }
+
     @WrapOperation(method = "dispenseFrom", at = @At(value = "NEW", target = "net/minecraft/core/dispenser/BlockSource"))
     private BlockSource phasecraft$visibleSource(ServerLevel level, BlockPos pos, BlockState state, DispenserBlockEntity entity,
             Operation<BlockSource> original) {
