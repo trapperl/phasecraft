@@ -3,6 +3,7 @@ package dev.phasecraft.link;
 import dev.phasecraft.layer.HiddenDimensions;
 import java.util.Optional;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -75,6 +76,7 @@ public final class PhaseLink {
         ServerTickEvents.END_SERVER_TICK.register(PhaseLink::deliver);
         ServerChunkEvents.FULL_CHUNK_STATUS_CHANGE.register(PhaseLink::followTicking);
         ServerChunkEvents.FULL_CHUNK_STATUS_CHANGE.register(PhaseLink::refreshPortsWhenTicking);
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> lastTwin = null);
     }
 
     /**
@@ -185,6 +187,12 @@ public final class PhaseLink {
         if (other == null) {
             return;
         }
+        // Almost every change has no port anywhere near it in the other layer: nothing to queue (measured on a
+        // busy wire network: queueing and delivering 25 refreshes per change was about a tenth of the tick).
+        ServerLevel otherLevel = level.getServer().getLevel(other);
+        if (otherLevel == null || !mayHavePortNear(otherLevel, pos)) {
+            return;
+        }
         for (int dx = -2; dx <= 2; dx++) {
             for (int dy = -2; dy <= 2; dy++) {
                 for (int dz = -2; dz <= 2; dz++) {
@@ -198,6 +206,40 @@ public final class PhaseLink {
     }
 
     /**
+     * Whether a port could stand within two blocks of pos in this level, so that a refresh queued for it could do
+     * anything: false only if no chunk section the positions lie in can hold one. A section's palette answers
+     * (it may still list a port that has been removed: then this says true, and the refreshes find nothing, as
+     * before). A chunk that is loaded but not there yet counts as "could": the delivery at the end of the tick
+     * decides, as before.
+     */
+    private static boolean mayHavePortNear(ServerLevel level, BlockPos pos) {
+        int minSection = Math.max(SectionPos.blockToSectionCoord(pos.getY() - 2), level.getMinSectionY());
+        int maxSection = Math.min(SectionPos.blockToSectionCoord(pos.getY() + 2), level.getMaxSectionY());
+        int minChunkX = SectionPos.blockToSectionCoord(pos.getX() - 2);
+        int maxChunkX = SectionPos.blockToSectionCoord(pos.getX() + 2);
+        int minChunkZ = SectionPos.blockToSectionCoord(pos.getZ() - 2);
+        int maxChunkZ = SectionPos.blockToSectionCoord(pos.getZ() + 2);
+        for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+            for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
+                LevelChunk chunk = level.getChunkSource().getChunkNow(chunkX, chunkZ);
+                if (chunk == null) {
+                    if (level.getChunkSource().hasChunk(chunkX, chunkZ)) {
+                        return true;
+                    }
+                    continue;
+                }
+                for (int sectionY = minSection; sectionY <= maxSection; sectionY++) {
+                    LevelChunkSection section = chunk.getSection(chunk.getSectionIndexFromSectionY(sectionY));
+                    if (!section.hasOnlyAir() && section.maybeHas(PhaseLink::isPort)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
      * The power a hidden port at pos puts up into this visible level (its UP), or 0: given out at
      * pos like an invisible redstone block (ServerLevelPhaseBridgeMixin).
      */
@@ -205,13 +247,55 @@ public final class PhaseLink {
         if (ignoreBridge > 0) {
             return 0;
         }
-        ResourceKey<Level> hiddenKey = HiddenDimensions.hiddenOf(visible.dimension()).orElse(null);
-        ServerLevel hidden = hiddenKey == null ? null : visible.getServer().getLevel(hiddenKey);
-        if (hidden == null || !hidden.isLoaded(pos)) {
+        ServerLevel hidden = hiddenOf(visible);
+        if (hidden == null) {
+            return 0;
+        }
+        // Every signal read in a visible level comes through here (measured on a busy wire network: an eighth of
+        // the tick), and almost none has a port at its spot. A hidden chunk that is there answers that with one
+        // look-up, its empty sections without reading a block.
+        LevelChunk chunk = hidden.getChunkSource().getChunkNow(SectionPos.blockToSectionCoord(pos.getX()),
+                SectionPos.blockToSectionCoord(pos.getZ()));
+        if (chunk != null && !portIn(chunk, pos)) {
+            return 0;
+        }
+        // A port, or a chunk that is not there (yet): as before.
+        if (!hidden.isLoaded(pos)) {
             return 0;
         }
         BlockState state = hidden.getBlockState(pos);
         return state.getBlock() instanceof PhasePortBlock ? state.getValue(PhasePortBlock.UP) : 0;
+    }
+
+    /** Whether the block at pos in this chunk is a port, read from its section (LevelChunk.getBlockState does more per call). */
+    private static boolean portIn(LevelChunk chunk, BlockPos pos) {
+        int index = chunk.getSectionIndex(pos.getY());
+        LevelChunkSection[] sections = chunk.getSections();
+        if (index < 0 || index >= sections.length || sections[index].hasOnlyAir()) {
+            return false;
+        }
+        return isPort(sections[index].getBlockState(pos.getX() & 15, pos.getY() & 15, pos.getZ() & 15));
+    }
+
+    /**
+     * The hidden level last asked for, by its visible level (null: that level has none, as a hidden level itself,
+     * whose signal reads come through upAt too): saves upAt two map look-ups on every signal read.
+     */
+    private record Twin(ServerLevel visible, ServerLevel hidden) {}
+
+    private static Twin lastTwin;
+
+    private static ServerLevel hiddenOf(ServerLevel visible) {
+        Twin twin = lastTwin;
+        if (twin != null && twin.visible() == visible) {
+            return twin.hidden();
+        }
+        ResourceKey<Level> hiddenKey = HiddenDimensions.hiddenOf(visible.dimension()).orElse(null);
+        ServerLevel hidden = hiddenKey == null ? null : visible.getServer().getLevel(hiddenKey);
+        if (hidden != null || hiddenKey == null) {
+            lastTwin = new Twin(visible, hidden);
+        }
+        return hidden;
     }
 
     /** A hidden port's UP changed: the visible neighbours of its spot hear about it at the end of the tick. */

@@ -57,7 +57,11 @@ the examples no longer use one.
   end of the tick (`PhaseUpdateQueue`). A loop through both layers therefore
   advances one hop per tick, like a clock, instead of recursing.
 - A change counts if a signal source or conductor changes within two blocks
-  (direct power, or power through a conductor).
+  (direct power, or power through a conductor). Nothing is queued where no
+  chunk section within those two blocks can hold a port in the other layer
+  (its palette says), which is almost everywhere: queueing 25 refreshes for
+  every such change, and looking for a hidden port on every visible signal
+  read, took a fifth of the tick on a busy wire network (`src/perf`).
 - **Ports catch up when their chunk starts ticking.** A refresh for a port
   whose chunk is not loaded is dropped, and a hidden chunk loads a few ticks
   after its visible twin, so the visible power at a port can change before
