@@ -162,16 +162,29 @@ protected:
 - claims of **Open Parties and Claims**: PhaseCraft asks it directly when it
   is installed (tested with version 0.33.0). The claim's owner, their party
   and whoever else the claim's settings let build there may edit the hidden
-  layer in it; nobody else.
+  layer in it; nobody else;
+- hidden machines too, with all of those mods: a phase shifter, Shifter
+  Piston, area shifter, phase piston, or a phased hopper, dropper or
+  dispenser acts with the rights of the player who placed it. A stranger's
+  machine outside your claim cannot take, push or put blocks across its
+  border, or empty and fill your chests; yours can. A refused block is to
+  the machine what obsidian is to a piston. A machine nobody placed by hand
+  (commands, structures, or built with an earlier PhaseCraft) works in a
+  claim only if it stands on protected ground itself: after updating, a
+  machine of yours that stands outside your claim and reaches into it stops
+  there until you break it and place it again, which makes it yours.
 
 Not covered yet:
 
 - claims of mods that do not answer that API: Yet Another World Protector,
   Leukocyte, FTB Chunks without FTB XMod Compat. With one of these, keep
   `phasecraft:survival_access` off on a public server;
-- hidden machines that reach across a claim's border from outside it (a
-  shifter piston's line, an area shifter's box, a phase piston): claim mods
-  stop vanilla pistons there, not PhaseCraft's.
+- two claims side by side: a machine nobody placed by hand that stands in
+  one can reach into the other (the claim mods cannot tell PhaseCraft
+  whether two spots are in the same claim);
+- hidden redstone power (phase ports) and hidden blocks that only watch the
+  visible world (pressure plates, observers, comparators, tripwire,
+  lights): these cross claim borders, as vanilla redstone does.
 
 Recipes (a starting point for balancing):
 
