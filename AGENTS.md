@@ -46,6 +46,10 @@ blocks, with future vanilla-compatible cross-layer redstone and pistons.
   visible ones, by chance, which made rare late or stalled hidden steps
   (issue #3). To see it: `./gradlew runGameTest -PgameTestVmArgs="-Dphasecraft.test.waitForHiddenChunks=false
   -Dphasecraft.test.hiddenChunkDelay=40"`; `-PgameTestFilter=...` picks tests.
+- `./gradlew runPerf` measures server tick cost with and without PhaseCraft's
+  parts (src/perf, a mod never shipped; method and options in
+  src/perf/README.md); not part of build. Rerun it after a change on a hot
+  path (signal reads, block changes, per-tick scans).
 - Client-only code lives in src/client (split source sets); src/main must not
   reference client classes.
 - Test games never talk to Mojang or Microsoft (2026-11-22: dozens of test
