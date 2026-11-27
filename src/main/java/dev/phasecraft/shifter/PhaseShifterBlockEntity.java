@@ -10,11 +10,24 @@ import net.minecraft.world.level.storage.ValueOutput;
 import org.jspecify.annotations.Nullable;
 
 /** The visible block a phase shifter is holding while it is out of the visible world, if any. */
-public class PhaseShifterBlockEntity extends BlockEntity {
+public class PhaseShifterBlockEntity extends BlockEntity implements HoldsBlocks {
     private Shifting.@Nullable Held held;
 
     public PhaseShifterBlockEntity(BlockPos pos, BlockState state) {
         super(PhaseCraftBlocks.PHASE_SHIFTER_ENTITY, pos, state);
+    }
+
+    @Override
+    public int heldCount() {
+        return held == null ? 0 : 1;
+    }
+
+    @Override
+    public void setChanged() {
+        super.setChanged();
+        if (level instanceof net.minecraft.server.level.ServerLevel server) {
+            dev.phasecraft.overlay.OverlaySync.onHoldingChanged(server, worldPosition, heldCount());
+        }
     }
 
     /** The held block, if any. */

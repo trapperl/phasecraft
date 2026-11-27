@@ -25,7 +25,11 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.chunk.LevelChunk;
+import dev.phasecraft.shifter.HoldsBlocks;
+import it.unimi.dsi.fastutil.longs.Long2IntLinkedOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2IntMap;
 import net.minecraft.world.level.chunk.LevelChunkSection;
 import org.jspecify.annotations.Nullable;
 
@@ -51,6 +55,8 @@ public final class OverlaySync {
     private static final Map<UUID, Watch> WATCHES = new HashMap<>();
     /** Hidden block changes this tick, per hidden dimension, by packed position. */
     private static final Map<ResourceKey<Level>, Long2ObjectLinkedOpenHashMap<BlockState>> PENDING = new HashMap<>();
+    /** What hidden shifters hold, changed this tick, per hidden dimension, by packed position. */
+    private static final Map<ResourceKey<Level>, Long2IntLinkedOpenHashMap> PENDING_HOLDING = new HashMap<>();
 
     private OverlaySync() {}
 
@@ -71,6 +77,7 @@ public final class OverlaySync {
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
             WATCHES.clear();
             PENDING.clear();
+            PENDING_HOLDING.clear();
         });
     }
 
@@ -81,6 +88,14 @@ public final class OverlaySync {
         }
         PENDING.computeIfAbsent(level.dimension(), key -> new Long2ObjectLinkedOpenHashMap<>())
                 .put(pos.asLong(), newState);
+    }
+
+    /** A hidden shifter's held count changed (its block entity's setChanged). */
+    public static void onHoldingChanged(ServerLevel level, BlockPos pos, int count) {
+        if (WATCHES.isEmpty() || !HiddenDimensions.isHidden(level.dimension())) {
+            return;
+        }
+        PENDING_HOLDING.computeIfAbsent(level.dimension(), key -> new Long2IntLinkedOpenHashMap()).put(pos.asLong(), count);
     }
 
     private static void tick(MinecraftServer server) {
@@ -94,6 +109,27 @@ public final class OverlaySync {
                 }
             }
             PENDING.clear();
+        }
+        if (!PENDING_HOLDING.isEmpty()) {
+            for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+                Watch watch = WATCHES.get(player.getUUID());
+                Long2IntLinkedOpenHashMap changes = watch == null ? null
+                        : PENDING_HOLDING.get(HiddenDimensions.hiddenOf(watch.visible).orElseThrow());
+                if (changes == null) {
+                    continue;
+                }
+                List<OverlayPayloads.Count> counts = new ArrayList<>();
+                for (Long2IntMap.Entry change : changes.long2IntEntrySet()) {
+                    BlockPos pos = BlockPos.of(change.getLongKey());
+                    if (watch.chunks.contains(ChunkPos.pack(pos))) {
+                        counts.add(new OverlayPayloads.Count(pos, change.getIntValue()));
+                    }
+                }
+                if (!counts.isEmpty()) {
+                    ServerPlayNetworking.send(player, new OverlayPayloads.Holding(counts));
+                }
+            }
+            PENDING_HOLDING.clear();
         }
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             update(server, player);
@@ -179,6 +215,15 @@ public final class OverlaySync {
         for (int from = first; from < ghosts.size(); from += MAX_GHOSTS_PER_PAYLOAD) {
             List<OverlayPayloads.Ghost> part = ghosts.subList(from, Math.min(ghosts.size(), from + MAX_GHOSTS_PER_PAYLOAD));
             ServerPlayNetworking.send(player, new OverlayPayloads.Blocks(List.copyOf(part)));
+        }
+        List<OverlayPayloads.Count> counts = new ArrayList<>();
+        for (BlockEntity entity : chunk.getBlockEntities().values()) {
+            if (entity instanceof HoldsBlocks shifter && shifter.heldCount() > 0) {
+                counts.add(new OverlayPayloads.Count(entity.getBlockPos(), shifter.heldCount()));
+            }
+        }
+        if (!counts.isEmpty()) {
+            ServerPlayNetworking.send(player, new OverlayPayloads.Holding(counts));
         }
     }
 

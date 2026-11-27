@@ -67,6 +67,8 @@ public final class PhaseCraftClient implements ClientModInitializer {
                 (payload, context) -> LAYER.forget(payload.chunk()));
         ClientPlayNetworking.registerGlobalReceiver(OverlayPayloads.Reset.TYPE,
                 (payload, context) -> LAYER.clear());
+        ClientPlayNetworking.registerGlobalReceiver(OverlayPayloads.Holding.TYPE,
+                (payload, context) -> payload.counts().forEach(count -> LAYER.setHolding(count.pos(), count.count())));
         ClientPlayNetworking.registerGlobalReceiver(PhasedLights.Sync.TYPE, (payload, context) -> PhasedLightsClient.apply(payload));
         ClientPlayNetworking.registerGlobalReceiver(PhasePistonAnimation.Moved.TYPE, (payload, context) -> PhasePistonAnimationClient.apply(payload));
         ClientPlayNetworking.registerGlobalReceiver(Access.Allowed.TYPE, (payload, context) -> ClientEditing.setAllowed(payload.edit()));

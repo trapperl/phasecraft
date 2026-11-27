@@ -94,7 +94,8 @@ client as well as on the server.
 Press **J** (Creative, or Survival, see below) and "Editing: hidden layer" shows in the top left.
 Your clicks now go to the hidden layer; the visible world is not touched.
 Aim at a hidden block and the line under it names the block and its state, e.g.
-"Shifter Piston · delay 3 · facing up" (on/off properties show only when on).
+"Shifter Piston · delay 3 · facing up · holding 2" (on/off properties show only
+when on; shifters also say how many visible blocks they hold).
 What a click acts on is outlined in purple:
 
 - **Aiming at a hidden block** (even one inside a wall, as the overlay shows
