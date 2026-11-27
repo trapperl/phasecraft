@@ -128,6 +128,36 @@ the action bar, with a dispenser's dull click only you hear.
 
 ![Editing mode: a hidden lamp placed at the spot of a visible stone block, outlined in purple](images/editing.png)
 
+### Building from inside the hidden layer
+
+For a bigger machine it is easier to step into the hidden layer itself.
+Press **K** (Creative or Spectator; Controls, "PhaseCraft") and you are in
+the hidden layer at the same spot, flying: there is no ground in there.
+
+- The hidden blocks are real blocks now: build, break and use them as you
+  would anywhere, with no editing mode.
+- The visible world is drawn around you, see-through and faint, so you can
+  see where the walls, floors and doors are that your machine has to line
+  up with: its surfaces only, from either side (stand under a floor and you
+  see it above you), up to about 48 blocks away. Solid ground is hollow.
+  You can fly through all of it. **H** hides and shows it, **]** and **[**
+  make it stronger or fainter.
+- It is only a picture: you cannot click the visible world from in here, and
+  its mobs and players are not shown. It is still running, though (the area
+  around you stays loaded), so you can flip your hidden lever and watch the
+  visible door move.
+- You are really in the hidden layer: a hidden pressure plate under your
+  feet is pressed by you, a visible one at the same spot is not.
+- Press **K** again to come back out at the same spot. If that spot is
+  inside a visible block, a Creative player is pushed out of it (or digs).
+
+K needs no cheats and no operator rights, only Creative or Spectator mode;
+Survival and Adventure players are told so and stay where they are (and
+anyone who changes to Survival inside is put back outside). Operators can
+also use `/phasecraft layer hidden` and `/phasecraft layer visible`.
+
+![Inside the hidden layer: a visible stone wall drawn faint, the real hidden gold block behind it](images/inside.png)
+
 ### Survival play
 
 PhaseCraft works in Survival. The game rule `phasecraft:survival_access`
@@ -429,7 +459,7 @@ Power crosses only through **phase ports**, and visible blocks are moved
 only by **phase pistons** placed in the hidden layer (all in the Redstone
 tab, or `/give @s phasecraft:phase_port`, `phasecraft:sticky_phase_piston`);
 see docs/ARCHITECTURE.md. Build hidden machinery with editing mode (J), with
-`/phasecraft set`, or from inside the hidden layer. Hidden machinery runs
+`/phasecraft set`, or from inside the hidden layer (K). Hidden machinery runs
 wherever the visible world around it runs. Commands require operator permission level 2. Worlds from earlier builds
 are upgraded automatically at server start.
 
