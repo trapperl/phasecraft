@@ -119,6 +119,13 @@ aim at), an empty one scoops hidden water or lava up. Fish buckets are
 refused. Hidden beds and respawn anchors are for show: you can place them,
 but not sleep in them, set your respawn point with them or charge them.
 
+Where you may not edit, you see it before you click: the outline turns
+**red** and the line under the label says why ("Redstone Lamp · Protected by
+a claim", or just "Spawn protection" on a visible block). The reasons: a
+claim (see the server admins' notes below), the server's spawn protection,
+or the world border. Clicking anyway does nothing but say the reason in
+the action bar, with a dispenser's dull click only you hear.
+
 ![Editing mode: a hidden lamp placed at the spot of a visible stone block, outlined in purple](images/editing.png)
 
 ### Survival play

@@ -2,6 +2,7 @@ package dev.phasecraft.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import dev.phasecraft.PhaseCraft;
+import dev.phasecraft.edit.AimCheck;
 import dev.phasecraft.layer.Access;
 import dev.phasecraft.overlay.OverlayPayloads;
 import dev.phasecraft.phased.PhasedLights;
@@ -72,6 +73,7 @@ public final class PhaseCraftClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(PhasedLights.Sync.TYPE, (payload, context) -> PhasedLightsClient.apply(payload));
         ClientPlayNetworking.registerGlobalReceiver(PhasePistonAnimation.Moved.TYPE, (payload, context) -> PhasePistonAnimationClient.apply(payload));
         ClientPlayNetworking.registerGlobalReceiver(Access.Allowed.TYPE, (payload, context) -> ClientEditing.setAllowed(payload.edit()));
+        ClientPlayNetworking.registerGlobalReceiver(AimCheck.Answer.TYPE, (payload, context) -> ClientEditing.setAnswer(payload));
         // A new connection starts empty: nothing from the last world or server
         // may show here. Queued before any of the new connection's payloads.
         ClientPlayConnectionEvents.INIT.register((handler, client) -> client.execute(() -> {
@@ -86,6 +88,7 @@ public final class PhaseCraftClient implements ClientModInitializer {
         }));
 
         ClientTickEvents.END_CLIENT_TICK.register(PhaseCraftClient::handleKeys);
+        ClientTickEvents.END_CLIENT_TICK.register(ClientEditing::askAboutAim);
         LevelRenderEvents.COLLECT_SUBMITS.register(context -> {
             GhostRenderer.collect(context, LAYER, settings, ClientEditing.editing());
             ClientEditing.submitOutline(context);

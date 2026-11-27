@@ -182,13 +182,17 @@ public final class HiddenEditing {
         return player.level().mayInteract(player, pos);
     }
 
-    /** As {@link #mayInteract}, telling the player when spawn protection is why not, as vanilla does. */
+    /** As {@link #mayInteract}, telling the player why not (AimCheck.tellRefused: spawn protection or the world border). */
     private static boolean mayInteractOrTell(ServerPlayer player, BlockPos pos) {
         if (player.level().getServer().isUnderSpawnProtection(player.level(), pos, player)) {
-            player.sendSpawnProtectionMessage(pos);
+            AimCheck.tellRefused(player, AimCheck.SPAWN);
             return false;
         }
-        return mayInteract(player, pos);
+        if (!mayInteract(player, pos)) {
+            AimCheck.tellRefused(player, AimCheck.BORDER);
+            return false;
+        }
+        return true;
     }
 
     /**

@@ -1,5 +1,13 @@
 package dev.phasecraft.test.client;
 
+import javax.imageio.ImageIO;
+import java.util.UUID;
+import java.util.Set;
+import java.nio.file.Path;
+import java.io.UncheckedIOException;
+import java.io.IOException;
+import java.awt.image.BufferedImage;
+import dev.phasecraft.test.TestClaims;
 import static dev.phasecraft.test.client.OverlayClientGameTest.assertTrue;
 import static dev.phasecraft.test.client.OverlayClientGameTest.waitForGhost;
 import static dev.phasecraft.test.client.OverlayClientGameTest.waitUntil;
@@ -61,7 +69,19 @@ public class EditingClientGameTest implements FabricClientGameTest {
             // Now the ghost is the target; right click places next to it, toward the player.
             waitUntil(context, "the hidden lamp is targeted", minecraft -> isTarget(STONE, true));
             assertTrue("Redstone Lamp".equals(readout(context)), "readout of the hidden lamp: " + readout(context));
-            context.takeScreenshot("editing_target_hidden");
+            Path purple = context.takeScreenshot("editing_target_hidden");
+            // A claim refuses breaking the lamp here: the spot shows it before any click, red outline and readout.
+            UUID stranger = UUID.randomUUID();
+            server.runOnServer(minecraft -> TestClaims.claim(stranger, Set.of(TestClaims.Action.BREAK), STONE));
+            waitUntil(context, "the readout says the lamp is protected",
+                    minecraft -> readoutIs("Redstone Lamp · Protected by a claim"));
+            Path red = context.takeScreenshot("editing_protected");
+            int redBefore = redPixels(purple);
+            int redAfter = redPixels(red);
+            assertTrue(redAfter > redBefore + 200, "the protected spot's outline is not red: " + redBefore + " red pixels before, "
+                    + redAfter + " after");
+            server.runOnServer(minecraft -> TestClaims.unclaim(STONE));
+            waitUntil(context, "the readout no longer says protected", minecraft -> readoutIs("Redstone Lamp"));
             // The readout names the hidden block aimed at and the parts of its state a builder needs.
             server.runCommand("phasecraft set 0 -60 3 phasecraft:line_shifter[delay=3,facing=up]");
             waitUntil(context, "the readout shows the shifter piston",
@@ -137,6 +157,29 @@ public class EditingClientGameTest implements FabricClientGameTest {
             assertTrue(!context.computeOnClient(minecraft -> ClientEditing.editing()), "survival player (rule off) turned editing on");
             server.runCommand("gamerule phasecraft:survival_access true");
         }
+    }
+
+    /** Strongly red pixels (the protected outline's colour, 0xFF4040) in a screenshot, below the HUD's readout (also red). */
+    private static int redPixels(Path screenshot) {
+        BufferedImage image;
+        try {
+            image = ImageIO.read(screenshot.toFile());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        int count = 0;
+        for (int y = image.getHeight() / 6; y < image.getHeight(); y++) {
+            for (int x = 0; x < image.getWidth(); x++) {
+                int rgb = image.getRGB(x, y);
+                int r = (rgb >> 16) & 0xFF;
+                int g = (rgb >> 8) & 0xFF;
+                int b = rgb & 0xFF;
+                if (r > 200 && g < 110 && b < 110) {
+                    count++;
+                }
+            }
+        }
+        return count;
     }
 
     private static boolean readoutIs(String expected) {

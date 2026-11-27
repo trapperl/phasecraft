@@ -2,7 +2,6 @@ package dev.phasecraft.edit;
 
 import eu.pb4.common.protection.api.CommonProtection;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
@@ -23,8 +22,6 @@ import net.minecraft.server.level.ServerPlayer;
  * through {@link MachineRights}, with the rights of whoever placed them.</p>
  */
 public final class Protection {
-    public static final String REFUSED = "phasecraft.edit.protected";
-
     private Protection() {}
 
     /** Whether the player may put a hidden block (or fluid) at this spot. */
@@ -45,7 +42,7 @@ public final class Protection {
     /** Tells the player when not, in the action bar: the hidden layer shows no reason of its own. */
     private static boolean allowed(ServerPlayer player, boolean allowed) {
         if (!allowed) {
-            player.sendSystemMessage(Component.translatable(REFUSED), true);
+            AimCheck.tellRefused(player, AimCheck.CLAIM);
         }
         return allowed;
     }

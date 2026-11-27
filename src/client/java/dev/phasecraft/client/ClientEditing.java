@@ -1,10 +1,12 @@
 package dev.phasecraft.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import dev.phasecraft.edit.AimCheck;
 import dev.phasecraft.edit.HiddenEditing;
 import dev.phasecraft.shifter.HoldsBlocks;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.player.LocalPlayer;
@@ -42,6 +44,10 @@ import org.jspecify.annotations.Nullable;
 public final class ClientEditing {
     /** Outline colour of the edit target: PhaseCraft purple. */
     static final int OUTLINE = 0xFFB04CFF;
+    /** Outline colour of a target the server would refuse to edit (a claim, spawn protection, the world border). */
+    static final int OUTLINE_PROTECTED = 0xFFFF4040;
+    /** Ticks before the spot aimed at is asked about again (claims change, rarely). */
+    private static final int ASK_AGAIN = 40;
 
     private static boolean editing;
     private static @Nullable Target target;
@@ -50,6 +56,12 @@ public final class ClientEditing {
     /** Survival: the hidden block being mined, and how far (1 = mined). */
     private static @Nullable BlockPos mining;
     private static float progress;
+    /** The spot last asked about (AimCheck), and how many ticks ago. */
+    private static @Nullable BlockPos asked;
+    private static boolean askedHidden;
+    private static int askedAge;
+    /** The server's latest answer about a spot. */
+    private static AimCheck.@Nullable Answer answer;
 
     private ClientEditing() {}
 
@@ -97,6 +109,41 @@ public final class ClientEditing {
         allowed = false;
         mining = null;
         progress = 0;
+        asked = null;
+        answer = null;
+    }
+
+    /**
+     * Each client tick while editing: asks the server what would refuse an edit at the spot aimed at, when the aim
+     * moves to another spot (and again now and then), so a protected spot shows before it is clicked.
+     */
+    static void askAboutAim(Minecraft minecraft) {
+        Target current = target;
+        if (current == null || !active(minecraft) || !ClientPlayNetworking.canSend(AimCheck.Aim.TYPE)) {
+            return;
+        }
+        BlockPos pos = current.hit().getBlockPos();
+        if (pos.equals(asked) && current.hidden() == askedHidden && ++askedAge < ASK_AGAIN) {
+            return;
+        }
+        asked = pos.immutable();
+        askedHidden = current.hidden();
+        askedAge = 0;
+        ClientPlayNetworking.send(new AimCheck.Aim(asked, askedHidden));
+    }
+
+    static void setAnswer(AimCheck.Answer value) {
+        answer = value;
+    }
+
+    /** What the server says would refuse an edit at the target (AimCheck.FREE if nothing, or not known yet). */
+    public static int protection() {
+        Target current = target;
+        AimCheck.Answer known = answer;
+        if (current == null || known == null || known.hidden() != current.hidden() || !known.pos().equals(current.hit().getBlockPos())) {
+            return AimCheck.FREE;
+        }
+        return known.why();
     }
 
     /** After vanilla picks what the crosshair is on: pick in the hidden layer instead, and hide vanilla's pick. */
@@ -217,7 +264,7 @@ public final class ClientEditing {
         }
     }
 
-    /** Purple outline around the target: the hidden block, or the spot a new hidden block would go. */
+    /** Purple outline around the target (the hidden block, or the spot a new hidden block would go); red if protected. */
     static void submitOutline(LevelRenderContext context) {
         Target current = target;
         Minecraft minecraft = Minecraft.getInstance();
@@ -237,7 +284,8 @@ public final class ClientEditing {
         PoseStack poseStack = context.poseStack();
         poseStack.pushPose();
         poseStack.translate(pos.getX() - camera.x, pos.getY() - camera.y, pos.getZ() - camera.z);
-        context.submitNodeCollector().submitShapeOutline(poseStack, shape, RenderTypes.linesTranslucent(), OUTLINE, 3.0F, true);
+        int colour = protection() == AimCheck.FREE ? OUTLINE : OUTLINE_PROTECTED;
+        context.submitNodeCollector().submitShapeOutline(poseStack, shape, RenderTypes.linesTranslucent(), colour, 3.0F, true);
         poseStack.popPose();
     }
 
@@ -262,12 +310,17 @@ public final class ClientEditing {
     /**
      * The hidden block aimed at, for the HUD: its name and the parts of its state a builder needs ("Shifter Piston ·
      * delay 2 · facing up · powered · holding 3", a shifter's held blocks last); null when no hidden block is aimed
-     * at. Booleans show only when true, and a wire's sides not at all (they follow from its neighbours).
+     * at. Booleans show only when true, and a wire's sides not at all (they follow from its neighbours). A protected
+     * target ends with why, in red ("Redstone Lamp · protected by a claim"); a protected visible spot shows only why.
      */
     public static @Nullable Component readout() {
         Target current = target;
-        if (current == null || !current.hidden()) {
+        int why = protection();
+        if (current == null) {
             return null;
+        }
+        if (!current.hidden()) {
+            return why == AimCheck.FREE ? null : AimCheck.reason(why).copy().withStyle(ChatFormatting.RED);
         }
         BlockState state = PhaseCraftClient.layer().get(current.hit().getBlockPos());
         if (state.isAir()) {
@@ -286,6 +339,9 @@ public final class ClientEditing {
         }
         if (HoldsBlocks.isShifter(state.getBlock())) {
             out.append(" · holding " + PhaseCraftClient.layer().holding(current.hit().getBlockPos()));
+        }
+        if (why != AimCheck.FREE) {
+            out.append(Component.literal(" · ").append(AimCheck.reason(why)).withStyle(ChatFormatting.RED));
         }
         return out;
     }
