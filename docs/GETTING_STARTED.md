@@ -6,6 +6,10 @@
 - Optional: **Sodium** works with PhaseCraft (tested with Sodium 0.9.3 for
   26.3, OpenGL): the overlay, editing mode, phased light and phase piston
   movement look the same as without it.
+- Optional: **Lithium** works with PhaseCraft (tested with Lithium 0.26.4 for
+  26.3). PhaseCraft turns off Lithium's hopper optimization
+  (`mixin.block.hopper`), as phased hoppers need vanilla's hoppers; the rest of
+  Lithium stays on.
 - Java Development Kit 25 (for local builds)
 - Git (Gradle 9.8.2 is fetched by the committed wrapper, `./gradlew`)
 - Visual Studio Code with Java and Gradle extensions, or IntelliJ IDEA
@@ -376,6 +380,7 @@ no migration path yet.
 | --- | --- |
 | `./gradlew build` | Compiles, then runs **every** test below (CI runs this). |
 | `./gradlew runGameTest` | In-game tests: every class named `*GameTests` in `src/gametest`. |
+| `./gradlew runGameTestLithium` | The same in-game tests with the Lithium mod loaded. |
 | `./gradlew restartTest` | Full restart: one server writes hidden cells and shuts down, a second server process loads the same world and checks them. |
 | `./gradlew clientTest` | A real game client, with OpenGL, with Vulkan, and with OpenGL plus Sodium: the overlay's pictures (screenshots in `build/run/clientGameTest*/screenshots`), keys and syncing, singleplayer and on a dedicated server, and editing mode driven by real key presses and clicks. |
 | `./gradlew installToMinecraft` | `build`, then (only if everything passed) replaces PhaseCraft in your Minecraft mods folder. Restart Minecraft afterwards. |

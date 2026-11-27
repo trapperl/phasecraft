@@ -35,7 +35,10 @@ blocks, with future vanilla-compatible cross-layer redstone and pistons.
     `fabric-client-gametest` entrypoint). `./gradlew clientTest` runs them
     with OpenGL, with Vulkan, and with OpenGL plus the Sodium mod (pinned
     by `sodium_version` in gradle.properties; most players use it) on an
-    Xvfb virtual display. Check what is
+    Xvfb virtual display. `runGameTestLithium` (part of build) runs the
+    server GameTests with the Lithium mod (`lithium_version`); PhaseCraft
+    turns off Lithium's hopper option in fabric.mod.json, as phased
+    hoppers need vanilla's. Check what is
     drawn by comparing screenshot pixels, and look at the screenshots
     (build/run/clientGameTest*/screenshots) before calling a visual change done.
 - Client-only code lives in src/client (split source sets); src/main must not
