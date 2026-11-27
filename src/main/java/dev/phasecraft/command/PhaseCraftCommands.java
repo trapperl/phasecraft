@@ -2,8 +2,8 @@ package dev.phasecraft.command;
 
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import dev.phasecraft.layer.HiddenDimensions;
 import dev.phasecraft.layer.HiddenLayer;
+import dev.phasecraft.layer.LayerSwitch;
 import dev.phasecraft.link.PhaseLink;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.commands.CommandSourceStack;
@@ -13,13 +13,9 @@ import net.minecraft.commands.arguments.blocks.BlockStateParser;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.Permissions;
-import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.portal.TeleportTransition;
-import net.minecraft.world.phys.Vec3;
 
 /**
  * Operator-only developer commands. They work from either layer.
@@ -31,7 +27,8 @@ import net.minecraft.world.phys.Vec3;
  *   <li>{@code /phasecraft get x y z} and {@code clear x y z}.</li>
  *   <li>{@code /phasecraft layer hidden|visible}: move yourself to the other
  *       layer at the same spot (Creative or Spectator only: the hidden layer
- *       has no ground).</li>
+ *       has no ground). The client's key K does the same without a command
+ *       ({@link LayerSwitch}).</li>
  * </ul>
  */
 public final class PhaseCraftCommands {
@@ -130,24 +127,24 @@ public final class PhaseCraftCommands {
         if (layer == null) {
             return 0;
         }
-        boolean inHidden = HiddenDimensions.isHidden(player.level().dimension());
-        if (inHidden == toHidden) {
-            source.sendFailure(Component.literal("You are already in the " + (toHidden ? "hidden" : "visible") + " layer"));
-            return 0;
-        }
-        GameType mode = player.gameMode();
-        if (toHidden && mode != GameType.CREATIVE && mode != GameType.SPECTATOR) {
-            source.sendFailure(Component.literal(
-                    "Switch to Creative or Spectator first: the hidden layer has no ground to stand on"));
-            return 0;
-        }
-        ServerLevel target = toHidden ? layer.level() : layer.visibleLevel();
-        Vec3 position = player.position();
-        player.teleport(new TeleportTransition(target, position, Vec3.ZERO,
-                player.getYRot(), player.getXRot(), TeleportTransition.DO_NOTHING));
-        source.sendSuccess(() -> Component.literal((toHidden ? "Now in the hidden layer" : "Back in the visible layer")
-                + " at " + BlockPos.containing(position).toShortString()
-                + " (" + target.dimension().identifier() + ")"), false);
-        return 1;
+        BlockPos spot = player.blockPosition();
+        return switch (LayerSwitch.move(player, toHidden)) {
+            case ALREADY_THERE -> {
+                source.sendFailure(Component.literal("You are already in the " + (toHidden ? "hidden" : "visible") + " layer"));
+                yield 0;
+            }
+            case WRONG_GAME_MODE -> {
+                source.sendFailure(Component.literal(
+                        "Switch to Creative or Spectator first: the hidden layer has no ground to stand on"));
+                yield 0;
+            }
+            case NO_LAYER -> 0;
+            case ENTERED, LEFT -> {
+                source.sendSuccess(() -> Component.literal((toHidden ? "Now in the hidden layer" : "Back in the visible layer")
+                        + " at " + spot.toShortString()
+                        + " (" + player.level().dimension().identifier() + ")"), false);
+                yield 1;
+            }
+        };
     }
 }

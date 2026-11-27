@@ -304,16 +304,159 @@ their height in their own texture and tint, without faces between hidden
 fluid of the same kind. Air, barriers and light blocks are not shown. Keys: H toggles, `]` and `[` change the opacity
 (15% to 100%); kept in `config/phasecraft-client.properties`.
 
-Cost: the geometry of each chunk's ghosts is built once (the same code as
-before, recorded instead of drawn: positions relative to the chunk, colours
-without the pass's alpha) and kept until hidden blocks in that chunk, or on
-the border of a neighbouring one, change (`GhostLayer.takeChangedChunks`),
-or the block models are reloaded. Each frame replays the meshes of chunks
-within about 100 blocks, with the camera transform and each pass's alpha. On
+Cost: the geometry of each 16x16x16 section's ghosts is built once (the same
+code as before, recorded instead of drawn: positions relative to the chunk,
+colours without the pass's alpha) and kept until hidden blocks in that
+section, or on the border of a neighbouring one, change
+(`GhostLayer.takeChangedSections`), the section is far out of range, or the
+block models are reloaded (per chunk at first; per section since the inside
+view, below, which holds whole landscapes). Each frame replays the meshes of
+sections within about 100 blocks, with the camera transform and each pass's
+alpha. On
 18,432 hidden blocks around the camera that took the overlay's CPU time per
 frame from 9.4 ms to 0.9 ms (`OverlayCacheClientGameTest` logs it), and the
 cached geometry matches drawing every ghost from its model, vertex for
 vertex, also after changes and across chunk borders.
+
+## The inside view: seeing the visible world from inside the hidden layer
+
+The person (2026-11-27): "Should we have a command that puts the player into
+the underworld ... and either ignores the main world or makes the main world
+transparent that way they can work on their contraption without disturbing
+the main world. ... It would be helpful for players in creative mode or mods
+that are making some interactive contraption to not have to disassemble the
+world in order to build something that interacts with it."
+
+Inside a hidden dimension the hidden blocks are real blocks and nothing of
+the visible world is there: a void with machinery floating in it. The inside
+view is the overlay in reverse: the visible world, drawn faint around the
+player, to build against.
+
+**Going in and out: `LayerSwitch`.** `/phasecraft layer hidden|visible`
+(operators) and the key **K** (`phasecraft:layer_toggle`, a serverbound
+payload with nothing in it) both call `LayerSwitch.move`: the same spot in
+the other layer, looking the same way. Going in is for Creative and
+Spectator players, checked on the server whoever asks; the key needs no
+cheats and no operator level (a Creative player may build anywhere already,
+and a Spectator sees the hidden layer through the overlay anyway). A player
+who goes in is set flying: there is no ground. `HiddenLayerGuard` still
+moves out anyone who stops being Creative or Spectator inside.
+
+**Server: `InsideView`.** For each player in a hidden dimension who may be
+there and may see the overlay (`InsideView.shows`), with PhaseCraft on the
+client:
+
+- **Surface only.** A block is sent if it is not air and has an open face:
+  toward air, toward a block that is not a full opaque cube (glass, leaves,
+  a slab, water), or toward the sky; water against water (and lava against
+  lava) is not open, so a sea is its top and its floor. Each block goes with
+  a bit per open face, and only those faces are drawn. Solid ground is
+  hollow in what is sent.
+- **Near only.** Chunks within 4 of the player (the overlay's 9x9 square),
+  nearest first, at most 2 new chunks a tick; chunks that leave the square
+  are forgotten (`visible_forget`). A chunk is scanned
+  (`InsideView.surface`, straight from its sections) only when it is sent,
+  never per tick.
+- **Changes.** A visible block change can change whether it and its six
+  neighbours are on the surface, and which of their faces are open; those
+  seven spots are looked at again at the end of the tick (`shownAt`) and sent
+  to the players who hold their chunk (`visible_blocks`; air: no longer
+  shown). The hook is the same one the phase link uses; it returns at once
+  while nobody is inside.
+- **Leaving.** Back in the visible world, or no longer allowed (Survival,
+  Adventure), the client is told to drop everything (`visible_reset`) and
+  nothing more is sent. Survival and Adventure players are never sent it, not
+  even for the tick before the guard moves them out.
+- **The visible world stays loaded.** Nobody may be standing in it there, so
+  each inside player holds a ticket on the visible level around their spot
+  (`phasecraft:inside_view`, radius 6: the 9x9 square ticks entities too, and
+  one ring more is loaded for the scan; two players in one chunk share the
+  ticket, counted, as vanilla keeps one per chunk and radius). Without it the visible world there
+  would unload a few seconds after its last player went inside, and the
+  machine they went in to work on would have nothing to act on. It also
+  means flying around inside generates visible terrain, as flying around
+  outside does.
+
+Messages (`OverlayPayloads`): `phasecraft:visible_chunk` (a chunk's surface
+blocks, written short: a byte for x and z, a short for y, the block state and
+the faces, 5 to 6 bytes a block), `visible_blocks` (changes: position, state,
+faces), `visible_forget`, `visible_reset`.
+
+**Client.** A second `GhostLayer` (`PhaseCraftClient.visibleLayer()`) holds
+them, and `GhostRenderer.collectInside` draws it with the overlay's cached
+meshes in one pass (`GhostRenderTypes.inside()`): translucent at half the
+chosen opacity (22% by default), behind real hidden blocks in front of it,
+writing no depth, and with no face culling, so a floor shows from underneath
+as well (only open faces exist; its underside is the back of its top faces).
+It is not sorted: at that opacity the order changes nothing one can see, and
+sorting every quad each frame is what cost most. H shows and hides it, `]`
+and `[` change the opacity, as for the overlay. Sections further than 48
+blocks from the camera are not drawn.
+
+**What it costs** (`InsideViewTerrainClientGameTest` logs it; a default
+world, seed "phasecraft", the 81 chunks around the spawn point: hills, a
+lake, caves):
+
+| | |
+| --- | --- |
+| Surface blocks per chunk | 715 to 3,814, mean 2,219: 7.7% of a chunk's 28,734 blocks other than air |
+| `visible_chunk` per chunk | mean 12.8 kB, largest 21.7 kB (5.7 kB as Minecraft compresses packets) |
+| All 81 chunks, on going in | 1.04 MB, 458 kB compressed, over about 2 seconds; then 9 chunks for each chunk border crossed |
+| Sending every block instead | 13.6 MB, 4.6 MB compressed (measured by switching the surface rule off) |
+| Server: scanning one chunk | 1.4 to 1.7 ms, at most 2 chunks a tick per player going in or moving |
+| Client: held | 180,000 blocks |
+| Client: drawn within 48 blocks | 181,000 vertices, 1.5 ms of CPU a frame (64 blocks: 415,000 vertices, 3.4 ms) |
+
+The first version drew every face of every surface block of every chunk in
+range, per chunk column: 1.9 million vertices and 14.7 ms a frame. Three
+things brought that down: the open faces only (the server knows them, the
+client cannot: a missing neighbour is air or solid rock), meshes per section
+instead of per chunk column, so that caves far below are left out, and a
+draw distance of 48 blocks. No cap on blocks per chunk was needed: the
+largest chunk fits one message (4,096 blocks; a larger one is split, as for
+the overlay).
+
+**Claims and spawn protection hold inside: `InsideProtection`.** Before the
+key, only operators could get in (the command). Now any Creative player
+can, and in there they place and break with vanilla's own clicks, in a
+dimension no claim mod knows and vanilla's spawn protection does not cover.
+So what editing mode asks before a hidden edit (`Protection`, "Claims hold
+for the hidden layer" below) is asked for these clicks too, about the
+visible twin level at the same spot: breaking asks `canBreakBlock`;
+clicking a hidden block asks `canInteractBlock` at its spot and, with
+something in hand, `canPlaceBlock` there and at the spot beside it; a
+bucket asks `canBreakBlock` and `canPlaceBlock` where it is aimed; and all
+of them the world border and spawn protection. A refused click does
+nothing and says why, as in editing mode. They are heard through Fabric's
+events for the player's own clicks in their own level
+(`PlayerBlockBreakEvents.BEFORE`, `UseBlockCallback`, `UseItemCallback`);
+nothing is fired for a block nobody clicked. Machines placed inside have
+their placer as owner, as before (`MachineOwners`). Not covered: what a
+player inside does without clicking a block (a mod's area tool, entities
+such as a minecart with TNT placed in there), and the same known gap as
+editing mode for claim mods that do not answer the API.
+`InsideProtectionGameTests`.
+
+**Inside, the player is really there.** A hidden pressure plate under them
+is pressed by them; a visible one at the same spot is not (they are not in
+the visible world, and a phased plate watches the visible world). Visible
+mobs and players are not shown, and clicks go to the hidden blocks only:
+the visible world can be seen from inside, not touched. To change it, press
+K and step out.
+
+Decided by the agent, open to change: the key (K); coming out puts the
+player at the same spot even inside a visible block (as the command always
+did; Creative players are pushed out or dig, Spectators pass through); the
+look (22%, both sides, 48 blocks); block entities' contents and entities of
+the visible world are not shown.
+
+Tests: `InsideViewGameTests` (what is scanned, what a Creative player inside
+is really sent and when, who is sent nothing, who the key lets in, one of
+two players leaving), `InsideProtectionGameTests`,
+`InsideViewClientGameTest` (K, the faint wall and ground in screenshots
+against H off, a real hidden block behind them, changes, out of range and
+back, improved transparency, K again), `InsideViewTerrainClientGameTest`
+(ordinary terrain: the numbers above, held inside bounds).
 
 ## Editing mode: building in the hidden layer from the visible world
 
@@ -778,7 +921,8 @@ point for balancing; each unlocks in the recipe book from amethyst shards
 
 ### Nobody ends up in the hidden layer by accident (`HiddenLayerGuard`)
 
-- **Only Creative and Spectator players may be there.** Any other player
+- **Only Creative and Spectator players may be there** (they go in with the
+  key K or `/phasecraft layer hidden`: `LayerSwitch`). Any other player
   found in a hidden dimension at the end of a tick (switched to Survival
   inside, a forced game mode on login, a teleport by command) is moved to the
   visible layer at the same spot, or the first spot above it where they fit,

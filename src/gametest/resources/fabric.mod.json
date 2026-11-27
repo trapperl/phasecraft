@@ -55,6 +55,8 @@
       "dev.phasecraft.test.OpacClaimChecks",
       "dev.phasecraft.test.ClaimMachineGameTests",
       "dev.phasecraft.test.KeepOutGameTests",
+      "dev.phasecraft.test.InsideViewGameTests",
+      "dev.phasecraft.test.InsideProtectionGameTests",
       "dev.phasecraft.test.NoMojangTrafficGameTests",
       "dev.phasecraft.test.PhaseLayerRestartPhases"
     ],
@@ -62,6 +64,8 @@
       "dev.phasecraft.test.client.OverlayClientGameTest",
       "dev.phasecraft.test.client.OverlayDedicatedServerClientGameTest",
       "dev.phasecraft.test.client.EditingClientGameTest",
+      "dev.phasecraft.test.client.InsideViewClientGameTest",
+      "dev.phasecraft.test.client.InsideViewTerrainClientGameTest",
       "dev.phasecraft.test.client.PhasedLightClientGameTest",
       "dev.phasecraft.test.client.OverlayCacheClientGameTest",
       "dev.phasecraft.test.client.PhasePistonAnimationClientGameTest",

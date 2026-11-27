@@ -21,6 +21,7 @@ import net.minecraft.server.players.NameAndId;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LeverBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -224,7 +225,7 @@ public class OpacClaimChecks {
      * in the unclaimed chunk faces west across the border into two blocks of the claim. A stranger's takes
      * nothing; once it is the claim owner's, who is not online, it takes both.
      */
-    @GameTest(environment = "phasecraft-test:opac_machine", maxTicks = 200)
+    @GameTest(environment = "phasecraft-test:opac_machine", maxTicks = 1200)
     public void opacClaimStopsAStrangersLineShifterAtItsBorder(GameTestHelper helper) {
         needsOpac(helper);
         ServerLevel level = helper.getLevel();
@@ -244,7 +245,13 @@ public class OpacClaimChecks {
         hidden.setBlock(shifter, PhaseCraftBlocks.LINE_SHIFTER.defaultBlockState().setValue(LineShifterBlock.FACING, Direction.WEST));
         MachineOwners.setOwner(hidden.level(), shifter, stranger);
         helper.startSequence()
-                .thenIdle(20) // the hidden chunk east of the test's own starts ticking
+                // The hidden chunk east of the test's own starts ticking: in its own time, on other threads, while this
+                // server runs ticks as fast as it can (a fixed 20 ticks was too few on a busy machine, and the owner's
+                // shifter then never moved within the test's time).
+                .thenWaitUntil(() -> helper.assertTrue(
+                        hidden.level().isPositionTickingWithEntitiesLoaded(new ChunkPos(shifter.getX() >> 4, shifter.getZ() >> 4).pack()),
+                        "the hidden chunk of the line shifter does not tick yet (its visible twin: "
+                                + level.isPositionTickingWithEntitiesLoaded(new ChunkPos(shifter.getX() >> 4, shifter.getZ() >> 4).pack()) + ")"))
                 .thenExecute(() -> hidden.setBlock(shifter.east(), Blocks.REDSTONE_BLOCK.defaultBlockState()))
                 .thenIdle(20)
                 .thenExecute(() -> {

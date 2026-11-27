@@ -35,7 +35,9 @@ blocks, with future vanilla-compatible cross-layer redstone and pistons.
     `fabric-client-gametest` entrypoint). `./gradlew clientTest` runs them
     with OpenGL, with Vulkan, and with OpenGL plus the Sodium mod (pinned
     by `sodium_version` in gradle.properties; most players use it) on an
-    Xvfb virtual display. `runGameTestLithium` (part of build) runs the
+    Xvfb virtual display. A client test that needs ordinary terrain makes
+    its world with `setUseConsistentSettings(false)` (the usual test world
+    is flat): InsideViewTerrainClientGameTest. `runGameTestLithium` (part of build) runs the
     server GameTests with the Lithium mod (`lithium_version`); PhaseCraft
     turns off Lithium's hopper option in fabric.mod.json, as phased
     hoppers need vanilla's. `runGameTestOpac` (part of build) runs the
@@ -59,6 +61,10 @@ blocks, with future vanilla-compatible cross-layer redstone and pistons.
   visible ones, by chance, which made rare late or stalled hidden steps
   (issue #3). To see it: `./gradlew runGameTest -PgameTestVmArgs="-Dphasecraft.test.waitForHiddenChunks=false
   -Dphasecraft.test.hiddenChunkDelay=40"`; `-PgameTestFilter=...` picks tests.
+- The GameTest server runs ticks as fast as it can, but chunks a ticket asks
+  for load in their own time on other threads: a test that waits a number
+  of ticks for such chunks passes or fails by luck. Load them in the test
+  (`level.getChunk(x, z)`), as InsideViewGameTests does.
 - `./gradlew runPerf` measures server tick cost with and without PhaseCraft's
   parts (src/perf, a mod never shipped; method and options in
   src/perf/README.md); not part of build. Rerun it after a change on a hot
@@ -262,6 +268,22 @@ open to change: Spectators see the overlay but cannot edit, Adventure
 players neither; ghosts show through
 visible blocks (fainter); in editing mode (J) a click on a visible block
 places the hidden block at that same spot.
+Building from inside the hidden layer (the person, 2026-11-27: "Should we
+have a command that puts the player into the underworld ... and either
+ignores the main world or makes the main world transparent that way they can
+work on their contraption without disturbing the main world"; for "players
+in creative mode or mods"; "I don't think that we had set up making the main
+world transparent"): done. The key K (LayerSwitch; Creative and Spectator
+only, no cheats needed; the command stays) goes in and out at the same spot,
+and inside, the visible world's surface near the player is drawn faint
+(InsideView on the server, a second GhostLayer on the client; "The inside
+view" in docs/ARCHITECTURE.md, with what it costs). The agent's defaults,
+open to change: the key, the look (22% opaque, both sides of each surface,
+48 blocks), coming out at the same spot even inside a block. Inside, the
+player is a real entity there: hidden plates feel them, visible ones do not.
+Their clicks in there are checked against the visible world's protection at
+the spot, as editing mode's are (InsideProtection; the key lets non-operators
+in, the command never did).
 Each PhaseCraft item's tooltip says what it does (TooltipGameTests); in
 editing mode the HUD names the hidden block aimed at and its state (and,
 for shifters, how many blocks they hold: OverlayPayloads.Holding).

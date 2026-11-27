@@ -4,6 +4,8 @@ import com.mojang.blaze3d.platform.InputConstants;
 import dev.phasecraft.PhaseCraft;
 import dev.phasecraft.edit.AimCheck;
 import dev.phasecraft.layer.Access;
+import dev.phasecraft.layer.HiddenDimensions;
+import dev.phasecraft.layer.LayerSwitch;
 import dev.phasecraft.overlay.OverlayPayloads;
 import dev.phasecraft.phased.PhasedLights;
 import dev.phasecraft.piston.PhasePistonAnimation;
@@ -24,7 +26,9 @@ import net.minecraft.resources.Identifier;
  *
  * <p>Keys (rebindable under Controls, "PhaseCraft"): H shows or hides the
  * overlay, ] and [ make the ghosts more or less opaque, J turns editing mode
- * on and off (clicks go to the hidden layer; see {@link ClientEditing}). The
+ * on and off (clicks go to the hidden layer; see {@link ClientEditing}), K goes
+ * into the hidden layer and back (Creative and Spectator; there the visible
+ * world is drawn see-through, from what {@code InsideView} sends). The
  * server decides what the client may see and do ({@code OverlaySync},
  * {@code HiddenEditing}).</p>
  */
@@ -40,12 +44,22 @@ public final class PhaseCraftClient implements ClientModInitializer {
     public static final KeyMapping LESS_OPAQUE = new KeyMapping("key.phasecraft.overlay_less_opaque",
             InputConstants.Type.KEYBOARD, InputConstants.KEY_LBRACKET, CATEGORY);
 
+    public static final KeyMapping TOGGLE_LAYER = new KeyMapping("key.phasecraft.toggle_layer",
+            InputConstants.Type.KEYBOARD, InputConstants.KEY_K, CATEGORY);
+
     private static final GhostLayer LAYER = new GhostLayer();
+    /** The inside view: the visible world's surface blocks, held while the player is inside the hidden layer. */
+    private static final GhostLayer VISIBLE_LAYER = new GhostLayer();
     private static OverlaySettings settings;
 
     /** The hidden blocks this client holds. Client thread only. */
     public static GhostLayer layer() {
         return LAYER;
+    }
+
+    /** The visible blocks this client holds while inside the hidden layer ({@code InsideView}). Client thread only. */
+    public static GhostLayer visibleLayer() {
+        return VISIBLE_LAYER;
     }
 
     public static OverlaySettings settings() {
@@ -59,6 +73,7 @@ public final class PhaseCraftClient implements ClientModInitializer {
         KeyMappingHelper.registerKeyMapping(MORE_OPAQUE);
         KeyMappingHelper.registerKeyMapping(LESS_OPAQUE);
         KeyMappingHelper.registerKeyMapping(TOGGLE_EDITING);
+        KeyMappingHelper.registerKeyMapping(TOGGLE_LAYER);
 
         ClientPlayNetworking.registerGlobalReceiver(OverlayPayloads.Chunk.TYPE,
                 (payload, context) -> LAYER.replaceChunk(payload.chunk(), payload.ghosts()));
@@ -70,6 +85,14 @@ public final class PhaseCraftClient implements ClientModInitializer {
                 (payload, context) -> LAYER.clear());
         ClientPlayNetworking.registerGlobalReceiver(OverlayPayloads.Holding.TYPE,
                 (payload, context) -> payload.counts().forEach(count -> LAYER.setHolding(count.pos(), count.count())));
+        ClientPlayNetworking.registerGlobalReceiver(OverlayPayloads.VisibleChunk.TYPE,
+                (payload, context) -> VISIBLE_LAYER.replaceChunkSurface(payload.chunk(), payload.blocks()));
+        ClientPlayNetworking.registerGlobalReceiver(OverlayPayloads.VisibleBlocks.TYPE,
+                (payload, context) -> VISIBLE_LAYER.applySurface(payload.blocks()));
+        ClientPlayNetworking.registerGlobalReceiver(OverlayPayloads.VisibleForget.TYPE,
+                (payload, context) -> VISIBLE_LAYER.forget(payload.chunk()));
+        ClientPlayNetworking.registerGlobalReceiver(OverlayPayloads.VisibleReset.TYPE,
+                (payload, context) -> VISIBLE_LAYER.clear());
         ClientPlayNetworking.registerGlobalReceiver(PhasedLights.Sync.TYPE, (payload, context) -> PhasedLightsClient.apply(payload));
         ClientPlayNetworking.registerGlobalReceiver(PhasePistonAnimation.Moved.TYPE, (payload, context) -> PhasePistonAnimationClient.apply(payload));
         ClientPlayNetworking.registerGlobalReceiver(Access.Allowed.TYPE, (payload, context) -> ClientEditing.setAllowed(payload.edit()));
@@ -78,11 +101,13 @@ public final class PhaseCraftClient implements ClientModInitializer {
         // may show here. Queued before any of the new connection's payloads.
         ClientPlayConnectionEvents.INIT.register((handler, client) -> client.execute(() -> {
             LAYER.clear();
+            VISIBLE_LAYER.clear();
             ClientEditing.reset();
             PhasedLights.CLIENT.clear();
         }));
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(() -> {
             LAYER.clear();
+            VISIBLE_LAYER.clear();
             ClientEditing.reset();
             PhasedLights.CLIENT.clear();
         }));
@@ -91,6 +116,7 @@ public final class PhaseCraftClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(ClientEditing::askAboutAim);
         LevelRenderEvents.COLLECT_SUBMITS.register(context -> {
             GhostRenderer.collect(context, LAYER, settings, ClientEditing.editing());
+            GhostRenderer.collectInside(context, VISIBLE_LAYER, settings);
             ClientEditing.submitOutline(context);
         });
         HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(PhaseCraft.MOD_ID, "editing"),
@@ -100,6 +126,17 @@ public final class PhaseCraftClient implements ClientModInitializer {
     private static void handleKeys(Minecraft minecraft) {
         while (TOGGLE_EDITING.consumeClick()) {
             ClientEditing.toggle(minecraft);
+        }
+        while (TOGGLE_LAYER.consumeClick()) {
+            if (minecraft.player == null) {
+                continue;
+            }
+            // The server decides (Creative and Spectator only) and answers above the hotbar.
+            if (ClientPlayNetworking.canSend(LayerSwitch.Toggle.TYPE)) {
+                ClientPlayNetworking.send(new LayerSwitch.Toggle());
+            } else {
+                minecraft.player.sendOverlayMessage(Component.translatable("phasecraft.layer.no_server"));
+            }
         }
         boolean changed = false;
         while (TOGGLE_OVERLAY.consumeClick()) {
@@ -115,9 +152,11 @@ public final class PhaseCraftClient implements ClientModInitializer {
             changed = true;
         }
         if (changed && minecraft.player != null) {
+            // Inside the hidden layer the same keys show, hide and fade the visible world instead.
+            boolean inside = HiddenDimensions.isHidden(minecraft.player.level().dimension());
             minecraft.player.sendOverlayMessage(settings.enabled()
-                    ? Component.translatable("phasecraft.overlay.on", settings.opacityPercent())
-                    : Component.translatable("phasecraft.overlay.off"));
+                    ? Component.translatable(inside ? "phasecraft.inside.on" : "phasecraft.overlay.on", settings.opacityPercent())
+                    : Component.translatable(inside ? "phasecraft.inside.off" : "phasecraft.overlay.off"));
         }
     }
 }

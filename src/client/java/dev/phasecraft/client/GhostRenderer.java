@@ -54,13 +54,13 @@ import org.joml.Vector3f;
  * block's surface as a tint instead of flickering against it. Faces between
  * two hidden full blocks are left out, as in the normal world.</p>
  *
- * <p>Performance: the geometry of each chunk's ghosts is built once into a
- * {@link Mesh} (positions relative to the chunk, colours without the pass's
- * alpha) and kept until the hidden blocks in or next to that chunk change
- * ({@link GhostLayer#takeChangedChunks}) or the block models are reloaded.
- * Each frame only replays the meshes of chunks in range, with the camera
- * transform and the pass's alpha applied: no model lookups, tints or face
- * checks per frame. {@link #drawDirect} is the uncached way, kept as the
+ * <p>Performance: the geometry of each 16x16x16 section's ghosts is built once
+ * into a {@link Mesh} (positions relative to the section's chunk, colours
+ * without the pass's alpha) and kept until the blocks in or next to that
+ * section change ({@link GhostLayer#takeChangedSections}), the section is far
+ * out of range, or the block models are reloaded. Each frame only replays the
+ * meshes of sections in range, with the camera transform and the pass's alpha
+ * applied: no model lookups, tints or face checks per frame. {@link #drawDirect} is the uncached way, kept as the
  * reference the cache is tested against.</p>
  */
 public final class GhostRenderer {
@@ -75,10 +75,23 @@ public final class GhostRenderer {
 
     private GhostRenderer() {}
 
-    /** Cached geometry per chunk (packed ChunkPos), for one GhostLayer. */
-    private static final Long2ObjectOpenHashMap<Mesh> MESHES = new Long2ObjectOpenHashMap<>();
-    private static @Nullable GhostLayer cachedLayer;
-    private static @Nullable BlockStateModelSet cachedModels;
+    /** How strong the visible world is drawn from inside the hidden layer, relative to the chosen opacity. */
+    static final float INSIDE_SHARE = 0.5F;
+    /** From inside, visible blocks further than this from the camera are not drawn (the cost is per vertex, per frame). */
+    static final double INSIDE_MAX_DISTANCE = 48.0;
+    /** A section's furthest corner from its middle, rounded up: a section is in range if its middle is this much further. */
+    private static final double SECTION_REACH = 14.0;
+    /** A section this much out of range no longer keeps its mesh. */
+    private static final double KEEP_BEYOND = 32.0;
+
+    /** Cached geometry per section (SectionPos.asLong), for one GhostLayer. */
+    private static final class Cache {
+        final Long2ObjectOpenHashMap<Mesh> meshes = new Long2ObjectOpenHashMap<>();
+        @Nullable BlockStateModelSet models;
+    }
+
+    /** One cache per layer drawn: the hidden blocks (the overlay) and the visible ones (the inside view). */
+    private static final java.util.Map<GhostLayer, Cache> CACHES = new java.util.WeakHashMap<>();
 
     /** Draws the ghosts if the overlay is on, or always while editing (you need to see what you edit). */
     public static void collect(LevelRenderContext context, GhostLayer layer, OverlaySettings settings, boolean editing) {
@@ -99,31 +112,74 @@ public final class GhostRenderer {
                 (pose, buffer) -> replay(pose, buffer, meshes, camera, inFrontAlpha));
     }
 
+    /**
+     * The inside view: the visible world's surface blocks, as the server sent them to a player inside the hidden
+     * layer, drawn faint ({@link #INSIDE_SHARE} of the chosen opacity) in one pass, so the real hidden blocks
+     * stand out; a hidden block in front hides them, as it would a real block. H turns it off.
+     */
+    public static void collectInside(LevelRenderContext context, GhostLayer visible, OverlaySettings settings) {
+        if (!settings.enabled() || visible.isEmpty()) {
+            return;
+        }
+        Vec3 camera = context.levelState().cameraRenderState.pos;
+        List<Mesh> meshes = meshesInRange(visible, camera, INSIDE_MAX_DISTANCE);
+        int vertices = 0;
+        for (Mesh mesh : meshes) {
+            vertices += mesh.vertices;
+        }
+        lastInsideVertices = vertices;
+        if (meshes.isEmpty()) {
+            return;
+        }
+        int alpha = ARGB.as8BitChannel(settings.opacity() * INSIDE_SHARE);
+        context.submitNodeCollector().submitCustomGeometry(context.poseStack(), GhostRenderTypes.inside(),
+                (pose, buffer) -> {
+                    long start = System.nanoTime();
+                    replay(pose, buffer, meshes, camera, alpha);
+                    lastInsideNanos = System.nanoTime() - start;
+                });
+    }
+
+    /** For tests and measurements: the inside view's last frame. */
+    static int lastInsideVertices;
+    static long lastInsideNanos;
+
     /** The cached meshes of chunks in range, rebuilding those whose ghosts changed. */
     static List<Mesh> meshesInRange(GhostLayer layer, Vec3 camera) {
+        return meshesInRange(layer, camera, MAX_DISTANCE);
+    }
+
+    static List<Mesh> meshesInRange(GhostLayer layer, Vec3 camera, double maxDistance) {
         BlockStateModelSet models = Minecraft.getInstance().getModelManager().getBlockStateModelSet();
-        LongOpenHashSet changed = layer.takeChangedChunks();
-        if (layer != cachedLayer || models != cachedModels || changed == null) {
-            MESHES.clear();
-            cachedLayer = layer;
-            cachedModels = models;
+        LongOpenHashSet changed = layer.takeChangedSections();
+        Cache cache = CACHES.computeIfAbsent(layer, key -> new Cache());
+        if (models != cache.models || changed == null) {
+            cache.meshes.clear();
+            cache.models = models;
         } else {
-            changed.forEach(MESHES::remove);
+            changed.forEach(cache.meshes::remove);
         }
         List<Mesh> meshes = new ArrayList<>();
-        double reach = MAX_DISTANCE + 8;
-        for (long chunk : layer.chunkKeys()) {
-            int originX = SectionPos.sectionToBlockCoord(ChunkPos.getX(chunk));
-            int originZ = SectionPos.sectionToBlockCoord(ChunkPos.getZ(chunk));
+        double reach = maxDistance + SECTION_REACH;
+        double keep = reach + KEEP_BEYOND;
+        for (long section : layer.sectionKeys()) {
+            int originX = SectionPos.sectionToBlockCoord(SectionPos.x(section));
+            int originY = SectionPos.sectionToBlockCoord(SectionPos.y(section));
+            int originZ = SectionPos.sectionToBlockCoord(SectionPos.z(section));
             double dx = originX + 8 - camera.x;
+            double dy = originY + 8 - camera.y;
             double dz = originZ + 8 - camera.z;
-            if (dx * dx + dz * dz > reach * reach) {
+            double distanceSq = dx * dx + dy * dy + dz * dz;
+            if (distanceSq > reach * reach) {
+                if (distanceSq > keep * keep) {
+                    cache.meshes.remove(section);
+                }
                 continue;
             }
-            Mesh mesh = MESHES.get(chunk);
+            Mesh mesh = cache.meshes.get(section);
             if (mesh == null) {
-                mesh = build(layer, chunk, originX, originZ);
-                MESHES.put(chunk, mesh);
+                mesh = build(layer, section, originX, originZ);
+                cache.meshes.put(section, mesh);
             }
             if (mesh.vertices > 0) {
                 meshes.add(mesh);
@@ -132,7 +188,7 @@ public final class GhostRenderer {
         return meshes;
     }
 
-    /** One chunk's ghost geometry: per vertex x, y, z (relative to the chunk's origin), u, v, normal; colour (alpha 255). */
+    /** One section's ghost geometry: per vertex x, y, z (x and z relative to its chunk's origin), u, v, normal; colour (alpha 255). */
     static final class Mesh {
         final int originX;
         final int originZ;
@@ -146,12 +202,12 @@ public final class GhostRenderer {
         }
     }
 
-    private static Mesh build(GhostLayer layer, long chunk, int originX, int originZ) {
+    private static Mesh build(GhostLayer layer, long section, int originX, int originZ) {
         Mesh mesh = new Mesh(originX, originZ);
         MeshRecorder recorder = new MeshRecorder(mesh);
         Emitter emitter = new Emitter(layer);
         PoseStack stack = new PoseStack();
-        layer.forEachInChunk(chunk, (packed, state) -> {
+        layer.forEachInSection(section, (packed, state) -> {
             BlockPos pos = BlockPos.of(packed);
             if (shown(state)) {
                 emitter.emit(stack, recorder, pos, state, pos.getX() - originX, pos.getY(), pos.getZ() - originZ, 255);
@@ -343,7 +399,7 @@ public final class GhostRenderer {
                             continue;
                         }
                         neighbour.setWithOffset(pos, direction);
-                        if (!Block.shouldRenderFace(state, layer.get(neighbour), direction)) {
+                        if (!layer.faceOpen(pos, direction) || !Block.shouldRenderFace(state, layer.get(neighbour), direction)) {
                             continue;
                         }
                         for (BakedQuad baked : quads) {
@@ -377,7 +433,7 @@ public final class GhostRenderer {
                 float height = fullBelowSurface ? 1.0F : fluid.getOwnHeight();
                 int faces = 0;
                 for (Direction direction : DIRECTIONS) {
-                    if (!sameFluid(fluid, layer.get(neighbour.setWithOffset(pos, direction)))) {
+                    if (layer.faceOpen(pos, direction) && !sameFluid(fluid, layer.get(neighbour.setWithOffset(pos, direction)))) {
                         faces |= 1 << direction.ordinal();
                     }
                 }
@@ -387,7 +443,7 @@ public final class GhostRenderer {
         }
     }
 
-    private static final int ALL_FACES = 0b111111;
+    private static final int ALL_FACES = GhostLayer.ALL_FACES;
 
     private static boolean sameFluid(FluidState fluid, BlockState neighbour) {
         return fluid.getType().isSame(neighbour.getFluidState().getType());

@@ -13,6 +13,16 @@ public final class GhostRendererAccess {
         GhostRenderer.drawDirect(cameraPose, buffer, layer, camera, alpha);
     }
 
+    /** The inside view's last frame: vertices replayed (chunks within its draw distance). */
+    public static int insideVertices() {
+        return GhostRenderer.lastInsideVertices;
+    }
+
+    /** The inside view's last frame: CPU time of replaying them, in nanoseconds. */
+    public static long insideNanos() {
+        return GhostRenderer.lastInsideNanos;
+    }
+
     /** The way frames draw: cached chunk meshes, rebuilt where ghosts changed. */
     public static void drawCached(PoseStack.Pose cameraPose, VertexConsumer buffer, GhostLayer layer, Vec3 camera, int alpha) {
         GhostRenderer.replay(cameraPose, buffer, GhostRenderer.meshesInRange(layer, camera), camera, alpha);
