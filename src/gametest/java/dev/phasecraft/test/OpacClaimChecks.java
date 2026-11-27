@@ -264,7 +264,14 @@ public class OpacClaimChecks {
                     MachineOwners.setOwner(hidden.level(), shifter, owner);
                 })
                 .thenIdle(4)
-                .thenExecute(() -> hidden.setBlock(shifter.east(), Blocks.REDSTONE_BLOCK.defaultBlockState()))
+                .thenExecute(() -> {
+                    String before = lineShifterState(level, hidden, shifter, line);
+                    hidden.setBlock(shifter.east(), Blocks.REDSTONE_BLOCK.defaultBlockState());
+                    // The first block goes the moment the power arrives.
+                    helper.assertTrue(hidden.level().getBlockEntity(shifter) instanceof LineShifterBlockEntity entity && entity.holding() == 1,
+                            "the owner's line shifter took nothing when powered: before " + before + "; after " + lineShifterState(level, hidden, shifter, line)
+                                    + " visibleLoaded=" + level.isLoaded(line[0]) + "/" + level.isLoaded(line[1]));
+                })
                 // Rare under a busy build (once in many runs): the message says which part did not happen.
                 .thenWaitUntil(() -> helper.assertTrue(hidden.level().getBlockEntity(shifter) instanceof LineShifterBlockEntity entity
                         && entity.holding() == 2, "the owner's line shifter did not take the line: " + lineShifterState(level, hidden, shifter, line)))
