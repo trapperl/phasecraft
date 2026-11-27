@@ -133,7 +133,8 @@ Survival rules (each PhaseCraft item's tooltip says what it does):
 
 `/gamerule phasecraft:survival_access false` turns it off: on a public
 server, Survival editing lets players build inside other people's walls
-(claim mods only watch the visible world). Adventure players never can.
+(claim mods only watch the visible world; the server's own spawn protection
+does cover the hidden layer). Adventure players never can.
 
 Recipes (a starting point for balancing):
 
