@@ -30,6 +30,7 @@ abstract class ServerLevelPhaseLinkMixin {
         HiddenChunks.onBlockChanged(level, pos, newState);
         PhaseLink.onBlockChanged(level, pos, oldState, newState);
         OverlaySync.onBlockChanged(level, pos, newState);
+        dev.phasecraft.overlay.InsideView.onBlockChanged(level, pos);
         PhasedInput.onBlockChanged(level, pos, oldState, newState);
         PhasedLights.onBlockChanged(level, pos, oldState, newState);
         PhasedWatchers.onBlockChanged(level, pos);

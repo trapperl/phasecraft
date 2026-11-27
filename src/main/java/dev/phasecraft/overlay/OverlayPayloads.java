@@ -96,6 +96,99 @@ public final class OverlayPayloads {
         }
     }
 
+    /**
+     * One visible block on the surface, for the inside view, and which of its faces are open (a bit per
+     * {@link net.minecraft.core.Direction}'s ordinal): only those are drawn. Air means "nothing to show here (any more)".
+     */
+    public record Surface(BlockPos pos, BlockState state, byte faces) {
+        public static final StreamCodec<RegistryFriendlyByteBuf, Surface> STREAM_CODEC = StreamCodec.composite(
+                BlockPos.STREAM_CODEC, Surface::pos,
+                ByteBufCodecs.idMapper(Block.BLOCK_STATE_REGISTRY), Surface::state,
+                ByteBufCodecs.BYTE, Surface::faces,
+                Surface::new);
+    }
+
+    private static final StreamCodec<RegistryFriendlyByteBuf, List<Surface>> SURFACES =
+            Surface.STREAM_CODEC.apply(ByteBufCodecs.list());
+
+    /**
+     * The inside view ({@link InsideView}), for a player in a hidden dimension: the visible twin's surface blocks
+     * of one chunk, replacing whatever the client had for it. More may follow in {@link VisibleBlocks}.
+     *
+     * <p>A chunk of ordinary terrain is some two thousand blocks, and 81 chunks are sent on going in, so each
+     * block is written short: its place in the chunk (a byte for x and z, a short for y) instead of a whole
+     * position, 5 to 6 bytes a block instead of 11. Every block must be in {@code chunk}.</p>
+     */
+    public record VisibleChunk(ChunkPos chunk, List<Surface> blocks) implements CustomPacketPayload {
+        public static final Type<VisibleChunk> TYPE = new Type<>(id("visible_chunk"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, VisibleChunk> STREAM_CODEC =
+                StreamCodec.of(VisibleChunk::write, VisibleChunk::read);
+
+        private static void write(RegistryFriendlyByteBuf buffer, VisibleChunk payload) {
+            ChunkPos.STREAM_CODEC.encode(buffer, payload.chunk);
+            buffer.writeVarInt(payload.blocks.size());
+            for (Surface block : payload.blocks) {
+                buffer.writeByte((block.pos.getX() & 15) << 4 | (block.pos.getZ() & 15));
+                buffer.writeShort(block.pos.getY());
+                buffer.writeVarInt(Block.getId(block.state));
+                buffer.writeByte(block.faces);
+            }
+        }
+
+        private static VisibleChunk read(RegistryFriendlyByteBuf buffer) {
+            ChunkPos chunk = ChunkPos.STREAM_CODEC.decode(buffer);
+            int count = buffer.readVarInt();
+            List<Surface> blocks = new java.util.ArrayList<>(Math.min(count, 4096));
+            for (int i = 0; i < count; i++) {
+                int xz = buffer.readUnsignedByte();
+                int y = buffer.readShort();
+                BlockState state = Block.stateById(buffer.readVarInt());
+                blocks.add(new Surface(new BlockPos(chunk.getMinBlockX() + (xz >> 4), y, chunk.getMinBlockZ() + (xz & 15)), state, buffer.readByte()));
+            }
+            return new VisibleChunk(chunk, blocks);
+        }
+
+        @Override
+        public Type<VisibleChunk> type() {
+            return TYPE;
+        }
+    }
+
+    /** Inside view: visible surface blocks that changed (air: no longer there, or no longer on the surface). */
+    public record VisibleBlocks(List<Surface> blocks) implements CustomPacketPayload {
+        public static final Type<VisibleBlocks> TYPE = new Type<>(id("visible_blocks"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, VisibleBlocks> STREAM_CODEC =
+                SURFACES.map(VisibleBlocks::new, VisibleBlocks::blocks);
+
+        @Override
+        public Type<VisibleBlocks> type() {
+            return TYPE;
+        }
+    }
+
+    /** Inside view: the client should drop one chunk of visible blocks: it is now out of range. */
+    public record VisibleForget(ChunkPos chunk) implements CustomPacketPayload {
+        public static final Type<VisibleForget> TYPE = new Type<>(id("visible_forget"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, VisibleForget> STREAM_CODEC =
+                ChunkPos.STREAM_CODEC.<RegistryFriendlyByteBuf>cast().map(VisibleForget::new, VisibleForget::chunk);
+
+        @Override
+        public Type<VisibleForget> type() {
+            return TYPE;
+        }
+    }
+
+    /** Inside view: the client should drop every visible block it holds (left the hidden layer, or may no longer be there). */
+    public record VisibleReset() implements CustomPacketPayload {
+        public static final Type<VisibleReset> TYPE = new Type<>(id("visible_reset"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, VisibleReset> STREAM_CODEC = StreamCodec.unit(new VisibleReset());
+
+        @Override
+        public Type<VisibleReset> type() {
+            return TYPE;
+        }
+    }
+
     private static Identifier id(String path) {
         return Identifier.fromNamespaceAndPath(PhaseCraft.MOD_ID, path);
     }
@@ -107,5 +200,9 @@ public final class OverlayPayloads {
         clientbound.register(Forget.TYPE, Forget.STREAM_CODEC);
         clientbound.register(Reset.TYPE, Reset.STREAM_CODEC);
         clientbound.register(Holding.TYPE, Holding.STREAM_CODEC);
+        clientbound.register(VisibleChunk.TYPE, VisibleChunk.STREAM_CODEC);
+        clientbound.register(VisibleBlocks.TYPE, VisibleBlocks.STREAM_CODEC);
+        clientbound.register(VisibleForget.TYPE, VisibleForget.STREAM_CODEC);
+        clientbound.register(VisibleReset.TYPE, VisibleReset.STREAM_CODEC);
     }
 }
