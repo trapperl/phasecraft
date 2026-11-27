@@ -198,6 +198,8 @@ open to change: Spectators see the overlay but cannot edit, Adventure
 players neither; ghosts show through
 visible blocks (fainter); in editing mode (J) a click on a visible block
 places the hidden block at that same spot.
+Each PhaseCraft item's tooltip says what it does (TooltipGameTests); in
+editing mode the HUD names the hidden block aimed at and its state.
 
 ## Showcase builds (the person, 2026-11-24: "builds that impress people")
 Showcasing blocks pulled into and out of the main world. The person's list,

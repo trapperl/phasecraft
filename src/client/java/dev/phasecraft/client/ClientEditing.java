@@ -11,6 +11,9 @@ import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.level.block.state.properties.RedstoneSide;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.ClipContext;
@@ -237,7 +240,7 @@ public final class ClientEditing {
         poseStack.popPose();
     }
 
-    /** "Editing: hidden layer" in the top left while editing. */
+    /** "Editing: hidden layer" in the top left while editing, and under it the hidden block aimed at (see {@link #readout}). */
     static void drawHud(GuiGraphicsExtractor graphics) {
         Minecraft minecraft = Minecraft.getInstance();
         if (!active(minecraft)) {
@@ -247,6 +250,45 @@ public final class ClientEditing {
         int width = minecraft.font.width(label);
         graphics.fill(2, 2, 8 + width, 14, 0x80000000);
         graphics.text(minecraft.font, label, 5, 4, OUTLINE, false);
+        Component aimed = readout();
+        if (aimed != null) {
+            int aimedWidth = minecraft.font.width(aimed);
+            graphics.fill(2, 15, 8 + aimedWidth, 27, 0x80000000);
+            graphics.text(minecraft.font, aimed, 5, 17, 0xFFFFFFFF, false);
+        }
+    }
+
+    /**
+     * The hidden block aimed at, for the HUD: its name and the parts of its state a builder needs ("Shifter Piston ·
+     * facing up · delay 2 · powered"); null when no hidden block is aimed at. Booleans show only when true, and a wire's
+     * sides not at all (they follow from its neighbours).
+     */
+    public static @Nullable Component readout() {
+        Target current = target;
+        if (current == null || !current.hidden()) {
+            return null;
+        }
+        BlockState state = PhaseCraftClient.layer().get(current.hit().getBlockPos());
+        if (state.isAir()) {
+            return null;
+        }
+        MutableComponent out = state.getBlock().getName().copy();
+        for (Property<?> property : state.getProperties()) {
+            Comparable<?> value = state.getValue(property);
+            if (value instanceof Boolean on) {
+                if (on) {
+                    out.append(" · " + property.getName());
+                }
+            } else if (!(value instanceof RedstoneSide)) {
+                out.append(" · " + property.getName() + " " + valueName(property, value));
+            }
+        }
+        return out;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends Comparable<T>> String valueName(Property<T> property, Comparable<?> value) {
+        return property.getName((T) value);
     }
 
     /** The hidden blocks the client holds, as a BlockGetter (for shapes and raycasts). */

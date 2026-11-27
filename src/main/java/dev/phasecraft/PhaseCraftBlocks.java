@@ -12,7 +12,14 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import dev.phasecraft.link.PhasePortBlock;
 import dev.phasecraft.phased.PhaseBlock;
 import dev.phasecraft.piston.PhasePistonBlock;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import net.minecraft.ChatFormatting;
+import net.minecraft.locale.Language;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.TooltipDisplay;
 import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -84,9 +91,33 @@ public final class PhaseCraftBlocks {
     }
 
     private static Item item(String path, Block block) {
-        return Registry.register(BuiltInRegistries.ITEM, id(path), new BlockItem(block, new Item.Properties()
+        return Registry.register(BuiltInRegistries.ITEM, id(path), new Explained(block, new Item.Properties()
                 .setId(ResourceKey.create(Registries.ITEM, id(path)))
                 .useBlockDescriptionPrefix()));
+    }
+
+    /** The most lines of a block's own tooltip ({@code block.phasecraft.<name>.tooltip.1}, {@code .2}...). */
+    static final int TOOLTIP_LINES = 3;
+    /** The line every item's tooltip ends with: these blocks work in the hidden layer. */
+    public static final String TOOLTIP_HIDDEN = "phasecraft.tooltip.hidden";
+
+    /** A block item whose tooltip says what the block does (players have no other way to find out in the game). */
+    static final class Explained extends BlockItem {
+        Explained(Block block, Properties properties) {
+            super(block, properties);
+        }
+
+        @Override
+        public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> builder,
+                TooltipFlag flag) {
+            for (int i = 1; i <= TOOLTIP_LINES; i++) {
+                String key = getDescriptionId() + ".tooltip." + i;
+                if (Language.getInstance().has(key)) {
+                    builder.accept(Component.translatable(key).withStyle(ChatFormatting.GRAY));
+                }
+            }
+            builder.accept(Component.translatable(TOOLTIP_HIDDEN).withStyle(ChatFormatting.DARK_PURPLE));
+        }
     }
 
     private PhaseCraftBlocks() {}

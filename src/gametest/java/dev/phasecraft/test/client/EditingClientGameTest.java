@@ -49,6 +49,7 @@ public class EditingClientGameTest implements FabricClientGameTest {
             context.getInput().pressKey(PhaseCraftClient.TOGGLE_EDITING);
             waitUntil(context, "J turns editing on", minecraft -> ClientEditing.editing());
             waitUntil(context, "the visible stone is targeted", minecraft -> isTarget(STONE, false));
+            assertTrue(readout(context) == null, "a readout for a visible block: " + readout(context));
             context.takeScreenshot("editing_target_visible");
 
             // Right click: a hidden lamp at the stone's own spot; the stone stays.
@@ -59,7 +60,16 @@ public class EditingClientGameTest implements FabricClientGameTest {
 
             // Now the ghost is the target; right click places next to it, toward the player.
             waitUntil(context, "the hidden lamp is targeted", minecraft -> isTarget(STONE, true));
+            assertTrue("Redstone Lamp".equals(readout(context)), "readout of the hidden lamp: " + readout(context));
             context.takeScreenshot("editing_target_hidden");
+            // The readout names the hidden block aimed at and the parts of its state a builder needs.
+            server.runCommand("phasecraft set 0 -60 3 phasecraft:line_shifter[delay=3,facing=up]");
+            waitUntil(context, "the readout shows the shifter piston",
+                    minecraft -> ClientEditing.readout() != null
+                            && "Shifter Piston · delay 3 · facing up".equals(ClientEditing.readout().getString()));
+            context.takeScreenshot("editing_readout");
+            server.runCommand("phasecraft set 0 -60 3 minecraft:redstone_lamp");
+            waitForGhost(context, STONE, Blocks.REDSTONE_LAMP);
             // Middle click picks the hidden block, not the visible stone at the same spot.
             server.runOnServer(minecraft -> minecraft.getPlayerList().getPlayers().getFirst()
                     .setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.OAK_PLANKS)));
@@ -111,6 +121,13 @@ public class EditingClientGameTest implements FabricClientGameTest {
             assertTrue(!context.computeOnClient(minecraft -> ClientEditing.editing()), "survival player (rule off) turned editing on");
             server.runCommand("gamerule phasecraft:survival_access true");
         }
+    }
+
+    private static String readout(ClientGameTestContext context) {
+        return context.computeOnClient(minecraft -> {
+            var line = ClientEditing.readout();
+            return line == null ? null : line.getString();
+        });
     }
 
     private static boolean isTarget(BlockPos pos, boolean hidden) {
