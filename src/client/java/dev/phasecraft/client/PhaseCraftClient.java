@@ -26,11 +26,13 @@ import net.minecraft.resources.Identifier;
  *
  * <p>Keys (rebindable under Controls, "PhaseCraft"): H shows or hides the
  * overlay, ] and [ make the ghosts more or less opaque, J turns editing mode
- * on and off (clicks go to the hidden layer; see {@link ClientEditing}), K goes
+ * on and off (clicks go to the hidden layer; see {@link ClientEditing}), ; goes
  * into the hidden layer and back (Creative and Spectator; there the visible
  * world is drawn see-through, from what {@code InsideView} sends). The
  * server decides what the client may see and do ({@code OverlaySync},
- * {@code HiddenEditing}).</p>
+ * {@code HiddenEditing}). No default may be a key another mod players commonly run
+ * already uses (the person, 2026-11-27: Iris's "Toggle Shaders" is K, so the layer key moved from K to ;):
+ * KeyDefaultsClientGameTest.</p>
  */
 public final class PhaseCraftClient implements ClientModInitializer {
     private static final KeyMapping.Category CATEGORY =
@@ -45,7 +47,7 @@ public final class PhaseCraftClient implements ClientModInitializer {
             InputConstants.Type.KEYBOARD, InputConstants.KEY_LBRACKET, CATEGORY);
 
     public static final KeyMapping TOGGLE_LAYER = new KeyMapping("key.phasecraft.toggle_layer",
-            InputConstants.Type.KEYBOARD, InputConstants.KEY_K, CATEGORY);
+            InputConstants.Type.KEYBOARD, InputConstants.KEY_SEMICOLON, CATEGORY);
 
     private static final GhostLayer LAYER = new GhostLayer();
     /** The inside view: the visible world's surface blocks, held while the player is inside the hidden layer. */
