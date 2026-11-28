@@ -106,7 +106,8 @@ public final class Shifting {
      * choosing this over waiting). Returns false, changing nothing, while one in the way has no room above, the block
      * there is unbreakable (bedrock, a moving piston...), the spot is not loaded, or a claim there refuses the
      * shifter (placing its block, or breaking the one in the spot; see {@link MachineRights}): the caller waits and
-     * tries again.
+     * tries again. A block that cannot stand there any more (its neighbours turn it into air: a sign whose wall is
+     * gone) is dropped there instead, and counts as put back.
      */
     public static boolean putBack(ServerLevel visible, BlockPos pos, Held held, MachineRights rights) {
         if (!visible.isLoaded(pos)) {

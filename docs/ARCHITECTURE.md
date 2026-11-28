@@ -166,7 +166,16 @@ not placed in the hidden layer, so it never collides with hidden machinery.
   (destroy speed -1: bedrock, a moving piston...).
 - Removed while holding a block, it puts it back the same way, or, if it
   cannot, drops it there as an item, with its contents: never lost, never
-  doubled.
+  doubled. The drop is the block's loot, as if broken with no tool, and then
+  whatever its block entity lets go of when it is removed (vanilla's
+  `preRemoveSideEffects`, run on a block entity made from the held data: a
+  container's items, a lectern's book, a jukebox's record, a campfire's
+  food, a furnace's experience). Before 2026-11-27 only containers were
+  emptied, and a held lectern lost its book.
+- A held block that cannot stand in its spot any more (the neighbours turn
+  it into air: a sign whose floor or wall is gone) is not put back but
+  dropped there the same way, as it would drop the moment it was placed, and
+  what stands in the spot is left alone. Before, it was silently lost.
 - `PhaseShifterGameTests`, and `PhaseLayerRestartPhases` (a held block, and
   a held chest with its items, survive a restart). Examples station 18:
   four bricks of a wall vanish into a doorway; station 21: a chest in a
@@ -243,7 +252,12 @@ default).
   pops, as it would off a pushed block. Putting back breaks what is in the
   way and lifts a mob in a spot onto the block (a pig under the hut's chest
   ends up standing on the chest); where it must wait, the layers above wait
-  for it.
+  for it. Within a layer, what can stand goes back first and what hangs on
+  it (a sign on a wall of the same layer) after it, waiting with it if it
+  must wait; plain order put the sign back first, and it was gone. Still
+  open: a sign hanging under a block of the layer above goes back before its
+  ceiling, and drops as an item; and when a layer is taken, a sign whose wall
+  is taken before it pops off as an item, as off a pushed block.
 - The leader (the corner whose position sorts first) holds the blocks
   (`AreaShifterBlockEntity`, saved by offset) and runs the move; the other
   corner only remembers its leader. Removing the leader puts everything back
@@ -914,7 +928,15 @@ message and then the block's mining time by vanilla's own measure
 (`getDestroyProgress` for this player and tool, with vanilla's 70%
 allowance for lag), drops go to the visible world with vanilla's loot and
 tool rules, the tool wears, stats and exhaustion count; middle click only
-selects what is carried. The client mines at vanilla's speed with vanilla's
+selects what is carried. What a Survival edit spills in the hidden layer
+besides (a mined chest's contents, the torch that stood on a mined block,
+the record a clicked jukebox gives back) is moved to the visible world at
+the same spot too (`bringingOutWhatSpills`: the item entities that appear
+within two blocks while the break or the click runs): a Survival player
+cannot go in to fetch them, so there they were lost. Not moved: what drops
+later (the rest of a hidden sugar cane column, a campfire's cooked food) and
+experience orbs (a mined furnace's), which stay in the hidden layer; and
+Creative edits, which spill there as before. The client mines at vanilla's speed with vanilla's
 cracks. Recipes are data (`data/phasecraft/recipe`), the person's starting
 point for balancing; each unlocks in the recipe book from amethyst shards
 (Phase Block) or Phase Blocks (the rest).
@@ -1548,6 +1570,17 @@ All of these run on every `./gradlew build`, locally and in CI:
     player and the GameTest server keep it on; middle
     click never makes items; the recipes craft what they should (each
     shown to fail with its code removed);
+  - Nothing doubled, nothing lost (`ItemConservationGameTests`, counting
+    items in both layers): a Survival player mining a hidden chest gets its
+    contents, and the torch off a mined block, and a hidden jukebox's
+    record, in the visible world; Ctrl + pick copies no contents; mining a
+    shifter that holds a chest gives the chest back, once; a held sign with
+    nothing to stand on drops; an area shifter puts a wall back before its
+    sign; a held lectern dropped drops its book (these shown to fail with
+    the fix removed); an explosion in the hidden layer, two shifters on one
+    spot, a line shifter removed mid-move, an open chest taken away, a
+    phased hopper or dropper working on a chest that a shifter takes
+    meanwhile, a phase piston against a chest: all add up;
   - the overlay's per-chunk geometry cache draws what drawing every ghost
     directly draws, vertex for vertex (tints, random offsets, model-less
     blocks, fluids), after a change and after a change across a chunk
