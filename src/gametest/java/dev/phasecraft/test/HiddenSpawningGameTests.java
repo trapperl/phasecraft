@@ -79,7 +79,8 @@ public class HiddenSpawningGameTests {
         inside.teleport(new TeleportTransition(hidden, spot, Vec3.ZERO, 0, 0, TeleportTransition.DO_NOTHING));
         AABB around = new AABB(spawner).inflate(8);
         helper.startSequence()
-                .thenWaitUntil(() -> helper.assertTrue(pigs(visible, around) >= 2, "the visible spawner made no pigs yet"))
+                // One pig is enough: a round that makes only one waits 200 to 800 ticks before the next.
+                .thenWaitUntil(() -> helper.assertTrue(pigs(visible, around) >= 1, "the visible spawner made no pigs yet"))
                 .thenExecute(() -> {
                     helper.assertValueEqual(hidden.getEntitiesOfClass(Pig.class, around).size(), 0, "pigs made by the hidden spawner");
                     for (Pig pig : visible.getEntitiesOfClass(Pig.class, around)) {
