@@ -35,6 +35,10 @@ configurations {
     // A shader pack for the Iris run with shaders on: MakeUp - Ultra Fast (Modrinth; LGPL-3.0-or-later),
     // fetched by Gradle and copied into that run's folder under build/, never committed or shipped.
     shaderPack { transitive = false }
+    // The trailer's shader pack (tools/trailer.py, runClientGameTestTrailer): Complementary Reimagined (Modrinth;
+    // the Complementary License Agreement, which grants use "for content creation"), fetched and copied
+    // into that run's folder under build/ as it comes, never committed, shipped or changed.
+    trailerPack { transitive = false }
     // Lithium (Modrinth) rewrites hopper, redstone and block-ticking code and
     // is on most servers; runGameTestLithium runs the server GameTests with it.
     lithium { transitive = false }
@@ -56,6 +60,7 @@ dependencies {
     iris "maven.modrinth:iris:${project.iris_version}"
     iris "maven.modrinth:sodium:${project.iris_sodium_version}"
     shaderPack "maven.modrinth:makeup-ultra-fast-shaders:${project.shader_pack_version}@zip"
+    trailerPack "maven.modrinth:complementary-reimagined:${project.trailer_pack_version}@zip"
     lithium "maven.modrinth:lithium:${project.lithium_version}"
     // dev.phasecraft.compat.OpacProtection answers the Common Protection API from OPAC's claims, through
     // OPAC's own API: compiled against it, loaded only when OPAC is installed, never part of the jar.
@@ -247,6 +252,20 @@ loom {
             vmArg '-Dphasecraft.test.shaderPack=true'
             vmArgs offlineTestArgs
         }
+        // The trailer's frames (tools/trailer.py runs it; not part of clientTest or build): Sodium, Iris and the
+        // trailer's shader pack, only TrailerClientGameTest, on a 1920x1080 virtual display.
+        clientGameTestTrailer {
+            inherit clientGameTest
+            configName = 'Client GameTest: the trailer'
+            runDir = 'build/run/clientGameTestTrailer'
+            vmArg '-Dphasecraft.test.graphicsApi=opengl'
+            vmArg '-Dphasecraft.test.sodium=true'
+            vmArg '-Dphasecraft.test.iris=true'
+            vmArg '-Dphasecraft.test.shaderPack=true'
+            vmArg '-Dphasecraft.test.only=TrailerClientGameTest'
+            vmArg '-Xmx4G'
+            vmArgs offlineTestArgs
+        }
         clientGameTest {
             configName = 'Client GameTest: OpenGL'
             vmArg '-Dphasecraft.test.graphicsApi=opengl'
@@ -333,9 +352,11 @@ tasks.register('restartTest') {
 // private virtual display instead, so nothing appears on your screen and they
 // run the same way in CI. Without Xvfb they use your display.
 def xvfb = ['/usr/bin/Xvfb', '/usr/local/bin/Xvfb'].find { new File(it).canExecute() }
-['runClientGameTest', 'runClientGameTestVulkan', 'runClientGameTestSodium', 'runClientGameTestIris', 'runClientGameTestIrisShaders'].each { name ->
+['runClientGameTest', 'runClientGameTestVulkan', 'runClientGameTestSodium', 'runClientGameTestIris', 'runClientGameTestIrisShaders',
+ 'runClientGameTestTrailer'].each { name ->
     tasks.named(name) { task ->
         def server = null
+        def screen = name.endsWith('Trailer') ? '1920x1080x24' : '1280x720x24'
         doFirst {
             if (xvfb == null) {
                 logger.lifecycle("${name}: Xvfb not found, using your display")
@@ -344,7 +365,7 @@ def xvfb = ['/usr/bin/Xvfb', '/usr/local/bin/Xvfb'].find { new File(it).canExecu
             // Try display numbers until one is free; -displayfd prints the number once ready.
             String number = null
             for (int candidate in (90..199).findAll { !new File("/tmp/.X${it}-lock").exists() }.take(5)) {
-                server = new ProcessBuilder(xvfb, ":${candidate}", '-displayfd', '1', '-screen', '0', '1280x720x24', '-nolisten', 'tcp')
+                server = new ProcessBuilder(xvfb, ":${candidate}", '-displayfd', '1', '-screen', '0', screen, '-nolisten', 'tcp')
                         .redirectError(ProcessBuilder.Redirect.DISCARD).start()
                 number = new BufferedReader(new InputStreamReader(server.inputStream)).readLine()?.trim()
                 if (number == "${candidate}") {
@@ -381,7 +402,8 @@ tasks.register('clientTest') {
     // run with the pack on also shows that Iris loads. Run it by name after changing Iris's or Sodium's version.
     dependsOn 'runClientGameTest', 'runClientGameTestVulkan', 'runClientGameTestSodium', 'runClientGameTestIrisShaders'
 }
-['runClientGameTestVulkan', 'runClientGameTestSodium', 'runClientGameTestIris', 'runClientGameTestIrisShaders'].each { name ->
+['runClientGameTestVulkan', 'runClientGameTestSodium', 'runClientGameTestIris', 'runClientGameTestIrisShaders',
+ 'runClientGameTestTrailer'].each { name ->
     def runDir = "build/run/${name.substring(3, 4).toLowerCase()}${name.substring(4)}"
     tasks.named(name) { task ->
         mustRunAfter 'runClientGameTest'
@@ -402,12 +424,13 @@ tasks.named('runClientGameTestSodium') { task ->
         task.jvmArgs "-Dfabric.addMods=${sodiumJars.singleFile.absolutePath}"
     }
 }
-['runClientGameTestIris', 'runClientGameTestIrisShaders'].each { name ->
+['runClientGameTestIris', 'runClientGameTestIrisShaders', 'runClientGameTestTrailer'].each { name ->
     tasks.named(name) { task ->
         mustRunAfter 'runClientGameTestSodium'
-        def shaders = name.endsWith('Shaders')
+        def trailer = name.endsWith('Trailer')
+        def shaders = name.endsWith('Shaders') || trailer
         def jars = configurations.iris
-        def pack = configurations.shaderPack
+        def pack = trailer ? configurations.trailerPack : configurations.shaderPack
         inputs.files(jars)
         def runDir = file("build/run/${name.substring(3, 4).toLowerCase()}${name.substring(4)}")
         if (shaders) {
@@ -426,7 +449,11 @@ tasks.named('runClientGameTestSodium') { task ->
                 // The pack as it comes (its "medium" profile: shadows, bloom, ambient occlusion), but still:
                 // without its antialiasing over time and its drifting clouds, two screenshots of one view
                 // are the same picture, which the tests' comparisons need.
-                new File(runDir, "shaderpacks/${pack.singleFile.name}.txt").text = 'AA_TYPE=0\nV_CLOUDS=0\n'
+                // The trailer's pack: its settings are the trailer tool's (PHASECRAFT_TRAILER_PACK_OPTIONS, lines
+                // of name=value), or the pack's own.
+                new File(runDir, "shaderpacks/${pack.singleFile.name}.txt").text = trailer
+                        ? (System.getenv('PHASECRAFT_TRAILER_PACK_OPTIONS') ?: '').replace(';', '\n') + '\n'
+                        : 'AA_TYPE=0\nV_CLOUDS=0\n'
             }
             new File(runDir, 'config').mkdirs()
             new File(runDir, 'config/iris.properties').text = settings.join('\n') + '\n'
