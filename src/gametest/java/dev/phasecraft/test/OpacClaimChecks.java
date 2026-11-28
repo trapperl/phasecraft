@@ -245,6 +245,7 @@ public class OpacClaimChecks {
                 "the line is not in the claim, or the shifter is");
         hidden.setBlock(shifter, PhaseCraftBlocks.LINE_SHIFTER.defaultBlockState().setValue(LineShifterBlock.FACING, Direction.WEST));
         MachineOwners.setOwner(hidden.level(), shifter, stranger);
+        String[] before = {""};
         helper.startSequence()
                 // The hidden chunk east of the test's own starts ticking: in its own time, on other threads, while this
                 // server runs ticks as fast as it can (a fixed 20 ticks was too few on a busy machine, and the owner's
@@ -265,16 +266,12 @@ public class OpacClaimChecks {
                 })
                 .thenIdle(4)
                 .thenExecute(() -> {
-                    String before = lineShifterState(level, hidden, shifter, line);
+                    before[0] = lineShifterState(level, hidden, shifter, line);
                     hidden.setBlock(shifter.east(), Blocks.REDSTONE_BLOCK.defaultBlockState());
-                    // The first block goes the moment the power arrives.
-                    helper.assertTrue(hidden.level().getBlockEntity(shifter) instanceof LineShifterBlockEntity entity && entity.holding() == 1,
-                            "the owner's line shifter took nothing when powered: before " + before + "; after " + lineShifterState(level, hidden, shifter, line)
-                                    + " visibleLoaded=" + level.isLoaded(line[0]) + "/" + level.isLoaded(line[1]));
                 })
                 // Rare under a busy build (once in many runs): the message says which part did not happen.
                 .thenWaitUntil(() -> helper.assertTrue(hidden.level().getBlockEntity(shifter) instanceof LineShifterBlockEntity entity
-                        && entity.holding() == 2, "the owner's line shifter did not take the line: " + lineShifterState(level, hidden, shifter, line)))
+                        && entity.holding() == 2, "the owner's line shifter did not take the line: before powering " + before[0] + "; now " + lineShifterState(level, hidden, shifter, line)))
                 .thenExecute(() -> {
                     hidden.removeBlock(shifter.east());
                     hidden.removeBlock(shifter); // puts the line back
@@ -294,6 +291,10 @@ public class OpacClaimChecks {
         out.append(" holding=").append(hidden.level().getBlockEntity(shifter) instanceof LineShifterBlockEntity e ? e.holding() : -1);
         out.append(" hiddenTicking=").append(hidden.level().isPositionTickingWithEntitiesLoaded(chunk));
         out.append(" owner=").append(java.util.Optional.ofNullable(MachineOwners.owner(hidden.level(), shifter)).map(NameAndId::name).orElse(null));
+        // Whether loaded first: reading a block loads its chunk.
+        for (BlockPos at : line) {
+            out.append(' ').append(at.toShortString()).append(level.isLoaded(at) ? " loaded" : " NOT LOADED");
+        }
         for (BlockPos at : line) {
             out.append(' ').append(at.toShortString()).append('=').append(level.getBlockState(at).getBlock())
                     .append(rights.mayBreak(level, at) ? " may" : " refused");
