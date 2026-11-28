@@ -23,8 +23,8 @@ final class IrisRun {
 
     /**
      * Every client test starts here. Checks the run has the mods it is named for; with Iris, takes Iris's keys
-     * away: its "Toggle Shaders" is K, PhaseCraft's key into the hidden layer, so every K in a test would also
-     * turn the shader pack off or on (as it does for a player who has not rebound one of the two).
+     * away, so no key a test presses can also turn the shader pack off or on (its "Toggle Shaders", K, was
+     * PhaseCraft's layer key until 2026-11-27).
      */
     static void prepare(ClientGameTestContext context) {
         boolean loaded = FabricLoader.getInstance().isModLoaded("iris");

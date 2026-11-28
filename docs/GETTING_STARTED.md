@@ -12,10 +12,8 @@
   start with it. With a shader pack on, the overlay (also behind visible
   blocks), the editing outline, the inside view and phased light are all
   drawn, in the pack's own light: ghosts are shaded like the blocks around
-  them instead of glowing evenly, and the outline is paler. **Iris uses K
-  too** ("Toggle Shaders"): until you rebind one of the two (Options,
-  Controls: "Iris" or "PhaseCraft"), K goes into the hidden layer *and* turns
-  your shaders off.
+  them instead of glowing evenly, and the outline is paler. (PhaseCraft's key into the hidden layer used
+  to be K, which is Iris's "Toggle Shaders"; it is ; now.)
 - Optional: **Lithium** works with PhaseCraft (tested with Lithium 0.26.4 for
   26.3). PhaseCraft turns off Lithium's hopper optimization
   (`mixin.block.hopper`), as phased hoppers need vanilla's hoppers; the rest of
@@ -65,7 +63,7 @@ completion: `redstone_wire`, `minecraft:redstone_wire` and
 (Creative or Spectator only: it has no ground; switch to Survival there and
 you are put back in the visible world), where you can see and build
 hidden circuits with normal blocks and commands; `layer visible` brings you
-back. The key **K** does the same without a command, and inside, the
+back. The key **;** (semicolon) does the same without a command, and inside, the
 visible world is drawn see-through around you (see "Building from inside
 the hidden layer" below). Hidden redstone runs by vanilla rules.
 
@@ -146,7 +144,7 @@ the action bar, with a dispenser's dull click only you hear.
 ### Building from inside the hidden layer
 
 For a bigger machine it is easier to step into the hidden layer itself.
-Press **K** (Creative or Spectator; Controls, "PhaseCraft") and you are in
+Press **;** (semicolon; Creative or Spectator; Controls, "PhaseCraft") and you are in
 the hidden layer at the same spot, flying: there is no ground in there.
 
 - The hidden blocks are real blocks now: build, break and use them as you
@@ -163,10 +161,10 @@ the hidden layer at the same spot, flying: there is no ground in there.
   visible door move.
 - You are really in the hidden layer: a hidden pressure plate under your
   feet is pressed by you, a visible one at the same spot is not.
-- Press **K** again to come back out at the same spot. If that spot is
+- Press **;** again to come back out at the same spot. If that spot is
   inside a visible block, a Creative player is pushed out of it (or digs).
 
-K needs no cheats and no operator rights, only Creative or Spectator mode;
+The key needs no cheats and no operator rights, only Creative or Spectator mode;
 Survival and Adventure players are told so and stay where they are (and
 anyone who changes to Survival inside is put back outside). Operators can
 also use `/phasecraft layer hidden` and `/phasecraft layer visible`.
@@ -474,7 +472,7 @@ Power crosses only through **phase ports**, and visible blocks are moved
 only by **phase pistons** placed in the hidden layer (all in the Redstone
 tab, or `/give @s phasecraft:phase_port`, `phasecraft:sticky_phase_piston`);
 see docs/ARCHITECTURE.md. Build hidden machinery with editing mode (J), with
-`/phasecraft set`, or from inside the hidden layer (K). Hidden machinery runs
+`/phasecraft set`, or from inside the hidden layer (;). Hidden machinery runs
 wherever the visible world around it runs. Commands require operator permission level 2. Worlds from earlier builds
 are upgraded automatically at server start.
 

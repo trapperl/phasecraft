@@ -10,7 +10,7 @@
   "phasecraft.overlay.off": "Hidden layer overlay: off",
   "key.phasecraft.toggle_editing": "Edit the hidden layer",
   "key.phasecraft.toggle_layer": "Go into / out of the hidden layer",
-  "phasecraft.layer.entered": "Inside the hidden layer: the visible world is shown see-through (K to go back, H to hide it)",
+  "phasecraft.layer.entered": "Inside the hidden layer: the visible world is shown see-through (%1$s to go back, %2$s to hide it)",
   "phasecraft.layer.left": "Back in the visible world",
   "phasecraft.layer.refused": "Only Creative and Spectator players can go into the hidden layer (it has no ground)",
   "phasecraft.layer.none": "This dimension has no hidden layer",

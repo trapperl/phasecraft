@@ -16,7 +16,7 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * Moving a player between the visible and the hidden layer, at the same spot: what
- * {@code /phasecraft layer hidden|visible} does, and what the client's key (K) asks for with {@link Toggle}.
+ * {@code /phasecraft layer hidden|visible} does, and what the client's key (; by default) asks for with {@link Toggle}.
  *
  * <p>Going in is for Creative and Spectator players only, whoever asks and however: the hidden layer has no ground,
  * and {@link HiddenLayerGuard} would move anyone else straight out again. The key needs no cheats and no operator
@@ -65,12 +65,13 @@ public final class LayerSwitch {
     /** The key: to the other layer, with a line above the hotbar saying what happened. */
     public static Result toggle(ServerPlayer player) {
         Result result = move(player, !HiddenDimensions.isHidden(player.level().dimension()));
+        // The keys by name as the player has bound them (a keybind component is spelled out on the client).
         player.sendOverlayMessage(Component.translatable(switch (result) {
             case ENTERED -> "phasecraft.layer.entered";
             case LEFT, ALREADY_THERE -> "phasecraft.layer.left";
             case WRONG_GAME_MODE -> "phasecraft.layer.refused";
             case NO_LAYER -> "phasecraft.layer.none";
-        }));
+        }, Component.keybind("key.phasecraft.toggle_layer"), Component.keybind("key.phasecraft.toggle_overlay")));
         return result;
     }
 

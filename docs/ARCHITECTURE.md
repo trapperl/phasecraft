@@ -350,7 +350,7 @@ view is the overlay in reverse: the visible world, drawn faint around the
 player, to build against.
 
 **Going in and out: `LayerSwitch`.** `/phasecraft layer hidden|visible`
-(operators) and the key **K** (`phasecraft:layer_toggle`, a serverbound
+(operators) and the key **;** (semicolon; K until 2026-11-27, see below; `phasecraft:layer_toggle`, a serverbound
 payload with nothing in it) both call `LayerSwitch.move`: the same spot in
 the other layer, looking the same way. Going in is for Creative and
 Spectator players, checked on the server whoever asks; the key needs no
@@ -459,9 +459,9 @@ is pressed by them; a visible one at the same spot is not (they are not in
 the visible world, and a phased plate watches the visible world). Visible
 mobs and players are not shown, and clicks go to the hidden blocks only:
 the visible world can be seen from inside, not touched. To change it, press
-K and step out.
+; and step out.
 
-Decided by the agent, open to change: the key (K); coming out puts the
+Decided by the agent, open to change: coming out puts the
 player at the same spot even inside a visible block (as the command always
 did; Creative players are pushed out or dig, Spectators pass through); the
 look (22%, both sides, 48 blocks); block entities' contents and entities of
@@ -470,9 +470,9 @@ the visible world are not shown.
 Tests: `InsideViewGameTests` (what is scanned, what a Creative player inside
 is really sent and when, who is sent nothing, who the key lets in, one of
 two players leaving), `InsideProtectionGameTests`,
-`InsideViewClientGameTest` (K, the faint wall and ground in screenshots
+`InsideViewClientGameTest` (the key, the faint wall and ground in screenshots
 against H off, a real hidden block behind them, changes, out of range and
-back, improved transparency, K again), `InsideViewTerrainClientGameTest`
+back, improved transparency, the key again), `InsideViewTerrainClientGameTest`
 (ordinary terrain: the numbers above, held inside bounds).
 
 ## Editing mode: building in the hidden layer from the visible world
@@ -947,7 +947,7 @@ point for balancing; each unlocks in the recipe book from amethyst shards
 ### Nobody ends up in the hidden layer by accident (`HiddenLayerGuard`)
 
 - **Only Creative and Spectator players may be there** (they go in with the
-  key K or `/phasecraft layer hidden`: `LayerSwitch`). Any other player
+  key ; or `/phasecraft layer hidden`: `LayerSwitch`). Any other player
   found in a hidden dimension at the end of a tick (switched to Survival
   inside, a forced game mode on login, a teleport by command) is moved to the
   visible layer at the same spot, or the first spot above it where they fit,
@@ -1679,12 +1679,14 @@ All of these run on every `./gradlew build`, locally and in CI:
     outline is paler, and phased light has the pack's colour. The tests keep
     their checks that each thing is drawn and use the pack's own thresholds
     where vanilla's colours were assumed (`IrisRun.threshold`).
-  - Iris's "Toggle Shaders" key is K, PhaseCraft's key into the hidden layer.
-    Both act on one press. Not changed (the key is the person's to choose);
-    GETTING_STARTED says to rebind one. The test runs take Iris's keys away
+  - Iris's "Toggle Shaders" key is K, which was PhaseCraft's key into the
+    hidden layer: both acted on one press. The person moved PhaseCraft's off it
+    (2026-11-27: "we could pick another key that doesn't clash"): ; now, and
+    `KeyDefaultsClientGameTest` fails if any PhaseCraft default is a key
+    another loaded mod (or vanilla) uses by default. The test runs still take Iris's keys away
     (`IrisRun.prepare`) and check before their pictures that the pack is
     still on (`IrisRun.checkPack`): the first runs' "inside" pictures were
-    taken with the shaders switched off by the K that went in.
+    taken with the shaders switched off by the K that went in, when K was the layer key.
 - **Open Parties and Claims** (`./gradlew runGameTestOpac`, part of
   `build`): the OPAC claim tests (`OpacClaimChecks`) with the real mod; see
   "Claims hold for the hidden layer".
