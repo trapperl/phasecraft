@@ -587,3 +587,27 @@ renders it a frame per game tick with the world frozen in between (`/tick
 freeze`, `/tick step 1`), and the tool adds the title, captions and fades and
 writes `build/trailer/phasecraft-trailer.mp4`. `--edit` re-edits the frames
 already rendered. Change the shots in `shots()` in the tool.
+
+The edit is `tools/trailer_edit.py` (needs ffmpeg, Pillow, numpy and scipy;
+`python3 tools/trailer_edit.py build/trailer` runs it alone, in a few minutes).
+It reads `frames/`, `timeline.json` (each shot's frames, caption and the frame
+where its action happens) and, for shots marked `hidden`, `frames_hidden/`
+(the same frames with the machinery shown), and cuts them on the beat: a hook,
+the title, a montage, a hit and silence, the reveal (a scanner line wipes to
+the hidden frames), the end card. It grades the picture, letterboxes it, and
+writes `edit-contact.png` (the titles and transitions on one page) and
+`edit-sync.txt` (each cut and action against the sound).
+
+- The music is original: `synth_music` in the tool makes it from nothing but
+  numpy and scipy (no samples, nobody else's track), 120 BPM in D minor, with
+  hits on the cuts; it is written to `build/trailer/music.wav`. So the
+  trailer can be published with its sound.
+- `--music track.wav` uses a track of yours instead (any format ffmpeg reads):
+  the tempo and first beat are detected, or give `--bpm`; `--sfx` adds the
+  tool's own impacts and risers on top. Check that track's licence yourself.
+- The font is Montserrat, under the SIL Open Font License 1.1, fetched into
+  `build/trailer-fonts/` (with its `OFL.txt`) from its own repository at a
+  pinned commit and checked by hash; it is not in this repository. With no
+  network the tool falls back to DejaVu Sans.
+- The graphics use nothing of Mojang's (no logo, no font, no texture), and
+  the end card carries the "not an official Minecraft product" line.

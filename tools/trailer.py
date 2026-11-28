@@ -190,7 +190,8 @@ def main():
     all_shots = shots()
     if "--edit" not in sys.argv:
         render(all_shots)
-    edit(all_shots)
+    import trailer_edit            # the cut, the grade, the titles and the music: tools/trailer_edit.py
+    trailer_edit.edit(OUT, timeline=trailer_edit.timeline_from_shots(all_shots, FPS, (W, H)))
 
 
 if __name__ == "__main__":
