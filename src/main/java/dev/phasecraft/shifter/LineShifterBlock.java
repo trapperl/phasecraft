@@ -50,6 +50,8 @@ import org.jspecify.annotations.Nullable;
  *       build can wait for a line to be all gone, or all back, before the next part moves.</li>
  *   <li>Where claims guard the line, it acts with the rights of whoever placed it ({@link MachineRights}): a block
  *       it may not take is an immovable block to it (nothing moves), and it waits to put back where it may not.</li>
+ *   <li>Where the visible world in its line is not loaded (the hidden layer can tick without it), it waits: it
+ *       sees its line, takes the next block or puts the next one back once the spot is loaded.</li>
  *   <li>Passes no power on, as a piston does not. Silent in the visible world; placed in the visible layer it does
  *       nothing.</li>
  * </ul>
@@ -144,6 +146,7 @@ public class LineShifterBlock extends Block implements EntityBlock {
         BlockState now = state.setValue(POWERED, powered);
         hidden.setBlock(pos, now, Block.UPDATE_CLIENTS);
         ServerLevel visible = Shifting.visibleOf(hidden);
+        // Where the visible world is not loaded the line is not seen yet (UNSEEN): step looks again until it is.
         entity.setTodo(powered && visible != null
                 ? line(visible, pos, now.getValue(FACING), entity, MachineRights.of(hidden, pos)) : 0);
         step(hidden, pos, now, entity);
@@ -153,7 +156,8 @@ public class LineShifterBlock extends Block implements EntityBlock {
      * How far the line in front reaches (the farthest distance to take), as a piston would see it: up to the first
      * air or fragile block, stopping before a spot it already holds a block for. 0 if there is nothing to take, or if
      * a piston would refuse: more than {@link LineShifterBlockEntity#MAX} blocks counting those it holds, an
-     * immovable block, a block a claim does not let it take (see {@link MachineRights}), or a spot not loaded.
+     * immovable block, or a block a claim does not let it take (see {@link MachineRights}).
+     * {@link LineShifterBlockEntity#UNSEEN} if the line reaches a spot that is not loaded: it cannot be told yet.
      */
     static int line(ServerLevel visible, BlockPos pos, Direction facing, LineShifterBlockEntity entity, MachineRights rights) {
         int count = entity.holding();
@@ -164,7 +168,7 @@ public class LineShifterBlock extends Block implements EntityBlock {
             }
             BlockPos at = pos.relative(facing, d);
             if (!visible.isLoaded(at)) {
-                return 0;
+                return LineShifterBlockEntity.UNSEEN;
             }
             Shifting.Reaction reaction = Shifting.reaction(visible, at, visible.getBlockState(at));
             if (reaction == Shifting.Reaction.NONE || reaction == Shifting.Reaction.FRAGILE) {
@@ -198,6 +202,22 @@ public class LineShifterBlock extends Block implements EntityBlock {
         }
         int every = 2 * state.getValue(DELAY);
         Direction facing = state.getValue(FACING);
+        if (taking && entity.todo() == LineShifterBlockEntity.UNSEEN) {
+            int far = line(visible, pos, facing, entity, MachineRights.of(hidden, pos));
+            if (far != LineShifterBlockEntity.UNSEEN) {
+                entity.setTodo(far);
+            }
+            if (far == 0) {
+                return;
+            }
+        }
+        // The visible world is not there (the hidden layer can tick without it: a Creative player inside it far from
+        // here, or the one tick a server that is behind runs the hidden layer after the visible chunk went): wait for
+        // it. Skipping the block would leave it standing in a line that is otherwise gone.
+        if (taking && (entity.todo() == LineShifterBlockEntity.UNSEEN || !visible.isLoaded(pos.relative(facing, entity.todo())))) {
+            hidden.scheduleTick(pos, this, 1);
+            return;
+        }
         if (taking) {
             int d = entity.todo();
             if (entity.heldAt(d) == null) {

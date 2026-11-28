@@ -51,6 +51,7 @@ import org.jspecify.annotations.Nullable;
  *       once, or drops what cannot go back; removing the other corner makes the leader put them back.</li>
  *   <li>Where claims guard the box, each corner acts with the rights of whoever placed it, and the box changes
  *       only the spots both may ({@link MachineRights}); the others stay, as immovable blocks do.</li>
+ *   <li>While part of the box's visible world is not loaded (the hidden layer can tick without it), it waits.</li>
  *   <li>Passes no power on; silent in the visible world; placed in the visible layer it does nothing.</li>
  * </ul>
  */
@@ -218,6 +219,13 @@ public class AreaShifterBlock extends Block implements EntityBlock {
             hidden.scheduleTick(pos, this, (int) (leader.nextStep() - time));
             return;
         }
+        if (taking && !loaded(visible, min, max)) {
+            // The visible world is not all there (the hidden layer can tick without it: a Creative player inside it
+            // far from here, or the one tick a server that is behind runs the hidden layer after the visible chunks
+            // went): wait for it. Going on would count the layers it cannot reach as done, and leave them standing.
+            hidden.scheduleTick(pos, this, 1);
+            return;
+        }
         MachineRights rights = rights(hidden, pos, partner);
         int layers = CAP + 1;                                  // at most one box's worth of layers in one tick
         do {
@@ -250,6 +258,18 @@ public class AreaShifterBlock extends Block implements EntityBlock {
         } while (delay == 0 && --layers > 0);
         leader.setNextStep(time + 2L * delay);
         hidden.scheduleTick(pos, this, 2 * delay);
+    }
+
+    /** Whether every visible chunk the box reaches into is loaded. */
+    private static boolean loaded(ServerLevel visible, BlockPos min, BlockPos max) {
+        for (int x = min.getX() >> 4; x <= max.getX() >> 4; x++) {
+            for (int z = min.getZ() >> 4; z <= max.getZ() >> 4; z++) {
+                if (!visible.hasChunk(x, z)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     /**

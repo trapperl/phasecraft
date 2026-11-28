@@ -8,6 +8,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -91,6 +92,12 @@ public class PhasePistonBlock extends DirectionalBlock {
         checkIfExtend(level, pos, state);
     }
 
+    /** Booked by an extend event that found the visible world in front of the powered piston not loaded. */
+    @Override
+    protected void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+        checkIfExtend(level, pos, state);
+    }
+
     /** The visible level this piston moves blocks in, or null if it is not in a hidden layer. */
     private static @Nullable ServerLevel visibleLevel(Level level) {
         if (!(level instanceof ServerLevel serverLevel) || !HiddenDimensions.isHidden(serverLevel.dimension())) {
@@ -112,7 +119,13 @@ public class PhasePistonBlock extends DirectionalBlock {
         Direction direction = state.getValue(FACING);
         boolean powered = hasNeighborSignal(level, pos, direction);
         if (powered && !state.getValue(EXTENDED)) {
-            if (visible.isLoaded(pos.relative(direction)) && PhasePistonMover.canMove(visible, pos, direction, true, rights(level, pos))) {
+            // Where the visible world is not there (the hidden layer can tick without it: a Creative player inside
+            // it far from here, or the one tick a server that is behind runs the hidden layer after the visible
+            // chunk went), whether it can push cannot be told yet: the event is booked all the same, and decides
+            // when it runs. Booked here, it keeps its place among the events of the pistons around it: on a flying
+            // machine the phase piston pushes the cargo before the engine's pistons carry it on. (Looking again a
+            // tick later instead, it came after them, already moved on, and the cargo was left behind.)
+            if (!visible.isLoaded(pos.relative(direction)) || PhasePistonMover.canMove(visible, pos, direction, true, rights(level, pos))) {
                 level.blockEvent(pos, this, EXTEND, direction.get3DDataValue());
             }
         } else if (!powered && state.getValue(EXTENDED)) {
@@ -148,7 +161,16 @@ public class PhasePistonBlock extends DirectionalBlock {
         Direction direction = state.getValue(FACING);
         boolean powered = hasNeighborSignal(level, pos, direction);
         if (event == EXTEND) {
-            if (!powered || !PhasePistonMover.moveBlocks(visible, pos, direction, true, rights(level, pos))) {
+            if (!powered) {
+                return false;
+            }
+            if (!visible.isLoaded(pos.relative(direction))) {
+                // Still no visible world there (the hidden chunk ticks on its own): nothing would tell the piston
+                // when there is, and it would stay in, powered. It looks again every tick.
+                level.scheduleTick(pos, this, 1);
+                return false;
+            }
+            if (!PhasePistonMover.moveBlocks(visible, pos, direction, true, rights(level, pos))) {
                 return false;
             }
             level.setBlock(pos, state.setValue(EXTENDED, true), Block.UPDATE_ALL);
