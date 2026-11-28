@@ -7,6 +7,6 @@
              "BlockLightEnginePhasedMixin", "ServerLevelPhaseBridgeMixin",
              "ComparatorBlockMixin", "LevelOutputSignalMixin", "TripWireBlockMixin", "TripWireBlockAccessor",
              "HopperBlockEntityMixin", "DispenserBlockMixin", "DropperBlockMixin", "ServerLevelSilenceMixin",
-             "BlockItemMixin", "PistonBaseBlockMixin"],
+             "BlockItemMixin", "PistonBaseBlockMixin", "EntityTypeHiddenSpawnMixin"],
   "injectors": {"defaultRequire": 1}
 }

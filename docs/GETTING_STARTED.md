@@ -6,6 +6,16 @@
 - Optional: **Sodium** works with PhaseCraft (tested with Sodium 0.9.3 for
   26.3, OpenGL): the overlay, editing mode, phased light and phase piston
   movement look the same as without it.
+- Optional: **Iris** (shader packs) works with PhaseCraft (tested with Iris
+  1.11.7 for 26.3, with and without a shader pack; the pack tested is MakeUp -
+  Ultra Fast 9.6a). Iris 1.11.7 needs Sodium 0.9.2: Sodium 0.9.3 refuses to
+  start with it. With a shader pack on, the overlay (also behind visible
+  blocks), the editing outline, the inside view and phased light are all
+  drawn, in the pack's own light: ghosts are shaded like the blocks around
+  them instead of glowing evenly, and the outline is paler. **Iris uses K
+  too** ("Toggle Shaders"): until you rebind one of the two (Options,
+  Controls: "Iris" or "PhaseCraft"), K goes into the hidden layer *and* turns
+  your shaders off.
 - Optional: **Lithium** works with PhaseCraft (tested with Lithium 0.26.4 for
   26.3). PhaseCraft turns off Lithium's hopper optimization
   (`mixin.block.hopper`), as phased hoppers need vanilla's hoppers, and its
@@ -122,6 +132,9 @@ water or lava (at the spot you aim at, or next to the hidden block you
 aim at), an empty one scoops hidden water or lava up. Fish buckets are
 refused. Hidden beds and respawn anchors are for show: you can place them,
 but not sleep in them, set your respawn point with them or charge them.
+No mob is ever born in the hidden layer: a hidden spawner stays idle, and
+spawn eggs, breeding and buckets of fish make nothing there, even from
+inside it (K). `/summon` still works there.
 
 Where you may not edit, you see it before you click: the outline turns
 **red** and the line under the label says why ("Redstone Lamp · Protected by
@@ -479,7 +492,7 @@ no migration path yet.
 | `./gradlew runGameTestLithium` | The same in-game tests with the Lithium mod loaded. |
 | `./gradlew runGameTestOpac` | The claim tests that need the Open Parties and Claims mod, with it loaded. |
 | `./gradlew restartTest` | Full restart: one server writes hidden cells and shuts down, a second server process loads the same world and checks them. |
-| `./gradlew clientTest` | A real game client, with OpenGL, with Vulkan, and with OpenGL plus Sodium: the overlay's pictures (screenshots in `build/run/clientGameTest*/screenshots`), keys and syncing, singleplayer and on a dedicated server, and editing mode driven by real key presses and clicks. |
+| `./gradlew clientTest` | A real game client, with OpenGL, with Vulkan, with OpenGL plus Sodium, and with Sodium, Iris and a shader pack on: the overlay's pictures (screenshots in `build/run/clientGameTest*/screenshots`), keys and syncing, singleplayer and on a dedicated server, and editing mode driven by real key presses and clicks. |
 | `./gradlew installToMinecraft` | `build`, then (only if everything passed) replaces PhaseCraft in your Minecraft mods folder. Restart Minecraft afterwards. |
 
 `installToMinecraft` reads your mods folder from `local.properties`

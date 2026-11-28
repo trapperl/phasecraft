@@ -33,9 +33,13 @@ blocks, with future vanilla-compatible cross-layer redstone and pistons.
   - Client behaviour (rendering, keys, syncing) goes in client GameTests
     (src/gametest/java/dev/phasecraft/test/client, listed under the
     `fabric-client-gametest` entrypoint). `./gradlew clientTest` runs them
-    with OpenGL, with Vulkan, and with OpenGL plus the Sodium mod (pinned
-    by `sodium_version` in gradle.properties; most players use it) on an
-    Xvfb virtual display. A client test that needs ordinary terrain makes
+    with OpenGL, with Vulkan, with OpenGL plus the Sodium mod (pinned
+    by `sodium_version` in gradle.properties; most players use it), and with
+    Sodium, the Iris mod and a shader pack on (`iris_version`,
+    `iris_sodium_version`, `shader_pack_version`; "Iris and shader packs" in
+    docs/ARCHITECTURE.md; a pipeline of PhaseCraft's own must be given to
+    `IrisCompat`, or a shader pack draws nothing for it) on an
+    Xvfb virtual display. Every client test starts with `IrisRun.prepare`. A client test that needs ordinary terrain makes
     its world with `setUseConsistentSettings(false)` (the usual test world
     is flat): InsideViewTerrainClientGameTest. `runGameTestLithium` (part of build) runs the
     server GameTests with the Lithium mod (`lithium_version`); PhaseCraft
@@ -250,6 +254,10 @@ transparent layer, not a separate world.
    person, 2026-11-27: "no beds in editing mode"; a security review found a
    hidden bed set the respawn point in the visible world at its spot, and
    anchors blew up hidden builds). Placing them stays allowed.
+5. No mob is born in the hidden layer (the person, 2026-11-27: "should not
+   allow spawning in the underworld"; HiddenSpawningGameTests): only saves,
+   commands, conversions and dimension travel bring mobs there (the agent's
+   defaults, open to change).
 
 Decided by the person: phase pistons show no visible arm; missing blocks
 are handled as vanilla does; Survival players may see and edit while the

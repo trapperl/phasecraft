@@ -9,6 +9,8 @@ import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.renderpearl.api.textures.AddressMode;
 import com.mojang.renderpearl.api.textures.FilterMode;
 import dev.phasecraft.PhaseCraft;
+import dev.phasecraft.client.compat.IrisCompat;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.renderer.BindGroupLayouts;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.oit.OitPipelineSet;
@@ -95,6 +97,16 @@ final class GhostRenderTypes {
                     .createRenderSetup());
 
     private GhostRenderTypes() {}
+
+    /**
+     * With the Iris mod, tells it how to draw PhaseCraft's own pipelines while a shader pack is on (see
+     * {@link IrisCompat}). {@link #inFront()} is vanilla's and needs nothing.
+     */
+    static void registerWithIris() {
+        if (FabricLoader.getInstance().isModLoaded("iris")) {
+            IrisCompat.drawAsTranslucentBlocks(SEE_THROUGH_PIPELINE, INSIDE_PIPELINE);
+        }
+    }
 
     static RenderType inFront() {
         return RenderTypes.translucentMovingBlock();

@@ -43,6 +43,7 @@ public class InsideViewTerrainClientGameTest implements FabricClientGameTest {
 
     @Override
     public void runTest(ClientGameTestContext context) {
+        IrisRun.prepare(context);
         // Not the test worlds' usual settings: those make a flat world.
         try (TestSingleplayerContext world = context.worldBuilder().setUseConsistentSettings(false).adjustSettings(state -> {
             state.setWorldType(state.getNormalPresetList().stream()
@@ -163,6 +164,7 @@ public class InsideViewTerrainClientGameTest implements FabricClientGameTest {
             assertTrue(held > 0.9 * costs.stream().mapToInt(Cost::ghosts).sum(), "the client holds " + held + " of what was sent");
             assertTrue(vertices > 0, "nothing of the terrain is drawn inside");
 
+            IrisRun.checkPack(context, "inside the hidden layer, over the land");
             BufferedImage shown = InsideViewClientGameTest.screenshot(context, "inside_terrain_shown");
             context.getInput().pressKey(PhaseCraftClient.TOGGLE_OVERLAY);
             context.waitTicks(3);

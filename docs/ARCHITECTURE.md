@@ -258,7 +258,16 @@ not placed in the hidden layer, so it never collides with hidden machinery.
   (destroy speed -1: bedrock, a moving piston...).
 - Removed while holding a block, it puts it back the same way, or, if it
   cannot, drops it there as an item, with its contents: never lost, never
-  doubled.
+  doubled. The drop is the block's loot, as if broken with no tool, and then
+  whatever its block entity lets go of when it is removed (vanilla's
+  `preRemoveSideEffects`, run on a block entity made from the held data: a
+  container's items, a lectern's book, a jukebox's record, a campfire's
+  food, a furnace's experience). Before 2026-11-27 only containers were
+  emptied, and a held lectern lost its book.
+- A held block that cannot stand in its spot any more (the neighbours turn
+  it into air: a sign whose floor or wall is gone) is not put back but
+  dropped there the same way, as it would drop the moment it was placed, and
+  what stands in the spot is left alone. Before, it was silently lost.
 - `PhaseShifterGameTests`, and `PhaseLayerRestartPhases` (a held block, and
   a held chest with its items, survive a restart). Examples station 18:
   four bricks of a wall vanish into a doorway; station 21: a chest in a
@@ -339,7 +348,12 @@ default).
   pops, as it would off a pushed block. Putting back breaks what is in the
   way and lifts a mob in a spot onto the block (a pig under the hut's chest
   ends up standing on the chest); where it must wait, the layers above wait
-  for it.
+  for it. Within a layer, what can stand goes back first and what hangs on
+  it (a sign on a wall of the same layer) after it, waiting with it if it
+  must wait; plain order put the sign back first, and it was gone. Still
+  open: a sign hanging under a block of the layer above goes back before its
+  ceiling, and drops as an item; and when a layer is taken, a sign whose wall
+  is taken before it pops off as an item, as off a pushed block.
 - The leader (the corner whose position sorts first) holds the blocks
   (`AreaShifterBlockEntity`, saved by offset) and runs the move; the other
   corner only remembers its leader. Removing the leader puts everything back
@@ -1012,7 +1026,15 @@ message and then the block's mining time by vanilla's own measure
 (`getDestroyProgress` for this player and tool, with vanilla's 70%
 allowance for lag), drops go to the visible world with vanilla's loot and
 tool rules, the tool wears, stats and exhaustion count; middle click only
-selects what is carried. The client mines at vanilla's speed with vanilla's
+selects what is carried. What a Survival edit spills in the hidden layer
+besides (a mined chest's contents, the torch that stood on a mined block,
+the record a clicked jukebox gives back) is moved to the visible world at
+the same spot too (`bringingOutWhatSpills`: the item entities that appear
+within two blocks while the break or the click runs): a Survival player
+cannot go in to fetch them, so there they were lost. Not moved: what drops
+later (the rest of a hidden sugar cane column, a campfire's cooked food) and
+experience orbs (a mined furnace's), which stay in the hidden layer; and
+Creative edits, which spill there as before. The client mines at vanilla's speed with vanilla's
 cracks. Recipes are data (`data/phasecraft/recipe`), the person's starting
 point for balancing; each unlocks in the recipe book from amethyst shards
 (Phase Block) or Phase Blocks (the rest).
@@ -1033,8 +1055,22 @@ point for balancing; each unlocks in the recipe book from amethyst shards
 - **Portals in the hidden layer do nothing** (`EntityPortalMixin`, on
   `Entity.setAsInsidePortal`, which every portal block goes through). They
   would lead into the real Nether or End and build a visible portal there.
-- **No mobs spawn there naturally:** the hidden dimensions use the void
-  biome, which has no mob spawns.
+- **No mob is born in the hidden layer** (the person, 2026-11-27: "should
+  not allow spawning in the underworld"). `EntityTypeHiddenSpawnMixin`, on
+  `EntityType.create(Level, EntitySpawnRequest)`, which every new entity goes
+  through with the reason it is made, gives nothing back for a mob in a
+  hidden dimension (`HiddenLayerGuard.mayBeBorn`): no spawners, trial
+  spawners, spawn eggs (also used from inside), dispensers, breeding,
+  buckets, raids or patrols, golems built from blocks. A hidden mob could
+  not be seen from the visible world, would keep its hidden chunk loaded
+  and ticking, and could stand on hidden plates. Let through (the agent's
+  defaults, open to change): mobs loaded from a save, put there by a command
+  (/summon, the tests), a mob turning into another (a zombie drowning) and
+  dimension travel; and anything that is not a mob (armor stands, minecarts,
+  items, falling blocks). Natural spawning had nothing to spawn anyway: the
+  hidden dimensions use the void biome. A hidden spawner just never spawns;
+  a dispenser with a spawn egg uses the egg up, as vanilla's does when the
+  mob cannot be made.
 
 ### Decision: real dimension, not a block list (decided 2026-11-22)
 
@@ -1630,7 +1666,9 @@ All of these run on every `./gradlew build`, locally and in CI:
   - keeping out: a player switched to Survival inside the hidden layer is
     moved out at the same spot (lifted out of visible blocks if needed);
     Creative and Spectator players stay; no respawn point can be set there; a
-    mob standing in a hidden Nether portal stays put; hidden entities tick
+    mob standing in a hidden Nether portal stays put; no mob is born there
+    (a hidden spawner beside a player inside, a spawn egg used inside), while
+    commands and saves still bring them; hidden entities tick
     where visible ones do (hidden sand falls and lands);
   - the hidden 2x2 door opens and closes from one visible lever (and jams
     half-closed if the hold repeater is removed);
@@ -1653,6 +1691,17 @@ All of these run on every `./gradlew build`, locally and in CI:
     player and the GameTest server keep it on; middle
     click never makes items; the recipes craft what they should (each
     shown to fail with its code removed);
+  - Nothing doubled, nothing lost (`ItemConservationGameTests`, counting
+    items in both layers): a Survival player mining a hidden chest gets its
+    contents, and the torch off a mined block, and a hidden jukebox's
+    record, in the visible world; Ctrl + pick copies no contents; mining a
+    shifter that holds a chest gives the chest back, once; a held sign with
+    nothing to stand on drops; an area shifter puts a wall back before its
+    sign; a held lectern dropped drops its book (these shown to fail with
+    the fix removed); an explosion in the hidden layer, two shifters on one
+    spot, a line shifter removed mid-move, an open chest taken away, a
+    phased hopper or dropper working on a chest that a shifter takes
+    meanwhile, a phase piston against a chest: all add up;
   - the overlay's per-chunk geometry cache draws what drawing every ghost
     directly draws, vertex for vertex (tints, random offsets, model-less
     blocks, fluids), after a change and after a change across a chunk
@@ -1691,7 +1740,8 @@ All of these run on every `./gradlew build`, locally and in CI:
 - **JUnit** also checks the update queue: work added while a batch runs waits
   for the next tick.
 - **Client GameTests** (`./gradlew clientTest`, a real game client, run
-  with OpenGL, with Vulkan, and with OpenGL plus Sodium, software-rendered
+  with OpenGL, with Vulkan, with OpenGL plus Sodium, and with Sodium, Iris
+  and a shader pack on, software-rendered
   on a virtual display; a test-only mixin pins the backend so neither
   silently falls back). Sodium replaces Minecraft's chunk renderer and is in
   most players' mod lists; the Sodium run loads it (from Modrinth's Maven,
@@ -1702,6 +1752,41 @@ All of these run on every `./gradlew build`, locally and in CI:
   `LevelRenderEvents`, phased light goes through vanilla's light engine,
   which Sodium reads, and the piston animation uses vanilla moving-piston
   block entities.
+- **Iris and shader packs** (`./gradlew runClientGameTestIrisShaders`, part
+  of `clientTest`; `./gradlew runClientGameTestIris` is the same with
+  shaders off, run by name). Iris (pinned by `iris_version`) comes with the
+  Sodium it works with (`iris_sodium_version`): the newest Iris for 26.3,
+  1.11.7, needs Sodium 0.9.2, and Sodium 0.9.3 refuses to start with any Iris
+  up to 1.12.0. The shader pack is MakeUp - Ultra Fast (`shader_pack_version`;
+  LGPL-3.0-or-later), fetched by Gradle into the run's folder under `build/`,
+  never committed; it runs as it comes except for its antialiasing over time
+  and its drifting clouds, which would make two screenshots of one view
+  differ. What was found, and what is done about it:
+  - With shaders off, Iris changes nothing: the pictures are the Sodium
+    run's.
+  - With a pack on, Iris draws everything with the pack's programs and picks
+    the program by render pipeline. It did not know PhaseCraft's two own
+    pipelines (`GhostRenderTypes`: the see-through pass and the inside view)
+    and drew nothing for them: no hidden blocks behind visible ones, no
+    visible world from inside the hidden layer; and now and then black wedges
+    across a washed-out screen. `dev.phasecraft.client.compat.IrisCompat`
+    (compiled against Iris, loaded only with it, never shipped) tells Iris,
+    through its API, to draw them with the pack's translucent blocks program,
+    the one the overlay's other pass (vanilla's translucent moving blocks) gets
+    anyway. `OverlayClientGameTest`, `InsideViewClientGameTest` and
+    `InsideViewTerrainClientGameTest` fail in this run without it.
+  - What a pack changes and PhaseCraft does not fight: ghosts and the inside
+    view are lit and shaded by the pack like any block (a ghost on a wall's
+    shaded side is dim, where without a pack it glows evenly), the editing
+    outline is paler, and phased light has the pack's colour. The tests keep
+    their checks that each thing is drawn and use the pack's own thresholds
+    where vanilla's colours were assumed (`IrisRun.threshold`).
+  - Iris's "Toggle Shaders" key is K, PhaseCraft's key into the hidden layer.
+    Both act on one press. Not changed (the key is the person's to choose);
+    GETTING_STARTED says to rebind one. The test runs take Iris's keys away
+    (`IrisRun.prepare`) and check before their pictures that the pack is
+    still on (`IrisRun.checkPack`): the first runs' "inside" pictures were
+    taken with the shaders switched off by the K that went in.
 - **Open Parties and Claims** (`./gradlew runGameTestOpac`, part of
   `build`): the OPAC claim tests (`OpacClaimChecks`) with the real mod; see
   "Claims hold for the hidden layer".
