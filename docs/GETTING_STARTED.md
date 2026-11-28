@@ -19,7 +19,10 @@
   (`mixin.block.hopper`), as phased hoppers need vanilla's hoppers, and its
   redstone wire optimization (`mixin.block.redstone_wire`), which kept a
   visible wire beside a phase port from getting the port's power; the rest of
-  Lithium stays on.
+  Lithium stays on. So with PhaseCraft installed, redstone wire runs at
+  vanilla speed even with Lithium: a big wire-heavy build may cost a little
+  more server time than with Lithium alone (the person, 2026-11-27: "we can
+  turn off lithium's speed up").
 - Java Development Kit 25 (for local builds)
 - Git (Gradle 9.8.2 is fetched by the committed wrapper, `./gradlew`)
 - Visual Studio Code with Java and Gradle extensions, or IntelliJ IDEA
@@ -95,6 +98,13 @@ machinery inside a wall or under the floor still shows.
 | --- | --- |
 | **H** | Show or hide the overlay |
 | **]** / **[** | More opaque / more see-through (15% to 100%, in steps of 10) |
+
+Every PhaseCraft key can be changed under Options, Controls, "PhaseCraft".
+Popular mods use most keys between them, so some defaults are bound to share
+a key with another mod; rebind either one. Known: **J** (editing mode) is
+JourneyMap's full-screen map and **[** its minimap type; **H** hides Simple
+Voice Chat's icons. The key into the hidden layer is **;** because Iris uses
+K for "Toggle Shaders".
 
 The setting is kept in `config/phasecraft-client.properties`. Adventure
 players, and Survival players when the game rule is off (as on a dedicated
