@@ -581,9 +581,81 @@ python3 tools/examples.py --print-commands > build/examples-commands.txt
 PHASECRAFT_EXAMPLES_COMMANDS=$PWD/build/examples-commands.txt ./gradlew runClientGameTest
 ```
 
-The trailer is made the same way: `python3 tools/trailer.py` (about 10 minutes;
-needs ffmpeg and Pillow) flies a scripted camera through the stations, the game
-renders it a frame per game tick with the world frozen in between (`/tick
-freeze`, `/tick step 1`), and the tool adds the title, captions and fades and
-writes `build/trailer/phasecraft-trailer.mp4`. `--edit` re-edits the frames
-already rendered. Change the shots in `shots()` in the tool.
+### The trailer
+
+`python3 tools/trailer.py` (needs ffmpeg and Pillow) renders the trailer's
+pictures and then edits them:
+
+- **The setting.** Not the flat examples world: a default world from a fixed
+  seed (`SEED` in the tool), with the hero builds set down in two scenic spots
+  (a meadow valley between snowy peaks, a plain by the sea; `SITES`). Each
+  build's commands are `tools/examples.py`'s, moved to its site; the ground
+  there is levelled first and sloped into the land around it. `--scout X0 Z0
+  X1 Z1` writes the land's heights (`build/trailer/heights.txt`) for choosing
+  a new site.
+- **The render.** The game draws every frame itself (TrailerClientGameTest, in
+  a run of its own, `runClientGameTestTrailer`: Sodium, Iris and a shader
+  pack, on a 1920x1080 virtual display, never on your screen). 1920x1080, 60
+  frames a second: the world is frozen (`/tick freeze`) and stepped a game
+  tick every third frame, and each frame is drawn at its own place between
+  two ticks, so the camera, carts and piston arms move every frame (a block a
+  shifter takes is there or gone, as in the game). The camera follows curves
+  through key points (`Path`, `orbit`, `dolly_zoom`), with its own field of
+  view per frame.
+- **The shader pack** is [Complementary Reimagined](https://modrinth.com/shader/complementary-reimagined)
+  r5.9.3 (`trailer_pack_version` in gradle.properties), fetched from Modrinth
+  by Gradle into the run's folder under `build/`; never committed, shipped or
+  changed. Its licence, the Complementary License Agreement 1.7 (in the zip:
+  `License.txt`), grants its use "for content creation" (1.1.b), which a
+  published video is; credit it where the trailer is published. Its settings
+  are the tool's `PACK_OPTIONS` (higher qualities; the sun's path leans north
+  so the builds' fronts are lit).
+- **The hidden layer.** Shots marked `hidden=True` are rendered twice from
+  the same camera, the second time with the overlay on, into `frames_hidden/`
+  with the same frame numbers, so the edit can wipe from one to the other.
+- **Graphics card or not.** Under WSL with a graphics card the run uses it
+  through Mesa's D3D12 driver (`GALLIUM_DRIVER=d3d12`; with two cards,
+  `PHASECRAFT_TRAILER_GPU=<part of the card's name>`, default NVIDIA), still on
+  the virtual display: about a tenth of a second to draw a frame, about 0.4 s
+  a frame all told, 35 minutes for the whole trailer. Elsewhere, or with
+  `--software`, it is Mesa's software renderer (12 threads unless
+  `LP_NUM_THREADS` says otherwise), which takes many times longer. The run is
+  niced. That driver sometimes loses the card in the middle of a run; the tool
+  then renders the shots with frames missing again.
+- **What it writes** (`build/trailer/`): `frames/NNNNN.png`,
+  `frames_hidden/NNNNN.png`, `timeline.json` (frames a second, size, and for
+  each shot its name, caption, first frame, length, the frame its action
+  happens at, and whether it has hidden frames), and `contact.png`, a frame
+  of every shot: look at it before publishing anything.
+- **The edit** is `tools/trailer_edit.py`'s (`edit(folder)`: grade, titles,
+  music, cuts); without that file the tool writes a plain cut with captions,
+  no sound, to `build/trailer/phasecraft-trailer.mp4`.
+
+`--shots iris,tower` renders only those shots again (their frames keep their
+numbers), `--step 6` only every sixth frame (a quick look at framing and
+timing), `--no-edit` stops after the render, `--edit` only edits again. Change
+the shots in `shots()` in the tool.
+
+The edit is `tools/trailer_edit.py` (needs ffmpeg, Pillow, numpy and scipy;
+`python3 tools/trailer_edit.py build/trailer` runs it alone, in a few minutes).
+It reads `frames/`, `timeline.json` (each shot's frames, caption and the frame
+where its action happens) and, for shots marked `hidden`, `frames_hidden/`
+(the same frames with the machinery shown), and cuts them on the beat: a hook,
+the title, a montage, a hit and silence, the reveal (a scanner line wipes to
+the hidden frames), the end card. It grades the picture, letterboxes it, and
+writes `edit-contact.png` (the titles and transitions on one page) and
+`edit-sync.txt` (each cut and action against the sound).
+
+- The music is original: `synth_music` in the tool makes it from nothing but
+  numpy and scipy (no samples, nobody else's track), 120 BPM in D minor, with
+  hits on the cuts; it is written to `build/trailer/music.wav`. So the
+  trailer can be published with its sound.
+- `--music track.wav` uses a track of yours instead (any format ffmpeg reads):
+  the tempo and first beat are detected, or give `--bpm`; `--sfx` adds the
+  tool's own impacts and risers on top. Check that track's licence yourself.
+- The font is Montserrat, under the SIL Open Font License 1.1, fetched into
+  `build/trailer-fonts/` (with its `OFL.txt`) from its own repository at a
+  pinned commit and checked by hash; it is not in this repository. With no
+  network the tool falls back to DejaVu Sans.
+- The graphics use nothing of Mojang's (no logo, no font, no texture), and
+  the end card carries the "not an official Minecraft product" line.

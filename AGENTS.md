@@ -339,7 +339,7 @@ line shifters powered by wire on top of them). Liked (the person: "I like your s
 too"): a shifter display (pixel wall; done, station 33: a creeper's face drawn
 on a lime wall, tools/gen_pixels.py), a track built ahead of a minecart (done, station 35: a
 chasm crossed on rails there only around the cart; tools/gen_track.py),
-a shifting maze, a light-up dance floor (done, station 31: hidden plates on
+a shifting maze (dropped, the person, 2026-11-27: annoying to build and to play at this stage), a light-up dance floor (done, station 31: hidden plates on
 phase blocks, ports under the lamps), a treasure reveal (done, station 34: an
 offering in a barrel brings it out; tools/gen_treasure.py), a combination
 lock (done, station 32: on, off, on, on opens a door that looks like the wall;
@@ -350,6 +350,15 @@ Replay Mod, the person chose a camera scripted by the agent instead):
 tools/trailer.py scripts a camera through the stations, TrailerClientGameTest
 renders it frame by frame with the world frozen and stepped a tick a frame,
 and the tool titles, captions and encodes it to build/trailer/*.mp4. No sound.
+Second cut (the person, 2026-11-27: a much flashier one): the render side is
+tools/trailer.py (the hero builds set in ordinary land from a fixed seed, under
+Iris and the Complementary Reimagined shader pack, 1920x1080 at 60 frames a
+second, curved camera moves, reveal shots rendered a second time with the
+overlay on; its own run, runClientGameTestTrailer, not part of clientTest; on
+the graphics card under WSL where there is one), the edit side
+tools/trailer_edit.py (grade, titles, music, cuts) from build/trailer/'s
+frames and timeline.json. "The trailer" in docs/GETTING_STARTED.md. A render
+is one game at a time, niced: the person may be playing on the machine.
 
 ## Building tools (tools/mcb)
 The person (2026-11-24): "build whatever harness and tools you want for
