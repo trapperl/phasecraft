@@ -270,7 +270,7 @@ public class OpacClaimChecks {
                     // The first block goes the moment the power arrives.
                     helper.assertTrue(hidden.level().getBlockEntity(shifter) instanceof LineShifterBlockEntity entity && entity.holding() == 1,
                             "the owner's line shifter took nothing when powered: before " + before + "; after " + lineShifterState(level, hidden, shifter, line)
-                                    + " visibleLoaded=" + level.isLoaded(line[0]) + "/" + level.isLoaded(line[1]) + " TRACE " + LineShifterBlock.TRACE);
+                                    + " visibleLoaded=" + level.isLoaded(line[0]) + "/" + level.isLoaded(line[1]));
                 })
                 // Rare under a busy build (once in many runs): the message says which part did not happen.
                 .thenWaitUntil(() -> helper.assertTrue(hidden.level().getBlockEntity(shifter) instanceof LineShifterBlockEntity entity

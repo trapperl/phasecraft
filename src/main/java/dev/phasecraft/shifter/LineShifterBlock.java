@@ -57,8 +57,6 @@ import org.jspecify.annotations.Nullable;
 public class LineShifterBlock extends Block implements EntityBlock {
     public static final EnumProperty<Direction> FACING = BlockStateProperties.FACING;
     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
-    /** TEMPORARY trace for the OPAC line shifter test's rare stall; remove once found. */
-    public static String TRACE = "", TRACE_LINE = "", TRACE_STEP = "";
     public static final IntegerProperty DELAY = BlockStateProperties.DELAY;
     private static final int DELAY_MAX = 4;
 
@@ -148,10 +146,7 @@ public class LineShifterBlock extends Block implements EntityBlock {
         ServerLevel visible = Shifting.visibleOf(hidden);
         entity.setTodo(powered && visible != null
                 ? line(visible, pos, now.getValue(FACING), entity, MachineRights.of(hidden, pos)) : 0);
-        TRACE = "update: powered=" + powered + " visible=" + (visible != null) + " todo=" + entity.todo() + " nextStep=" + entity.nextStep()
-                + " time=" + hidden.getGameTime() + " facing=" + now.getValue(FACING) + " [" + TRACE_LINE + "]";
         step(hidden, pos, now, entity);
-        TRACE += " -> holding=" + entity.holding() + " todo=" + entity.todo() + " [" + TRACE_STEP + "]";
     }
 
     /**
@@ -163,32 +158,19 @@ public class LineShifterBlock extends Block implements EntityBlock {
     static int line(ServerLevel visible, BlockPos pos, Direction facing, LineShifterBlockEntity entity, MachineRights rights) {
         int count = entity.holding();
         int far = 0;
-        TRACE_LINE = "";
         for (int d = 1; d <= LineShifterBlockEntity.MAX + 1; d++) {
             if (d <= LineShifterBlockEntity.MAX && entity.heldAt(d) != null) {
-                TRACE_LINE += " d" + d + " held";
                 break;
             }
             BlockPos at = pos.relative(facing, d);
             if (!visible.isLoaded(at)) {
-                TRACE_LINE += " d" + d + " notLoaded";
                 return 0;
             }
             Shifting.Reaction reaction = Shifting.reaction(visible, at, visible.getBlockState(at));
             if (reaction == Shifting.Reaction.NONE || reaction == Shifting.Reaction.FRAGILE) {
-                TRACE_LINE += " d" + d + " " + reaction;
                 break;
             }
-            if (reaction == Shifting.Reaction.IMMOVABLE) {
-                TRACE_LINE += " d" + d + " immovable";
-                return 0;
-            }
-            if (!rights.mayBreak(visible, at)) {
-                TRACE_LINE += " d" + d + " refused";
-                return 0;
-            }
-            if (++count > LineShifterBlockEntity.MAX) {
-                TRACE_LINE += " d" + d + " tooMany";
+            if (reaction == Shifting.Reaction.IMMOVABLE || !rights.mayBreak(visible, at) || ++count > LineShifterBlockEntity.MAX) {
                 return 0;
             }
             far = d;
@@ -203,7 +185,6 @@ public class LineShifterBlock extends Block implements EntityBlock {
             return;
         }
         boolean taking = state.getValue(POWERED);
-        TRACE_STEP = "taking=" + taking + " todo=" + entity.todo() + " next=" + entity.nextStep() + " time=" + hidden.getGameTime();
         if (taking ? entity.todo() == 0 : entity.nearestHeld() == 0) {
             return;
         }
