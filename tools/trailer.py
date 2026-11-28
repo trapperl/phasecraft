@@ -7,6 +7,7 @@ virtual display; on a graphics card where there is one under WSL, else in softwa
     python3 tools/trailer.py                  # script, render, edit: build/trailer/
     python3 tools/trailer.py --shots iris,tower   # render only these shots again (their frames keep their numbers)
     python3 tools/trailer.py --step 6         # a quick look: every 6th frame only
+    python3 tools/trailer.py --no-edit        # render only
     python3 tools/trailer.py --edit           # only edit again, from the frames already rendered
     python3 tools/trailer.py --software       # never the graphics card
     python3 tools/trailer.py --scout X0 Z0 X1 Z1   # the land's heights there, to choose where builds go (heights.txt)
