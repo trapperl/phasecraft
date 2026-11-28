@@ -166,19 +166,29 @@ public class LineShifterBlock extends Block implements EntityBlock {
         TRACE_LINE = "";
         for (int d = 1; d <= LineShifterBlockEntity.MAX + 1; d++) {
             if (d <= LineShifterBlockEntity.MAX && entity.heldAt(d) != null) {
+                TRACE_LINE += " d" + d + " held";
                 break;
             }
             BlockPos at = pos.relative(facing, d);
-            TRACE_LINE += " d" + d + " loaded=" + visible.isLoaded(at) + " " + visible.getBlockState(at).getBlock()
-                    + " " + Shifting.reaction(visible, at, visible.getBlockState(at)) + " may=" + rights.mayBreak(visible, at);
             if (!visible.isLoaded(at)) {
+                TRACE_LINE += " d" + d + " notLoaded";
                 return 0;
             }
             Shifting.Reaction reaction = Shifting.reaction(visible, at, visible.getBlockState(at));
             if (reaction == Shifting.Reaction.NONE || reaction == Shifting.Reaction.FRAGILE) {
+                TRACE_LINE += " d" + d + " " + reaction;
                 break;
             }
-            if (reaction == Shifting.Reaction.IMMOVABLE || !rights.mayBreak(visible, at) || ++count > LineShifterBlockEntity.MAX) {
+            if (reaction == Shifting.Reaction.IMMOVABLE) {
+                TRACE_LINE += " d" + d + " immovable";
+                return 0;
+            }
+            if (!rights.mayBreak(visible, at)) {
+                TRACE_LINE += " d" + d + " refused";
+                return 0;
+            }
+            if (++count > LineShifterBlockEntity.MAX) {
+                TRACE_LINE += " d" + d + " tooMany";
                 return 0;
             }
             far = d;
