@@ -68,7 +68,6 @@ SITES = {
     "tower": (-520, 87, -250),
     "falls": (-470, 100, -290),
     "bridge": (-560, 91, -190),
-    "stairs": (-615, 93, -195),
     "iris": (-455, 98, -235),
     "ocean": (-600, 86, -90),
     # a plain by the sea
@@ -78,6 +77,7 @@ SITES = {
 }
 LATE = {"ocean": lambda: ex.ocean_corner_commands()}      # sent a second after the build (see examples.py)
 PAD_MARGIN = 4
+PAD_NORTH = {"falls": 14, "cottage": 12}     # more level ground in front of a build, where its camera flies low
 PAD_SKIRT = 10
 
 TRIPLE = r"(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)"
@@ -129,7 +129,8 @@ class Site:
         x, y, z = SITES[name]
         self.offset = (x - (shown_lo[0] + shown_hi[0]) // 2, y - FLAT_GROUND, z - (shown_lo[2] + shown_hi[2]) // 2)
         self.flat = flat
-        self.pad = (shown_lo[0] - PAD_MARGIN, shown_lo[2] - PAD_MARGIN, shown_hi[0] + PAD_MARGIN, shown_hi[2] + PAD_MARGIN)
+        self.pad = (shown_lo[0] - PAD_MARGIN, shown_lo[2] - PAD_MARGIN - PAD_NORTH.get(name, 0),
+                    shown_hi[0] + PAD_MARGIN, shown_hi[2] + PAD_MARGIN)
 
     def at(self, x, y, z):
         """A flat-world position, where this build stands."""
@@ -257,10 +258,10 @@ def shots():
              {30: [cottage_on], 70: [cottage_off]}, action=30, hidden=True, again_wait=60),
         Shot("iris", "A round door that opens from the middle", "iris", 5.0,
              Path([(221.0, -52.0, -15.0), (225.5, -51.5, -11.5), (228.5, -51.2, -7.5)], [iris_door], (62, 52)),
-             before=[iris_on], wait=25, action=25, after=[iris_off], settle=80),
+             before=[iris_on], wait=25, action=20, after=[iris_off], settle=80),
         Shot("falls", "A waterfall that parts", "falls", 5.0,
-             orbit((262.5, -55.0, 0.0), 24.0, 3.0, -14, 8, look=(262.5, -54.0, 0.0), fov=(60, 54), radius_to=18.0, height_to=1.0),
-             {15: [falls_on]}, action=30, after=[falls_off], settle=120, time=9000),
+             orbit((262.5, -55.0, 0.0), 21.0, 4.0, -14, 8, look=(262.5, -54.0, 0.0), fov=(62, 56), radius_to=17.0, height_to=2.0),
+             before=[falls_on], wait=35, action=30, after=[falls_off], settle=120, time=9000),
         Shot("mountain", "A door into the mountain", "mountain", 6.0,
              Path([(309.0, -52.0, -30.0), (317.0, -56.0, -12.0), (321.5, -57.5, 2.0), (321.5, -57.5, 7.0)],
                   [(321.5, -52.0, 13.0), (321.5, -56.0, 13.0), (321.5, -56.5, 20.0)], (70, 58)),
