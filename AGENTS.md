@@ -150,7 +150,8 @@ transparent layer, not a separate world.
       2026-11-24); instant, no effect (the agent's default,
       open to change). Putting back breaks a visible block in the spot
       (the person, 2026-11-24: "it should break the main world block";
-      done), silently; it waits for unbreakable blocks (the agent's
+      done), silently, as by hand: a block that needs a tool drops nothing
+      but its contents (the person, 2026-11-27: "it just gets broken"); it waits for unbreakable blocks (the agent's
       default), and lifts a mob or player in the spot to stand on the
       block, as a piston pushing up would (the person, 2026-11-26, over
       waiting: the hole in the ocean left a pillar standing when someone

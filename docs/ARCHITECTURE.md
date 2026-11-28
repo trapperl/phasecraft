@@ -155,8 +155,11 @@ not placed in the hidden layer, so it never collides with hidden machinery.
   alone if that half is gone.
 - Putting back breaks a visible block that has taken the spot meanwhile
   (the person, 2026-11-24: "I think it should break the main world block"):
-  `destroyBlock` with drops, as if broken with no tool, contents spilled,
-  silenced like a phased dispenser (`PhasedItems.silently`). A mob or player
+  `destroyBlock` as if broken by hand, contents spilled, silenced like a
+  phased dispenser (`PhasedItems.silently`). A block that needs a tool to
+  drop anything (stone, obsidian, ores) drops nothing but what it holds (the
+  person, 2026-11-27: "it just gets broken"; before, a shifter mined them
+  for free). A mob or player
   in the spot (not a spectator; a rider goes up with its vehicle) is lifted
   to stand on the block, as a piston pushing up would move them (the person, 2026-11-26, chose this over waiting: the hole in the
   ocean left a filler pillar in the sea when someone was in the shaft as it
