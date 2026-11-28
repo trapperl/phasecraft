@@ -61,6 +61,7 @@ public class OverlayClientGameTest implements FabricClientGameTest {
 
     @Override
     public void runTest(ClientGameTestContext context) {
+        IrisRun.prepare(context);
         String mojang = NoMojangTrafficGameTests.problem();
         assertTrue(mojang == null, "test client would contact Mojang: " + mojang);
         // The Sodium run (build.gradle) must really have Sodium, and the others must not.
@@ -103,6 +104,7 @@ public class OverlayClientGameTest implements FabricClientGameTest {
             context.waitTicks(5);
 
             // Rendering: on at 45%, off, on at 65%.
+            IrisRun.checkPack(context, "before the overlay's pictures");
             BufferedImage on45 = screenshot(context, "overlay_on_45");
             context.getInput().pressKey(PhaseCraftClient.TOGGLE_OVERLAY);
             context.waitTicks(2);
@@ -128,19 +130,21 @@ public class OverlayClientGameTest implements FabricClientGameTest {
             assertTrue(goldTint65 > goldTint45 + 15, "higher opacity not stronger: " + goldTint45 + " -> " + goldTint65);
             // Lapis over the visible stone at the same position: bluer.
             double stoneTint = stone.mean(on45, Channel.BLUE_MINUS_RED) - stone.mean(off, Channel.BLUE_MINUS_RED);
-            assertTrue(stoneTint > 25, "lapis ghost on the visible stone not drawn: tint " + stoneTint + " at " + stone);
+            // (With a shader pack the stone's side is in the pack's shade, and so is the ghost on it.)
+            assertTrue(stoneTint > IrisRun.threshold(25, 8), "lapis ghost on the visible stone not drawn: tint " + stoneTint + " at " + stone);
             // Redstone block inside the grass: its top shows on the grass, redder.
             double buriedTint = buried.mean(on45, Channel.RED_MINUS_GREEN) - buried.mean(off, Channel.RED_MINUS_GREEN);
             assertTrue(buriedTint > 25, "buried redstone ghost not drawn: tint " + buriedTint + " at " + buried);
             // Emerald hidden behind a visible stone block: shows through it, faintly.
             double throughTint = wall.mean(on45, Channel.GREEN_MINUS_RED) - wall.mean(off, Channel.GREEN_MINUS_RED);
             assertTrue(throughTint > 10, "emerald ghost behind the wall does not show through: tint " + throughTint + " at " + wall);
-            assertTrue(throughTint < stoneTint, "see-through ghost as strong as one in front: " + throughTint + " vs " + stoneTint);
+            assertTrue(IrisRun.SHADER_PACK || throughTint < stoneTint, "see-through ghost as strong as one in front: " + throughTint + " vs " + stoneTint);
             // Overlay off: the visible stone blocks look like plain stone.
             double offStone = stone.mean(off, Channel.BLUE_MINUS_RED);
-            assertTrue(Math.abs(offStone) < 12, "stone not grey with the overlay off: " + offStone);
+            // (A shader pack's shade is blue.)
+            assertTrue(Math.abs(offStone) < IrisRun.threshold(12, 30), "stone not grey with the overlay off: " + offStone);
             double offWall = wall.mean(off, Channel.GREEN_MINUS_RED);
-            assertTrue(Math.abs(offWall) < 12, "wall not grey with the overlay off: " + offWall);
+            assertTrue(Math.abs(offWall) < IrisRun.threshold(12, 30), "wall not grey with the overlay off: " + offWall);
 
             // A chest (drawn by a special renderer, so shown as its shape), up in the sky.
             Box chest = box(on45, CHEST);

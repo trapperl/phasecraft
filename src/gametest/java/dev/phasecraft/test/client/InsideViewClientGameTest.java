@@ -48,6 +48,7 @@ public class InsideViewClientGameTest implements FabricClientGameTest {
 
     @Override
     public void runTest(ClientGameTestContext context) {
+        IrisRun.prepare(context);
         try (TestSingleplayerContext world = context.worldBuilder().create()) {
             TestServerContext server = world.getServer();
             server.runCommand("gamemode creative @a");
@@ -107,6 +108,7 @@ public class InsideViewClientGameTest implements FabricClientGameTest {
                     new net.minecraft.world.phys.Vec3(EYE_X, -60, EYE_Z)));
             assertTrue(fell < 0.05, "the player did not stay at the same spot inside (no ground: should be flying): moved " + fell);
 
+            IrisRun.checkPack(context, "inside the hidden layer");
             BufferedImage shown = screenshot(context, "inside_visible_world_shown");
             context.getInput().pressKey(PhaseCraftClient.TOGGLE_OVERLAY);
             context.waitTicks(3);
@@ -122,17 +124,20 @@ public class InsideViewClientGameTest implements FabricClientGameTest {
             double wallThere = wall.distance(shown, hiddenOnly);
             assertTrue(wallThere > 12, "the visible wall is not drawn inside the hidden layer: differs by " + wallThere + " at " + wall);
             double groundThere = ground.distance(shown, hiddenOnly);
-            assertTrue(groundThere > 12, "the visible ground is not drawn inside the hidden layer: differs by " + groundThere + " at " + ground);
+            // (A shader pack shades the faint ground darker.)
+            assertTrue(groundThere > IrisRun.threshold(12, 4), "the visible ground is not drawn inside the hidden layer: differs by " + groundThere + " at " + ground);
             // Faint: the wall is nearer to the empty hidden layer behind it than to the solid stone it is.
             double wallFromSolid = wall.distance(shown, outside);
             assertTrue(wallThere < wallFromSolid, "the visible wall is not faint: " + wallThere + " from nothing, " + wallFromSolid + " from solid");
             // The real hidden gold block behind the wall stands out: gold with the view off, still gold with it on.
             double goldOff = gold.mean(hiddenOnly, true);
             double goldOn = gold.mean(shown, true);
-            assertTrue(goldOff > 60, "the hidden gold block is not there: red minus blue " + goldOff + " at " + gold);
+            // (Under a shader pack's noon sun the side of the block that faces the camera is in the shade.)
+            assertTrue(goldOff > IrisRun.threshold(60, 12), "the hidden gold block is not there: red minus blue " + goldOff + " at " + gold);
             assertTrue(goldOn > goldOff * 0.6, "the hidden gold block does not stand out behind the faint wall: " + goldOn + " of " + goldOff);
             // In the visible world it was a ghost seen through the solid wall, much fainter.
-            assertTrue(gold.mean(outside, true) < goldOn * 0.6, "the gold block was as clear from the visible world: "
+            // (Not with a shader pack: the ghost is drawn bright, the real block in the pack's shade.)
+            assertTrue(IrisRun.SHADER_PACK || gold.mean(outside, true) < goldOn * 0.6, "the gold block was as clear from the visible world: "
                     + gold.mean(outside, true) + " against " + goldOn);
 
             // Improved transparency (order-independent) draws the visible world too.

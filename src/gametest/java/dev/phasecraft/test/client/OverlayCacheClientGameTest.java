@@ -181,6 +181,7 @@ public class OverlayCacheClientGameTest implements FabricClientGameTest {
 
     @Override
     public void runTest(ClientGameTestContext context) {
+        IrisRun.prepare(context);
         try (TestSingleplayerContext world = context.worldBuilder().create()) {
             world.getConnection().waitForChunksRender();
             GhostLayer layer = new GhostLayer();

@@ -1619,7 +1619,8 @@ All of these run on every `./gradlew build`, locally and in CI:
 - **JUnit** also checks the update queue: work added while a batch runs waits
   for the next tick.
 - **Client GameTests** (`./gradlew clientTest`, a real game client, run
-  with OpenGL, with Vulkan, and with OpenGL plus Sodium, software-rendered
+  with OpenGL, with Vulkan, with OpenGL plus Sodium, and with Sodium, Iris
+  and a shader pack on, software-rendered
   on a virtual display; a test-only mixin pins the backend so neither
   silently falls back). Sodium replaces Minecraft's chunk renderer and is in
   most players' mod lists; the Sodium run loads it (from Modrinth's Maven,
@@ -1630,6 +1631,41 @@ All of these run on every `./gradlew build`, locally and in CI:
   `LevelRenderEvents`, phased light goes through vanilla's light engine,
   which Sodium reads, and the piston animation uses vanilla moving-piston
   block entities.
+- **Iris and shader packs** (`./gradlew runClientGameTestIrisShaders`, part
+  of `clientTest`; `./gradlew runClientGameTestIris` is the same with
+  shaders off, run by name). Iris (pinned by `iris_version`) comes with the
+  Sodium it works with (`iris_sodium_version`): the newest Iris for 26.3,
+  1.11.7, needs Sodium 0.9.2, and Sodium 0.9.3 refuses to start with any Iris
+  up to 1.12.0. The shader pack is MakeUp - Ultra Fast (`shader_pack_version`;
+  LGPL-3.0-or-later), fetched by Gradle into the run's folder under `build/`,
+  never committed; it runs as it comes except for its antialiasing over time
+  and its drifting clouds, which would make two screenshots of one view
+  differ. What was found, and what is done about it:
+  - With shaders off, Iris changes nothing: the pictures are the Sodium
+    run's.
+  - With a pack on, Iris draws everything with the pack's programs and picks
+    the program by render pipeline. It did not know PhaseCraft's two own
+    pipelines (`GhostRenderTypes`: the see-through pass and the inside view)
+    and drew nothing for them: no hidden blocks behind visible ones, no
+    visible world from inside the hidden layer; and now and then black wedges
+    across a washed-out screen. `dev.phasecraft.client.compat.IrisCompat`
+    (compiled against Iris, loaded only with it, never shipped) tells Iris,
+    through its API, to draw them with the pack's translucent blocks program,
+    the one the overlay's other pass (vanilla's translucent moving blocks) gets
+    anyway. `OverlayClientGameTest`, `InsideViewClientGameTest` and
+    `InsideViewTerrainClientGameTest` fail in this run without it.
+  - What a pack changes and PhaseCraft does not fight: ghosts and the inside
+    view are lit and shaded by the pack like any block (a ghost on a wall's
+    shaded side is dim, where without a pack it glows evenly), the editing
+    outline is paler, and phased light has the pack's colour. The tests keep
+    their checks that each thing is drawn and use the pack's own thresholds
+    where vanilla's colours were assumed (`IrisRun.threshold`).
+  - Iris's "Toggle Shaders" key is K, PhaseCraft's key into the hidden layer.
+    Both act on one press. Not changed (the key is the person's to choose);
+    GETTING_STARTED says to rebind one. The test runs take Iris's keys away
+    (`IrisRun.prepare`) and check before their pictures that the pack is
+    still on (`IrisRun.checkPack`): the first runs' "inside" pictures were
+    taken with the shaders switched off by the K that went in.
 - **Open Parties and Claims** (`./gradlew runGameTestOpac`, part of
   `build`): the OPAC claim tests (`OpacClaimChecks`) with the real mod; see
   "Claims hold for the hidden layer".

@@ -35,6 +35,7 @@ public class TrailerClientGameTest implements FabricClientGameTest {
 
     @Override
     public void runTest(ClientGameTestContext context) {
+        IrisRun.prepare(context);
         String script = System.getenv("PHASECRAFT_TRAILER");
         String examples = System.getenv("PHASECRAFT_EXAMPLES_COMMANDS");
         if (script == null || script.isBlank() || examples == null || examples.isBlank()) {

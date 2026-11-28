@@ -71,6 +71,7 @@ public class PhasedLightClientGameTest implements FabricClientGameTest {
 
     @Override
     public void runTest(ClientGameTestContext context) {
+        IrisRun.prepare(context);
         String mojang = NoMojangTrafficGameTests.problem();
         check(mojang == null, "test client would contact Mojang: " + mojang);
         try (TestSingleplayerContext world = context.worldBuilder().create()) {
@@ -127,6 +128,7 @@ public class PhasedLightClientGameTest implements FabricClientGameTest {
             awaitClientLight(context, IN_FRONT, 14, "room lit again with the game rule back on");
             check(clientHolds(context, LIGHT), "the client does not hold the phased light with the rule back on");
             context.waitTicks(5);
+            IrisRun.checkPack(context, "in the lit room");
             context.takeScreenshot("phased_light_rule_on");
 
             // A phased light far away is not this client's business: its position arrives only

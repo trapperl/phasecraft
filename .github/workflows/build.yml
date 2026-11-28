@@ -46,6 +46,8 @@ jobs:
           path: |
             build/run/clientGameTest/screenshots/
             build/run/clientGameTestVulkan/screenshots/
+            build/run/clientGameTestSodium/screenshots/
+            build/run/clientGameTestIrisShaders/screenshots/
           if-no-files-found: ignore
       - name: Upload development mod JAR
         if: success()
