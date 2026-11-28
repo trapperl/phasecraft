@@ -1610,8 +1610,19 @@ All of these run on every `./gradlew build`, locally and in CI:
   in the visible world. That option has no finer switch, so PhaseCraft's
   fabric.mod.json turns it off (`"custom": {"lithium:options":
   {"mixin.block.hopper": false}}`, Lithium's own way for a mod to do this);
-  without it `PhasedItemGameTests` and `SkeletonFarmGameTests` fail. The rest
-  of Lithium stays on and every test passes with it.
+  without it `PhasedItemGameTests` and `SkeletonFarmGameTests` fail.
+  Lithium's redstone wire option (`mixin.block.redstone_wire`: a wire works
+  out its power from its neighbours' blocks itself) reads past the level's
+  signal read, where a hidden port's power is added
+  (`ServerLevelPhaseBridgeMixin`): with it a visible wire beside a port's
+  spot got no power from the port, though a lamp there did (other blocks ask
+  the level). Found 2026-11-27 by the first test that put a visible wire at a port;
+  PhaseCraft turns that option off too, the same way
+  (`hiddenPowerPowersVisibleWireThroughHiddenPort` fails without). It costs
+  Lithium's saving on wire updates (vanilla's speed for wires); the
+  alternative, adding the port's power inside Lithium's own calculation
+  with a mixin compiled against Lithium, would keep it. The rest of Lithium
+  stays on and every test passes with it.
   - screenshots with the overlay on, off, and at higher opacity, compared
     pixel by pixel where each test block appears: a ghost floating in the air,
     a ghost tinting the visible block at its own spot, a ghost inside the

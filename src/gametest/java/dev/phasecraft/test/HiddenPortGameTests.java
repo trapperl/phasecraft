@@ -90,6 +90,36 @@ public class HiddenPortGameTests {
                 .thenSucceed();
     }
 
+    /**
+     * A visible redstone wire beside the port's spot is powered by it, as beside a redstone block, and unpowered when
+     * the hidden power goes. (With the Lithium mod it was not: Lithium's wire reads its neighbours' blocks itself,
+     * past the level's signal read where the port's power is added; PhaseCraft turns that Lithium option off.)
+     */
+    @GameTest(maxTicks = 40)
+    public void hiddenPowerPowersVisibleWireThroughHiddenPort(GameTestHelper helper) {
+        floor(helper);
+        helper.setBlock(SPOT.west(), Blocks.REDSTONE_WIRE);
+        helper.setBlock(SPOT.west(2), Blocks.REDSTONE_WIRE);
+        hidden(helper, SPOT, port());
+        helper.startSequence()
+                .thenIdle(3)
+                .thenExecute(() -> helper.assertValueEqual(helper.getBlockState(SPOT.west()).getValue(BlockStateProperties.POWER), 0,
+                        "the visible wire's power before any hidden power"))
+                .thenExecute(() -> hidden(helper, SPOT.east(), Blocks.REDSTONE_BLOCK.defaultBlockState()))
+                .thenIdle(3)
+                .thenExecute(() -> {
+                    helper.assertValueEqual(helper.getBlockState(SPOT.west()).getValue(BlockStateProperties.POWER), 15,
+                            "the power of the visible wire beside the port's spot");
+                    helper.assertValueEqual(helper.getBlockState(SPOT.west(2)).getValue(BlockStateProperties.POWER), 14,
+                            "the power of the next visible wire");
+                    hidden(helper, SPOT.east(), Blocks.AIR.defaultBlockState());
+                })
+                .thenIdle(3)
+                .thenExecute(() -> helper.assertValueEqual(helper.getBlockState(SPOT.west()).getValue(BlockStateProperties.POWER), 0,
+                        "the visible wire's power once the hidden power is gone"))
+                .thenSucceed();
+    }
+
     /** Without a port, the same hidden power stays hidden; a phase block in its place carries none either. */
     @GameTest(maxTicks = 40)
     public void nothingCrossesWithoutPortAndPhaseBlockCarriesNoPower(GameTestHelper helper) {

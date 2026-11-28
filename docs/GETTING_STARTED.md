@@ -8,7 +8,9 @@
   movement look the same as without it.
 - Optional: **Lithium** works with PhaseCraft (tested with Lithium 0.26.4 for
   26.3). PhaseCraft turns off Lithium's hopper optimization
-  (`mixin.block.hopper`), as phased hoppers need vanilla's hoppers; the rest of
+  (`mixin.block.hopper`), as phased hoppers need vanilla's hoppers, and its
+  redstone wire optimization (`mixin.block.redstone_wire`), which kept a
+  visible wire beside a phase port from getting the port's power; the rest of
   Lithium stays on.
 - Java Development Kit 25 (for local builds)
 - Git (Gradle 9.8.2 is fetched by the committed wrapper, `./gradlew`)
