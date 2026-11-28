@@ -14,6 +14,8 @@ import net.minecraft.world.level.GameType;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.FurnaceBlockEntity;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.network.chat.Component;
 import net.minecraft.core.component.DataComponents;
@@ -155,7 +157,7 @@ public class PhaseShifterGameTests {
     }
 
     /**
-     * While the block is away, a stone is placed in its spot: when the block comes back it breaks the stone
+     * While the block is away, dirt is placed in its spot: when the block comes back it breaks the dirt
      * (the person, 2026-11-24: "I think it should break the main world block"), which drops as if broken
      * with no tool, silently.
      */
@@ -167,16 +169,69 @@ public class PhaseShifterGameTests {
         helper.startSequence()
                 .thenExecute(() -> power(helper, SPOT, true))
                 .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.AIR, SPOT))
-                .thenExecute(() -> helper.setBlock(SPOT, Blocks.STONE))
+                .thenExecute(() -> helper.setBlock(SPOT, Blocks.DIRT))
                 .thenIdle(2)
                 .thenExecute(() -> power(helper, SPOT, false))
                 .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.GOLD_BLOCK, SPOT))
                 .thenWaitUntil(() -> helper.assertFalse(helper.getLevel().getEntitiesOfClass(ItemEntity.class,
-                        new AABB(helper.absolutePos(SPOT)).inflate(2), item -> item.getItem().is(Items.COBBLESTONE)).isEmpty(),
-                        "the broken stone dropped nothing"))
+                        new AABB(helper.absolutePos(SPOT)).inflate(2), item -> item.getItem().is(Items.DIRT)).isEmpty(),
+                        "the broken dirt dropped nothing"))
                 .thenExecute(() -> {
                     var heard = SoundRecorder.in(helper.getLevel().dimension(), new AABB(helper.absolutePos(SPOT)).inflate(2));
                     helper.assertTrue(heard.isEmpty(), "heard or seen in the visible world: " + heard);
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * A block that needs a tool to drop anything (stone, obsidian, ores: mined by hand they give nothing) is broken
+     * by a block coming back as by hand: it is gone and gives nothing (the person, 2026-11-27: "it just gets broken").
+     * What it holds still spills, as when a player breaks it by hand: a furnace's smelting.
+     */
+    @GameTest(maxTicks = 80)
+    public void aBlockThatNeedsAToolDropsNothing(GameTestHelper helper) {
+        floor(helper);
+        BlockPos[] spots = {SPOT, SPOT.east(2), SPOT.east(4)};
+        Block[] inTheWay = {Blocks.STONE, Blocks.OBSIDIAN, Blocks.FURNACE};
+        for (BlockPos spot : spots) {
+            helper.setBlock(spot, Blocks.GOLD_BLOCK);
+            shifter(helper, spot);
+        }
+        helper.startSequence()
+                .thenExecute(() -> {
+                    for (BlockPos spot : spots) {
+                        power(helper, spot, true);
+                    }
+                })
+                .thenWaitUntil(() -> {
+                    for (BlockPos spot : spots) {
+                        helper.assertBlockPresent(Blocks.AIR, spot);
+                    }
+                })
+                .thenExecute(() -> {
+                    for (int i = 0; i < spots.length; i++) {
+                        helper.setBlock(spots[i], inTheWay[i]);
+                    }
+                    helper.getBlockEntity(spots[2], FurnaceBlockEntity.class).setItem(0, new ItemStack(Items.RAW_IRON, 5));
+                })
+                .thenIdle(2)
+                .thenExecute(() -> {
+                    for (BlockPos spot : spots) {
+                        power(helper, spot, false);
+                    }
+                })
+                .thenWaitUntil(() -> {
+                    for (BlockPos spot : spots) {
+                        helper.assertBlockPresent(Blocks.GOLD_BLOCK, spot);
+                    }
+                })
+                .thenIdle(5)
+                .thenExecute(() -> {
+                    var items = helper.getLevel().getEntitiesOfClass(ItemEntity.class, new AABB(helper.absolutePos(SPOT)).inflate(6));
+                    for (var item : items) {
+                        helper.assertTrue(item.getItem().is(Items.RAW_IRON), "dropped by a block that needs a tool: " + item.getItem());
+                    }
+                    helper.assertValueEqual(items.stream().mapToInt(item -> item.getItem().getCount()).sum(), 5, "raw iron spilled from the furnace");
                 })
                 .thenSucceed();
     }
