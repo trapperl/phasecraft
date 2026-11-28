@@ -62,6 +62,7 @@
       "dev.phasecraft.test.PhaseLayerRestartPhases"
     ],
     "fabric-client-gametest": [
+      "dev.phasecraft.test.client.KeyDefaultsClientGameTest",
       "dev.phasecraft.test.client.OverlayClientGameTest",
       "dev.phasecraft.test.client.OverlayDedicatedServerClientGameTest",
       "dev.phasecraft.test.client.EditingClientGameTest",

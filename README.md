@@ -10,7 +10,7 @@ put it back (and shifter pistons that do it for a whole row or column, block by 
 that opens into stairs down to a cellar), a hidden 3x3 flush door, the transparent overlay (press **H** in Creative to see hidden blocks drawn as
 see-through ghosts over the world; `[` and `]` change the opacity), editing mode (press **J**, and your
 clicks place, use and break blocks in the hidden layer instead of the visible world), building from inside
-(press **K** in Creative to step into the hidden layer, with the visible world drawn see-through around you) and the phase block
+(press **;** (semicolon) in Creative to step into the hidden layer, with the visible world drawn see-through around you) and the phase block
 (a hidden button, lever, pressure plate or light standing on it reacts to the visible world: secret bricks,
 secret floor tiles, and lamps hidden in walls that light the room). It all works in Survival too, with
 recipes and Survival rules (a game rule decides whether Survival players may see and edit the hidden layer: on in single player and LAN, off on dedicated servers until an admin turns it on), and a hidden flying-machine engine can push visible blocks along. See [Getting started](docs/GETTING_STARTED.md) and [Architecture](docs/ARCHITECTURE.md).
