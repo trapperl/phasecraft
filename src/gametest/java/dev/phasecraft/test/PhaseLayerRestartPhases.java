@@ -25,6 +25,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.players.NameAndId;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Blocks;
@@ -271,6 +272,251 @@ public class PhaseLayerRestartPhases {
                 .thenExecute(() -> {
                     helper.assertValueEqual(hidden.getBlockState(pos).getBlock(), Blocks.STONE, what);
                     visible.setChunkForced(chunkX, chunkZ, false);
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * Machines stopped mid-move by the restart, in a far chunk of their own that the write phase keeps ticking until
+     * it lets go of it, all at once, mid-move (the server then stops whenever it does: nothing there ticks any more).
+     * After the restart each goes on by itself where it left off, once its chunk ticks again:
+     * a line shifter taking its line, another putting its line back, an area shifter taking its box, a sticky phase
+     * piston whose block is sliding out, a phase shifter waiting to put its block back (bedrock is in the spot), and
+     * the flying machine in flight with its cargo.
+     */
+    private static final ChunkPos MID_MOVE = new ChunkPos(-3000, 2500);
+    private static final BlockPos MM_TAKING = midMove(1, 1);
+    private static final BlockPos MM_BACK = midMove(1, 3);
+    private static final BlockPos MM_AREA = midMove(1, 5);
+    private static final BlockPos MM_AREA_FAR = MM_AREA.offset(2, 2, 2);
+    private static final BlockPos MM_SHIFTER = midMove(10, 1);
+    private static final BlockPos MM_PISTON = midMove(10, 3);
+    private static final BlockPos MM_ENGINE = midMove(1, 12);
+    private static final int MM_WALL = 12;
+    private static final Block[] MM_LINE = {Blocks.STONE, Blocks.GOLD_BLOCK, Blocks.BRICKS, Blocks.OAK_PLANKS,
+            Blocks.COBBLESTONE, Blocks.IRON_BLOCK};
+
+    private static BlockPos midMove(int dx, int dz) {
+        return new BlockPos(MID_MOVE.getMinBlockX() + dx, 80, MID_MOVE.getMinBlockZ() + dz);
+    }
+
+    private static void loadAround(ServerLevel level, ChunkPos chunk) {
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dz = -2; dz <= 2; dz++) {
+                level.getChunk(chunk.x() + dx, chunk.z() + dz);
+            }
+        }
+    }
+
+    private static LineShifterBlockEntity lineAt(ServerLevel hidden, BlockPos at) {
+        return (LineShifterBlockEntity) hidden.getBlockEntity(at);
+    }
+
+    /** Every block of a line is held or in the visible world, never both, never neither; how many are held. */
+    private static int lineWhole(GameTestHelper helper, ServerLevel visible, ServerLevel hidden, BlockPos at, String what) {
+        LineShifterBlockEntity entity = lineAt(hidden, at);
+        int held = 0;
+        for (int d = 1; d <= MM_LINE.length; d++) {
+            boolean there = visible.getBlockState(at.east(d)).is(MM_LINE[d - 1]);
+            boolean holds = entity.held(d) != null && entity.held(d).is(MM_LINE[d - 1]);
+            helper.assertTrue(there != holds, what + ": block " + d + (there ? " both in the world and held" : " neither in the world nor held"));
+            held += holds ? 1 : 0;
+        }
+        helper.assertValueEqual(entity.holding(), held, what + ": blocks held");
+        return held;
+    }
+
+    /** Every block of the box is held or in the visible world, never both, never neither; how many are held. */
+    private static int areaWhole(GameTestHelper helper, ServerLevel visible, ServerLevel hidden, String what) {
+        AreaShifterBlockEntity leader = (AreaShifterBlockEntity) hidden.getBlockEntity(MM_AREA);
+        int held = 0;
+        for (BlockPos at : BlockPos.betweenClosed(MM_AREA, MM_AREA_FAR)) {
+            boolean there = visible.getBlockState(at).is(Blocks.STONE_BRICKS);
+            boolean holds = leader.held(at) != null && leader.held(at).is(Blocks.STONE_BRICKS);
+            helper.assertTrue(there != holds, what + ": the block at " + at.toShortString()
+                    + (there ? " both in the world and held" : " neither in the world nor held"));
+            held += holds ? 1 : 0;
+        }
+        helper.assertValueEqual(leader.holding(), held, what + ": blocks held");
+        return held;
+    }
+
+    private static int count(ServerLevel level, BlockPos from, BlockPos to, Block block) {
+        int n = 0;
+        for (BlockPos at : BlockPos.betweenClosed(from, to)) {
+            n += level.getBlockState(at).is(block) ? 1 : 0;
+        }
+        return n;
+    }
+
+    /** How far east of where it started the flying machine's phase piston is; -99 if it is gone. */
+    private static int engineAhead(ServerLevel hidden) {
+        for (int dx = -1; dx <= MM_WALL; dx++) {
+            if (hidden.getBlockState(MM_ENGINE.north().east(dx)).is(PhaseCraftBlocks.PHASE_PISTON)) {
+                return dx;
+            }
+        }
+        return -99;
+    }
+
+    @GameTest(maxTicks = 2400)
+    public void writeMachinesMidMove(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        ServerLevel visible = server.overworld();
+        HiddenLayer layer = HiddenLayer.of(visible);
+        ServerLevel hidden = layer.level();
+        BlockState redstone = Blocks.REDSTONE_BLOCK.defaultBlockState();
+        loadAround(visible, MID_MOVE);
+        visible.setChunkForced(MID_MOVE.x(), MID_MOVE.z(), true);
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(visible.isPositionEntityTicking(MM_TAKING), "the visible chunk ticks"))
+                .thenExecute(() -> {
+                    loadAround(hidden, MID_MOVE);
+                    visible.getGameRules().set(AreaShifterBlock.RULE, true, server);
+                    for (BlockPos at : List.of(MM_TAKING, MM_BACK)) {
+                        for (int d = 1; d <= MM_LINE.length; d++) {
+                            visible.setBlock(at.east(d), MM_LINE[d - 1].defaultBlockState(), Block.UPDATE_ALL);
+                        }
+                        layer.setBlock(at, PhaseCraftBlocks.LINE_SHIFTER.defaultBlockState()
+                                .setValue(LineShifterBlock.FACING, Direction.EAST).setValue(LineShifterBlock.DELAY, at == MM_BACK ? 1 : 4));
+                    }
+                    for (BlockPos at : BlockPos.betweenClosed(MM_AREA, MM_AREA_FAR)) {
+                        visible.setBlock(at, Blocks.STONE_BRICKS.defaultBlockState(), Block.UPDATE_ALL);
+                    }
+                    for (BlockPos corner : List.of(MM_AREA, MM_AREA_FAR)) {
+                        layer.setBlock(corner, PhaseCraftBlocks.AREA_SHIFTER.defaultBlockState().setValue(AreaShifterBlock.DELAY, 4));
+                    }
+                    visible.setBlock(MM_SHIFTER, Blocks.GOLD_BLOCK.defaultBlockState(), Block.UPDATE_ALL);
+                    layer.setBlock(MM_SHIFTER, PhaseCraftBlocks.PHASE_SHIFTER.defaultBlockState());
+                    visible.setBlock(MM_PISTON.east(), Blocks.GOLD_BLOCK.defaultBlockState(), Block.UPDATE_ALL);
+                    layer.setBlock(MM_PISTON, PhaseCraftBlocks.STICKY_PHASE_PISTON.defaultBlockState()
+                            .setValue(BlockStateProperties.FACING, Direction.EAST));
+                    // The flying machine of FlyingMachineGameTests (engine A, flying east), hidden obsidian ahead.
+                    BlockState observer = Blocks.OBSERVER.defaultBlockState().setValue(BlockStateProperties.FACING, Direction.UP);
+                    layer.setBlock(MM_ENGINE, Blocks.SLIME_BLOCK.defaultBlockState());
+                    layer.setBlock(MM_ENGINE.east(), Blocks.STICKY_PISTON.defaultBlockState().setValue(BlockStateProperties.FACING, Direction.WEST));
+                    layer.setBlock(MM_ENGINE.south(), Blocks.STICKY_PISTON.defaultBlockState().setValue(BlockStateProperties.FACING, Direction.EAST));
+                    layer.setBlock(MM_ENGINE.south().east(), Blocks.SLIME_BLOCK.defaultBlockState());
+                    layer.setBlock(MM_ENGINE.above(), observer);
+                    layer.setBlock(MM_ENGINE.south().east().above(), observer);
+                    layer.setBlock(MM_ENGINE.north(), PhaseCraftBlocks.PHASE_PISTON.defaultBlockState()
+                            .setValue(BlockStateProperties.FACING, Direction.EAST));
+                    visible.setBlock(MM_ENGINE.north().east(), Blocks.GOLD_BLOCK.defaultBlockState(), Block.UPDATE_ALL);
+                    for (BlockPos at : BlockPos.betweenClosed(MM_ENGINE.offset(MM_WALL, 0, -1), MM_ENGINE.offset(MM_WALL, 1, 1))) {
+                        layer.setBlock(at.immutable(), Blocks.OBSIDIAN.defaultBlockState());
+                    }
+                })
+                .thenWaitUntil(() -> helper.assertTrue(hidden.isPositionEntityTicking(MM_TAKING), "the hidden chunk ticks"))
+                .thenIdle(5)
+                .thenExecute(() -> {
+                    layer.setBlock(MM_BACK.west(), redstone);
+                    layer.setBlock(MM_SHIFTER.above(), redstone);
+                    layer.setBlock(MM_ENGINE.above(2), Blocks.STONE.defaultBlockState());
+                    layer.removeBlock(MM_ENGINE.above(2));
+                })
+                .thenWaitUntil(() -> helper.assertValueEqual(lineAt(hidden, MM_BACK).holding(), MM_LINE.length,
+                        "blocks the second line shifter took before it turns around"))
+                .thenExecute(() -> {
+                    hidden.setBlock(MM_BACK, hidden.getBlockState(MM_BACK).setValue(LineShifterBlock.DELAY, 4), Block.UPDATE_CLIENTS);
+                    layer.removeBlock(MM_BACK.west());
+                })
+                // The line starts back (its first block within a step), then everything else starts.
+                .thenWaitUntil(() -> helper.assertValueEqual(lineAt(hidden, MM_BACK).holding(), MM_LINE.length - 1,
+                        "blocks the second line shifter holds once it has put one back"))
+                .thenExecute(() -> {
+                    layer.setBlock(MM_TAKING.west(), redstone);
+                    layer.setBlock(MM_AREA.west(), redstone);
+                    layer.setBlock(MM_AREA_FAR.east(), redstone);
+                    visible.setBlock(MM_SHIFTER, Blocks.BEDROCK.defaultBlockState(), Block.UPDATE_ALL);
+                    layer.removeBlock(MM_SHIFTER.above());
+                    layer.setBlock(MM_PISTON.below(), redstone);
+                })
+                .thenWaitUntil(() -> helper.assertValueEqual(visible.getBlockState(MM_PISTON.east(2)).getBlock(), Blocks.MOVING_PISTON,
+                        "the phase piston's gold sliding out"))
+                .thenExecute(() -> visible.setChunkForced(MID_MOVE.x(), MID_MOVE.z(), false))
+                .thenWaitUntil(() -> helper.assertFalse(visible.shouldTickBlocksAt(MID_MOVE.pack()) || hidden.shouldTickBlocksAt(MID_MOVE.pack()),
+                        "the chunk still ticks"))
+                .thenIdle(20)
+                .thenExecute(() -> {
+                    int taking = lineWhole(helper, visible, hidden, MM_TAKING, "the line being taken, before the restart");
+                    helper.assertTrue(taking >= 1 && taking < MM_LINE.length, "the line being taken is not mid-move: " + taking + " held");
+                    int back = lineWhole(helper, visible, hidden, MM_BACK, "the line being put back, before the restart");
+                    helper.assertTrue(back >= 1 && back < MM_LINE.length, "the line being put back is not mid-move: " + back + " held");
+                    int area = areaWhole(helper, visible, hidden, "the box, before the restart");
+                    helper.assertTrue(area >= 9 && area < 27, "the box is not mid-move: " + area + " held");
+                    helper.assertTrue(hidden.getBlockEntity(MM_SHIFTER) instanceof PhaseShifterBlockEntity shifter
+                            && shifter.held() != null && shifter.held().is(Blocks.GOLD_BLOCK), "the waiting shifter holds its gold");
+                    helper.assertValueEqual(visible.getBlockState(MM_PISTON.east(2)).getBlock(), Blocks.MOVING_PISTON,
+                            "the phase piston's gold, still sliding");
+                    int engine = engineAhead(hidden);
+                    helper.assertTrue(engine >= -1 && engine < MM_WALL - 4, "the flying machine is not mid-flight: " + engine + " ahead");
+                })
+                .thenSucceed();
+    }
+
+    @GameTest(maxTicks = 2400)
+    public void verifyMachinesMidMoveGoOn(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        ServerLevel visible = server.overworld();
+        HiddenLayer layer = HiddenLayer.of(visible);
+        ServerLevel hidden = layer.level();
+        // A test server starts with every game rule at its default (a real one keeps them): on again before the chunk
+        // ticks, or the box would come back, as it does when the rule is turned off.
+        visible.getGameRules().set(AreaShifterBlock.RULE, true, server);
+        loadAround(visible, MID_MOVE);
+        visible.setChunkForced(MID_MOVE.x(), MID_MOVE.z(), true);
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(visible.isPositionEntityTicking(MM_TAKING), "the visible chunk ticks"))
+                .thenExecute(() -> loadAround(hidden, MID_MOVE))
+                .thenWaitUntil(() -> helper.assertTrue(hidden.isPositionEntityTicking(MM_TAKING), "the hidden chunk ticks"))
+                // Nothing is touched: each move goes on by itself. The flying machine has the farthest to go.
+                .thenIdle(240)
+                .thenExecute(() -> {
+                    helper.assertValueEqual(lineWhole(helper, visible, hidden, MM_TAKING, "the line being taken, after the restart"),
+                            MM_LINE.length, "blocks of the line taken after the restart");
+                    helper.assertTrue(hidden.getBlockState(MM_TAKING).getValue(LineShifterBlock.POWERED), "the taking line shifter is powered");
+                    helper.assertValueEqual(lineWhole(helper, visible, hidden, MM_BACK, "the line being put back, after the restart"),
+                            0, "blocks of the line still held after the restart");
+                    helper.assertFalse(hidden.getBlockState(MM_BACK).getValue(LineShifterBlock.POWERED), "the other line shifter is powered");
+                    helper.assertValueEqual(areaWhole(helper, visible, hidden, "the box, after the restart"), 27,
+                            "blocks of the box taken after the restart");
+                    helper.assertValueEqual(visible.getBlockState(MM_PISTON.east(2)).getBlock(), Blocks.GOLD_BLOCK,
+                            "the phase piston's gold, landed after the restart");
+                    helper.assertValueEqual(count(visible, MM_PISTON.west(), MM_PISTON.east(4), Blocks.GOLD_BLOCK), 1, "gold blocks at the phase piston");
+                    helper.assertTrue(hidden.getBlockState(MM_PISTON).getValue(BlockStateProperties.EXTENDED), "the powered phase piston is extended");
+                    BlockPos from = MM_ENGINE.offset(-2, -1, -2);
+                    BlockPos to = MM_ENGINE.offset(MM_WALL + 2, 3, 3);
+                    String parts = "";
+                    for (Block part : List.of(Blocks.SLIME_BLOCK, Blocks.STICKY_PISTON, Blocks.OBSERVER, PhaseCraftBlocks.PHASE_PISTON,
+                            Blocks.MOVING_PISTON, Blocks.PISTON_HEAD)) {
+                        parts += " " + count(hidden, from, to, part);
+                    }
+                    helper.assertValueEqual(parts, " 2 2 2 1 0 0", "the flying machine's slime blocks, sticky pistons, observers,"
+                            + " phase piston, moving blocks and piston heads after the restart");
+                    helper.assertValueEqual(count(visible, from, to, Blocks.GOLD_BLOCK) + " " + count(visible, from, to, Blocks.MOVING_PISTON),
+                            "1 0", "the flying machine's cargo (gold blocks, moving blocks) after the restart");
+                    int engine = engineAhead(hidden);
+                    helper.assertTrue(engine >= MM_WALL - 4, "the flying machine did not fly on after the restart: " + engine + " ahead");
+                    helper.assertTrue(visible.getBlockState(MM_ENGINE.north().east(engine + 1)).is(Blocks.GOLD_BLOCK)
+                            || visible.getBlockState(MM_ENGINE.north().east(engine + 2)).is(Blocks.GOLD_BLOCK),
+                            "the cargo is not in front of the flying machine's phase piston");
+                    helper.assertTrue(hidden.getBlockEntity(MM_SHIFTER) instanceof PhaseShifterBlockEntity shifter
+                            && shifter.held() != null && shifter.held().is(Blocks.GOLD_BLOCK), "the waiting shifter holds its gold after the restart");
+                    helper.assertValueEqual(visible.getBlockState(MM_SHIFTER).getBlock(), Blocks.BEDROCK, "the block in the waiting shifter's spot");
+                    // The bedrock goes: the shifter, which has been trying every tick, puts its gold back.
+                    visible.setBlock(MM_SHIFTER, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+                    layer.removeBlock(MM_TAKING.west());
+                    layer.removeBlock(MM_AREA.west());
+                    layer.removeBlock(MM_PISTON.below());
+                })
+                .thenIdle(80)
+                .thenExecute(() -> {
+                    helper.assertValueEqual(visible.getBlockState(MM_SHIFTER).getBlock(), Blocks.GOLD_BLOCK, "the waiting shifter's gold, put back");
+                    helper.assertValueEqual(lineWhole(helper, visible, hidden, MM_TAKING, "the line, put back"), 0, "blocks of the line still held");
+                    helper.assertValueEqual(areaWhole(helper, visible, hidden, "the box, put back"), 0, "blocks of the box still held");
+                    helper.assertValueEqual(visible.getBlockState(MM_PISTON.east()).getBlock(), Blocks.GOLD_BLOCK, "the phase piston's gold, pulled back");
+                    helper.assertValueEqual(count(visible, MM_PISTON.west(), MM_PISTON.east(4), Blocks.GOLD_BLOCK), 1, "gold blocks at the phase piston");
+                    visible.setChunkForced(MID_MOVE.x(), MID_MOVE.z(), false);
                 })
                 .thenSucceed();
     }
