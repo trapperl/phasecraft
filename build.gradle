@@ -28,6 +28,13 @@ repositories {
 // that one run only, with Fabric Loader's fabric.addMods.
 configurations {
     sodium { transitive = false }
+    // Iris (Modrinth; LGPL-3.0, loaded in a test run, never shipped) adds shader packs on top of Sodium.
+    // It lags behind Sodium: the Sodium pinned above refuses to start with the newest Iris for 26.3, so
+    // the Iris run has the Sodium that Iris was made for (iris_sodium_version), as Iris players do.
+    iris { transitive = false }
+    // A shader pack for the Iris run with shaders on: MakeUp - Ultra Fast (Modrinth; LGPL-3.0-or-later),
+    // fetched by Gradle and copied into that run's folder under build/, never committed or shipped.
+    shaderPack { transitive = false }
     // Lithium (Modrinth) rewrites hopper, redstone and block-ticking code and
     // is on most servers; runGameTestLithium runs the server GameTests with it.
     lithium { transitive = false }
@@ -46,6 +53,9 @@ dependencies {
     // those mods ship it, so nothing extra to install.
     implementation include("eu.pb4:common-protection-api:${project.common_protection_api_version}")
     sodium "maven.modrinth:sodium:${project.sodium_version}"
+    iris "maven.modrinth:iris:${project.iris_version}"
+    iris "maven.modrinth:sodium:${project.iris_sodium_version}"
+    shaderPack "maven.modrinth:makeup-ultra-fast-shaders:${project.shader_pack_version}@zip"
     lithium "maven.modrinth:lithium:${project.lithium_version}"
     // dev.phasecraft.compat.OpacProtection answers the Common Protection API from OPAC's claims, through
     // OPAC's own API: compiled against it, loaded only when OPAC is installed, never part of the jar.
@@ -109,8 +119,9 @@ tasks.named('check') { dependsOn tasks.named('mcbTest') }
 //   ./gradlew restartTest   two server processes on one world folder:
 //                           PhaseLayerRestartPhases write, then verify
 //   ./gradlew clientTest    client GameTests (src/gametest/.../client): a real
-//                           client, with OpenGL, with Vulkan, and with OpenGL
-//                           plus the Sodium mod,
+//                           client, with OpenGL, with Vulkan, with OpenGL
+//                           plus the Sodium mod, and with Sodium, the Iris
+//                           mod and a shader pack on,
 //                           taking screenshots (build/run/clientGameTest*/screenshots)
 //   ./gradlew check         unit tests + all of the above (build runs it)
 fabricApi {
@@ -128,6 +139,11 @@ fabricApi {
 // The OPAC claim GameTests make their claims through OPAC's API.
 dependencies {
     gametestCompileOnly "maven.modrinth:open-parties-and-claims:${project.opac_version}"
+    // The Iris runs ask Iris whether a shader pack is on (IrisPack).
+    gametestCompileOnly "maven.modrinth:iris:${project.iris_version}"
+    // dev.phasecraft.client.compat.IrisCompat tells Iris how to draw PhaseCraft's own pipelines under a
+    // shader pack, through Iris's API: compiled against it, loaded only with Iris, never part of the jar.
+    clientCompileOnly "maven.modrinth:iris:${project.iris_version}"
 }
 
 def gameTestArgs = { String report, String filter ->
@@ -205,6 +221,27 @@ loom {
             runDir = 'build/run/clientGameTestSodium'
             vmArg '-Dphasecraft.test.graphicsApi=opengl'
             vmArg '-Dphasecraft.test.sodium=true'
+            vmArgs offlineTestArgs
+        }
+        // Sodium plus Iris, no shader pack on (./gradlew runClientGameTestIris; not part of clientTest).
+        clientGameTestIris {
+            inherit clientGameTest
+            configName = 'Client GameTest: OpenGL with Sodium and Iris'
+            runDir = 'build/run/clientGameTestIris'
+            vmArg '-Dphasecraft.test.graphicsApi=opengl'
+            vmArg '-Dphasecraft.test.sodium=true'
+            vmArg '-Dphasecraft.test.iris=true'
+            vmArgs offlineTestArgs
+        }
+        // The same with a shader pack on (./gradlew runClientGameTestIrisShaders, part of clientTest).
+        clientGameTestIrisShaders {
+            inherit clientGameTest
+            configName = 'Client GameTest: OpenGL with Sodium, Iris and a shader pack'
+            runDir = 'build/run/clientGameTestIrisShaders'
+            vmArg '-Dphasecraft.test.graphicsApi=opengl'
+            vmArg '-Dphasecraft.test.sodium=true'
+            vmArg '-Dphasecraft.test.iris=true'
+            vmArg '-Dphasecraft.test.shaderPack=true'
             vmArgs offlineTestArgs
         }
         clientGameTest {
@@ -293,7 +330,7 @@ tasks.register('restartTest') {
 // private virtual display instead, so nothing appears on your screen and they
 // run the same way in CI. Without Xvfb they use your display.
 def xvfb = ['/usr/bin/Xvfb', '/usr/local/bin/Xvfb'].find { new File(it).canExecute() }
-['runClientGameTest', 'runClientGameTestVulkan', 'runClientGameTestSodium'].each { name ->
+['runClientGameTest', 'runClientGameTestVulkan', 'runClientGameTestSodium', 'runClientGameTestIris', 'runClientGameTestIrisShaders'].each { name ->
     tasks.named(name) { task ->
         def server = null
         doFirst {
@@ -336,11 +373,13 @@ gradle.taskGraph.afterTask { task ->
 }
 tasks.register('clientTest') {
     group = 'verification'
-    description = 'Runs the client GameTests with OpenGL, with Vulkan, and with OpenGL and Sodium.'
-    dependsOn 'runClientGameTest', 'runClientGameTestVulkan', 'runClientGameTestSodium'
+    description = 'Runs the client GameTests with OpenGL, with Vulkan, with OpenGL and Sodium, and with Iris and a shader pack.'
+    // runClientGameTestIris (Iris with shaders off) is left out: it draws what the Sodium run draws, and the
+    // run with the pack on also shows that Iris loads. Run it by name after changing Iris's or Sodium's version.
+    dependsOn 'runClientGameTest', 'runClientGameTestVulkan', 'runClientGameTestSodium', 'runClientGameTestIrisShaders'
 }
-['runClientGameTestVulkan', 'runClientGameTestSodium'].each { name ->
-    def runDir = name == 'runClientGameTestVulkan' ? 'build/run/clientGameTestVulkan' : 'build/run/clientGameTestSodium'
+['runClientGameTestVulkan', 'runClientGameTestSodium', 'runClientGameTestIris', 'runClientGameTestIrisShaders'].each { name ->
+    def runDir = "build/run/${name.substring(3, 4).toLowerCase()}${name.substring(4)}"
     tasks.named(name) { task ->
         mustRunAfter 'runClientGameTest'
         dependsOn 'acceptGameTestEula'
@@ -358,6 +397,37 @@ tasks.named('runClientGameTestSodium') { task ->
     inputs.files(sodiumJars)
     doFirst {
         task.jvmArgs "-Dfabric.addMods=${sodiumJars.singleFile.absolutePath}"
+    }
+}
+['runClientGameTestIris', 'runClientGameTestIrisShaders'].each { name ->
+    tasks.named(name) { task ->
+        mustRunAfter 'runClientGameTestSodium'
+        def shaders = name.endsWith('Shaders')
+        def jars = configurations.iris
+        def pack = configurations.shaderPack
+        inputs.files(jars)
+        def runDir = file("build/run/${name.substring(3, 4).toLowerCase()}${name.substring(4)}")
+        if (shaders) {
+            mustRunAfter 'runClientGameTestIris'
+            inputs.files(pack)
+        }
+        doFirst {
+            task.jvmArgs "-Dfabric.addMods=${jars.files.collect { it.absolutePath }.join(File.pathSeparator)}"
+            def settings = ['disableUpdateMessage=true', "enableShaders=${shaders}"]
+            if (shaders) {
+                project.copy {
+                    from pack.singleFile
+                    into new File(runDir, 'shaderpacks')
+                }
+                settings += "shaderPack=${pack.singleFile.name}"
+                // The pack as it comes (its "medium" profile: shadows, bloom, ambient occlusion), but still:
+                // without its antialiasing over time and its drifting clouds, two screenshots of one view
+                // are the same picture, which the tests' comparisons need.
+                new File(runDir, "shaderpacks/${pack.singleFile.name}.txt").text = 'AA_TYPE=0\nV_CLOUDS=0\n'
+            }
+            new File(runDir, 'config').mkdirs()
+            new File(runDir, 'config/iris.properties').text = settings.join('\n') + '\n'
+        }
     }
 }
 tasks.named('runGameTestLithium') { task ->

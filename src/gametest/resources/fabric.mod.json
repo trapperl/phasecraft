@@ -49,6 +49,7 @@
       "dev.phasecraft.test.SkeletonFarmGameTests",
       "dev.phasecraft.test.PhasedWatcherGameTests",
       "dev.phasecraft.test.PhasedItemGameTests",
+      "dev.phasecraft.test.ItemConservationGameTests",
       "dev.phasecraft.test.HiddenEditingGameTests",
       "dev.phasecraft.test.EditingSecurityGameTests",
       "dev.phasecraft.test.ClaimProtectionGameTests",

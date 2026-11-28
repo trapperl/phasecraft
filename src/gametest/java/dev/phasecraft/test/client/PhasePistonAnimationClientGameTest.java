@@ -72,6 +72,7 @@ public class PhasePistonAnimationClientGameTest implements FabricClientGameTest 
 
     @Override
     public void runTest(ClientGameTestContext context) {
+        IrisRun.prepare(context);
         String mojang = NoMojangTrafficGameTests.problem();
         if (mojang != null) {
             throw new AssertionError("test client would contact Mojang: " + mojang);

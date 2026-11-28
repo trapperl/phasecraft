@@ -112,6 +112,7 @@ public class ExamplesTourClientGameTest implements FabricClientGameTest {
 
     @Override
     public void runTest(ClientGameTestContext context) {
+        IrisRun.prepare(context);
         String file = System.getenv("PHASECRAFT_EXAMPLES_COMMANDS");
         if (file == null || file.isBlank()) {
             return;

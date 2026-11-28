@@ -28,6 +28,7 @@ import net.minecraft.world.level.block.Blocks;
 public class OverlayDedicatedServerClientGameTest implements FabricClientGameTest {
     @Override
     public void runTest(ClientGameTestContext context) {
+        IrisRun.prepare(context);
         Properties properties = new Properties();
         properties.setProperty("server-port", Integer.toString(freePort()));
         // No Mojang login check: test games never talk to Mojang (see NoMojangTrafficGameTests).

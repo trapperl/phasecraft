@@ -69,6 +69,7 @@ public final class PhaseCraftClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         settings = OverlaySettings.load();
+        GhostRenderTypes.registerWithIris();
         KeyMappingHelper.registerKeyMapping(TOGGLE_OVERLAY);
         KeyMappingHelper.registerKeyMapping(MORE_OPAQUE);
         KeyMappingHelper.registerKeyMapping(LESS_OPAQUE);

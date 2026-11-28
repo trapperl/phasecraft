@@ -4,9 +4,12 @@ import dev.phasecraft.PhaseCraft;
 import dev.phasecraft.layer.Access;
 import dev.phasecraft.layer.HiddenDimensions;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.Supplier;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -25,6 +28,7 @@ import net.minecraft.stats.Stats;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.network.protocol.game.ClientboundSetHeldSlotPacket;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.sounds.SoundEvents;
@@ -48,6 +52,7 @@ import net.minecraft.world.level.block.GameMasterBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import com.mojang.logging.LogUtils;
@@ -222,7 +227,37 @@ public final class HiddenEditing {
             return InteractionResult.PASS;
         }
         player.resetLastActionTime();
+        return bringingOutWhatSpills(player, hidden, pos, () -> click(player, hand, hit, hidden));
+    }
 
+    /**
+     * Survival: the items an edit spills in the hidden layer (a mined chest's contents, the torch that stood on a
+     * mined block, the record a clicked jukebox gives back) are moved to the visible world at the same spot, where
+     * the block's own drop goes: the player cannot go in to fetch them, so there they would be lost. Only what the
+     * edit itself spilled, at once, within two blocks: what lay there before stays. Creative edits spill where they
+     * always did (a Creative player can go in).
+     */
+    private static <T> T bringingOutWhatSpills(ServerPlayer player, ServerLevel hidden, BlockPos pos, Supplier<T> edit) {
+        if (player.hasInfiniteMaterials()) {
+            return edit.get();
+        }
+        AABB near = new AABB(pos).inflate(2);
+        Set<ItemEntity> before = new HashSet<>(hidden.getEntitiesOfClass(ItemEntity.class, near));
+        T result = edit.get();
+        for (ItemEntity spilled : hidden.getEntitiesOfClass(ItemEntity.class, near, item -> item.isAlive() && !before.contains(item))) {
+            ItemStack stack = spilled.getItem().copy();
+            spilled.discard();
+            Vec3 speed = spilled.getDeltaMovement();
+            ItemEntity out = new ItemEntity(player.level(), spilled.getX(), spilled.getY(), spilled.getZ(), stack, speed.x, speed.y, speed.z);
+            out.setDefaultPickUpDelay();
+            player.level().addFreshEntity(out);
+        }
+        return result;
+    }
+
+    /** The click itself, once {@link #use} has let it through. */
+    private static InteractionResult click(ServerPlayer player, InteractionHand hand, BlockHitResult hit, ServerLevel hidden) {
+        BlockPos pos = hit.getBlockPos();
         // Vanilla's ServerPlayerGameMode.useItemOn, but with the hidden level
         // (vanilla's UseOnContext would take the player's own, visible level).
         ItemStack stack = player.getItemInHand(hand);
@@ -377,8 +412,10 @@ public final class HiddenEditing {
         ItemStack tool = player.getMainHandItem();
         ItemStack toolBefore = tool.copy();
         boolean harvest = survival && player.hasCorrectToolForDrops(state);
-        state.getBlock().playerWillDestroy(hidden, pos, state, player);
-        boolean removed = hidden.removeBlock(pos, false);
+        boolean removed = bringingOutWhatSpills(player, hidden, pos, () -> {
+            state.getBlock().playerWillDestroy(hidden, pos, state, player);
+            return hidden.removeBlock(pos, false);
+        });
         if (removed) {
             state.getBlock().destroy(hidden, pos, state);
             if (survival) {

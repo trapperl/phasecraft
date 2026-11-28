@@ -36,6 +36,7 @@ public class EditingClientGameTest implements FabricClientGameTest {
 
     @Override
     public void runTest(ClientGameTestContext context) {
+        IrisRun.prepare(context);
         try (TestSingleplayerContext world = context.worldBuilder().create()) {
             TestServerContext server = world.getServer();
             server.runCommand("gamemode creative @a");
@@ -69,6 +70,7 @@ public class EditingClientGameTest implements FabricClientGameTest {
             // Now the ghost is the target; right click places next to it, toward the player.
             waitUntil(context, "the hidden lamp is targeted", minecraft -> isTarget(STONE, true));
             assertTrue("Redstone Lamp".equals(readout(context)), "readout of the hidden lamp: " + readout(context));
+            IrisRun.checkPack(context, "while editing");
             Path purple = context.takeScreenshot("editing_target_hidden");
             // A claim refuses breaking the lamp here: the spot shows it before any click, red outline and readout.
             UUID stranger = UUID.randomUUID();
