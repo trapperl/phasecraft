@@ -254,6 +254,10 @@ transparent layer, not a separate world.
    person, 2026-11-27: "no beds in editing mode"; a security review found a
    hidden bed set the respawn point in the visible world at its spot, and
    anchors blew up hidden builds). Placing them stays allowed.
+5. No mob is born in the hidden layer (the person, 2026-11-27: "should not
+   allow spawning in the underworld"; HiddenSpawningGameTests): only saves,
+   commands, conversions and dimension travel bring mobs there (the agent's
+   defaults, open to change).
 
 Decided by the person: phase pistons show no visible arm; missing blocks
 are handled as vanilla does; Survival players may see and edit while the

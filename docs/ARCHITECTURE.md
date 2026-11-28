@@ -957,8 +957,22 @@ point for balancing; each unlocks in the recipe book from amethyst shards
 - **Portals in the hidden layer do nothing** (`EntityPortalMixin`, on
   `Entity.setAsInsidePortal`, which every portal block goes through). They
   would lead into the real Nether or End and build a visible portal there.
-- **No mobs spawn there naturally:** the hidden dimensions use the void
-  biome, which has no mob spawns.
+- **No mob is born in the hidden layer** (the person, 2026-11-27: "should
+  not allow spawning in the underworld"). `EntityTypeHiddenSpawnMixin`, on
+  `EntityType.create(Level, EntitySpawnRequest)`, which every new entity goes
+  through with the reason it is made, gives nothing back for a mob in a
+  hidden dimension (`HiddenLayerGuard.mayBeBorn`): no spawners, trial
+  spawners, spawn eggs (also used from inside), dispensers, breeding,
+  buckets, raids or patrols, golems built from blocks. A hidden mob could
+  not be seen from the visible world, would keep its hidden chunk loaded
+  and ticking, and could stand on hidden plates. Let through (the agent's
+  defaults, open to change): mobs loaded from a save, put there by a command
+  (/summon, the tests), a mob turning into another (a zombie drowning) and
+  dimension travel; and anything that is not a mob (armor stands, minecarts,
+  items, falling blocks). Natural spawning had nothing to spawn anyway: the
+  hidden dimensions use the void biome. A hidden spawner just never spawns;
+  a dispenser with a spawn egg uses the egg up, as vanilla's does when the
+  mob cannot be made.
 
 ### Decision: real dimension, not a block list (decided 2026-11-22)
 
@@ -1547,7 +1561,9 @@ All of these run on every `./gradlew build`, locally and in CI:
   - keeping out: a player switched to Survival inside the hidden layer is
     moved out at the same spot (lifted out of visible blocks if needed);
     Creative and Spectator players stay; no respawn point can be set there; a
-    mob standing in a hidden Nether portal stays put; hidden entities tick
+    mob standing in a hidden Nether portal stays put; no mob is born there
+    (a hidden spawner beside a player inside, a spawn egg used inside), while
+    commands and saves still bring them; hidden entities tick
     where visible ones do (hidden sand falls and lands);
   - the hidden 2x2 door opens and closes from one visible lever (and jams
     half-closed if the hold repeater is removed);
