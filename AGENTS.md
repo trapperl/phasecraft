@@ -160,7 +160,8 @@ transparent layer, not a separate world.
       2026-11-24); instant, no effect (the agent's default,
       open to change). Putting back breaks a visible block in the spot
       (the person, 2026-11-24: "it should break the main world block";
-      done), silently; it waits for unbreakable blocks (the agent's
+      done), silently, as by hand: a block that needs a tool drops nothing
+      but its contents (the person, 2026-11-27: "it just gets broken"); it waits for unbreakable blocks (the agent's
       default), and lifts a mob or player in the spot to stand on the
       block, as a piston pushing up would (the person, 2026-11-26, over
       waiting: the hole in the ocean left a pillar standing when someone
@@ -291,12 +292,14 @@ have a command that puts the player into the underworld ... and either
 ignores the main world or makes the main world transparent that way they can
 work on their contraption without disturbing the main world"; for "players
 in creative mode or mods"; "I don't think that we had set up making the main
-world transparent"): done. The key K (LayerSwitch; Creative and Spectator
+world transparent"): done. The key ; (semicolon; K until the person, 2026-11-27,
+moved it off Iris's "Toggle Shaders": "we could pick another key that doesn't
+clash"; LayerSwitch; Creative and Spectator
 only, no cheats needed; the command stays) goes in and out at the same spot,
 and inside, the visible world's surface near the player is drawn faint
 (InsideView on the server, a second GhostLayer on the client; "The inside
 view" in docs/ARCHITECTURE.md, with what it costs). The agent's defaults,
-open to change: the key, the look (22% opaque, both sides of each surface,
+open to change: the look (22% opaque, both sides of each surface,
 48 blocks), coming out at the same spot even inside a block. Inside, the
 player is a real entity there: hidden plates feel them, visible ones do not.
 Their clicks in there are checked against the visible world's protection at

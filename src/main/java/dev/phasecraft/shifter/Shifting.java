@@ -101,7 +101,8 @@ public final class Shifting {
 
     /**
      * Puts a held block back at pos, breaking a visible block in its spot first (the person, 2026-11-24: "I think it
-     * should break the main world block"): it drops as if broken with no tool, contents included, silently. A mob or
+     * should break the main world block"): it drops as if broken by hand, contents included, silently; a block
+     * that needs a tool to drop anything drops nothing (only its contents). A mob or
      * player in the way is lifted to stand on it, as a piston pushing up would move them (the person, 2026-11-26,
      * choosing this over waiting). Returns false, changing nothing, while one in the way has no room above, the block
      * there is unbreakable (bedrock, a moving piston...), the spot is not loaded, or a claim there refuses the
@@ -132,7 +133,10 @@ public final class Shifting {
             return false;
         }
         if (!there.canBeReplaced()) {
-            PhasedItems.silently(visible, () -> visible.destroyBlock(pos, true));
+            // Broken as by hand: a block that needs a tool to drop anything (stone, obsidian, ores) drops nothing (the
+            // person, 2026-11-27: "it just gets broken"); what it holds spills all the same, as in vanilla.
+            boolean drops = !there.requiresCorrectToolForDrops();
+            PhasedItems.silently(visible, () -> visible.destroyBlock(pos, drops));
         }
         visible.setBlock(pos, placed, Block.UPDATE_ALL);
         BlockEntity contents = visible.getBlockEntity(pos);
