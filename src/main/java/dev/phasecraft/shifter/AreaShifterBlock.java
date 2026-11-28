@@ -293,19 +293,37 @@ public class AreaShifterBlock extends Block implements EntityBlock {
         return false;
     }
 
-    /** Puts back the lowest layer it holds: how many of that layer could not go back yet, or -1 if none is held. */
+    /**
+     * Puts back the lowest layer it holds: how many of that layer could not go back yet, or -1 if none is held.
+     * What can stand goes first, then what hangs on it (a sign on a wall of the same layer), which waits with it if
+     * it must wait: put back with nothing to hang on, it would drop.
+     */
     private static int putBackLayer(ServerLevel visible, AreaShifterBlockEntity leader, MachineRights rights) {
         Map<BlockPos, Shifting.Held> held = leader.heldMap();
         if (held.isEmpty()) {
             return -1;
         }
         int y = held.keySet().iterator().next().getY();      // ordered by y first
-        int left = 0;
-        for (BlockPos at : new ArrayList<>(held.keySet())) {
+        List<BlockPos> layer = new ArrayList<>();
+        for (BlockPos at : held.keySet()) {
             if (at.getY() != y) {
                 break;
             }
-            if (Shifting.putBack(visible, at, held.get(at), rights)) {
+            layer.add(at);
+        }
+        int left = 0;
+        List<BlockPos> hanging = new ArrayList<>();
+        for (BlockPos at : layer) {
+            if (Shifting.wouldDrop(visible, at, held.get(at))) {
+                hanging.add(at);
+            } else if (Shifting.putBack(visible, at, held.get(at), rights)) {
+                leader.hold(at, null);
+            } else {
+                left++;
+            }
+        }
+        for (BlockPos at : hanging) {
+            if (left == 0 && Shifting.putBack(visible, at, held.get(at), rights)) {
                 leader.hold(at, null);
             } else {
                 left++;
