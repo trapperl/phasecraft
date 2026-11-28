@@ -40,7 +40,13 @@ import net.minecraft.world.level.chunk.LevelChunkSection;
  *       change before then), and a port reads 0 from the other layer where
  *       that is not loaded. So when a chunk starts ticking, the ports in it,
  *       and in the other layer's chunk at the same place, are refreshed
- *       (issue #17).</li>
+ *       (issue #17), and the visible neighbours of each hidden port that
+ *       puts power up are updated: they read no power from it while its
+ *       hidden chunk was not there.</li>
+ *   <li><b>A hidden port keeps its power while the visible world at its
+ *       spot is not loaded</b> (the hidden layer can tick without it): what
+ *       reaches it there is not known then, which is not the same as
+ *       nothing.</li>
  * </ul>
  */
 public final class PhaseLink {
@@ -103,6 +109,10 @@ public final class PhaseLink {
     }
 
     private static void queuePorts(ResourceKey<Level> dimension, LevelChunk chunk) {
+        // What a hidden port puts up reads as nothing in the visible world while its hidden chunk is not loaded,
+        // and the visible chunk is there first: anything there updated meanwhile (a wire, a door, a piston) has
+        // lost that power, and nothing else would tell it that it is back.
+        ResourceKey<Level> visible = HiddenDimensions.visibleOf(dimension).orElse(null);
         LevelChunkSection[] sections = chunk.getSections();
         for (int index = 0; index < sections.length; index++) {
             LevelChunkSection section = sections[index];
@@ -113,10 +123,15 @@ public final class PhaseLink {
             for (int y = 0; y < 16; y++) {
                 for (int z = 0; z < 16; z++) {
                     for (int x = 0; x < 16; x++) {
-                        if (isPort(section.getBlockState(x, y, z))) {
-                            QUEUE.add(new Refresh(dimension, new BlockPos(chunk.getPos().getMinBlockX() + x, baseY + y,
-                                    chunk.getPos().getMinBlockZ() + z)));
+                        BlockState state = section.getBlockState(x, y, z);
+                        if (isPort(state)) {
+                            BlockPos pos = new BlockPos(chunk.getPos().getMinBlockX() + x, baseY + y,
+                                    chunk.getPos().getMinBlockZ() + z);
+                            QUEUE.add(new Refresh(dimension, pos));
                             queued++;
+                            if (visible != null && state.getValue(PhasePortBlock.UP) > 0) {
+                                VISIBLE_UPDATES.add(new Refresh(visible, pos));
+                            }
                         }
                     }
                 }
@@ -137,13 +152,14 @@ public final class PhaseLink {
     /**
      * What a port at this position receives: the power reaching the same
      * position in the other layer, from a source standing there or from its
-     * neighbours there. Ports there are ignored. 0 if that chunk is not loaded.
+     * neighbours there. Ports there are ignored. 0 if that chunk is not loaded: a hidden chunk that is not loaded is
+     * as good as empty (HiddenChunks); for a hidden port, whose other layer is the visible world, it is unknown, -1.
      */
     public static int portInput(ServerLevel level, BlockPos pos) {
         ResourceKey<Level> otherKey = otherLayer(level.dimension()).orElse(null);
         ServerLevel other = otherKey == null ? null : level.getServer().getLevel(otherKey);
         if (other == null || !other.isLoaded(pos)) {
-            return 0;
+            return other != null && HiddenDimensions.isHidden(level.dimension()) ? -1 : 0;
         }
         ignoreBridge++;
         try {

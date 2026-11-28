@@ -31,7 +31,8 @@ import org.jspecify.annotations.Nullable;
  *       would carry them somewhere else; the shifter always puts a block back
  *       at its own spot.</li>
  *   <li>It takes only when the power arrives, so a block placed in the gap
- *       while it is powered stays.</li>
+ *       while it is powered stays. (If the visible world at its spot is not
+ *       loaded when the power arrives, it takes once it is.)</li>
  *   <li>Putting back breaks a block that has taken the spot, and lifts a mob
  *       or player standing there onto the block; it waits, retrying every
  *       tick, while the block there is unbreakable or the mob has no room
@@ -81,8 +82,13 @@ public class PhaseShifterBlock extends Block implements EntityBlock {
 
     @Override
     protected void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-        if (!state.getValue(POWERED) && level.getBlockEntity(pos) instanceof PhaseShifterBlockEntity entity
-                && entity.holding() != null && !putBack(level, pos, entity)) {
+        if (!(level.getBlockEntity(pos) instanceof PhaseShifterBlockEntity entity)) {
+            return;
+        }
+        if (state.getValue(POWERED)) {
+            // Only booked by take, where the visible world was not loaded when the power came.
+            take(level, pos, entity);
+        } else if (entity.holding() != null && !putBack(level, pos, entity)) {
             level.scheduleTick(pos, this, 1);
         }
     }
@@ -108,6 +114,13 @@ public class PhaseShifterBlock extends Block implements EntityBlock {
     private static void take(ServerLevel hidden, BlockPos pos, PhaseShifterBlockEntity entity) {
         ServerLevel visible = Shifting.visibleOf(hidden);
         if (visible == null || entity.holding() != null) {
+            return;
+        }
+        if (!visible.isLoaded(pos)) {
+            // The visible world is not there (the hidden layer can tick without it: a Creative player inside it far
+            // from here, or the one tick a server that is behind runs the hidden layer after the visible chunk
+            // went): the power has come all the same, so it takes the block once the spot is loaded.
+            hidden.scheduleTick(pos, hidden.getBlockState(pos).getBlock(), 1);
             return;
         }
         Shifting.Held held = Shifting.take(visible, pos, MachineRights.of(hidden, pos));

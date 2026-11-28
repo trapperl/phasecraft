@@ -59,6 +59,7 @@
       "dev.phasecraft.test.InsideViewGameTests",
       "dev.phasecraft.test.HiddenSpawningGameTests",
       "dev.phasecraft.test.InsideProtectionGameTests",
+      "dev.phasecraft.test.MidMoveGameTests",
       "dev.phasecraft.test.NoMojangTrafficGameTests",
       "dev.phasecraft.test.PhaseLayerRestartPhases"
     ],

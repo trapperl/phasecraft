@@ -19,7 +19,13 @@ public class LineShifterBlockEntity extends BlockEntity implements HoldsBlocks {
     public static final int MAX = 12;
 
     private final Shifting.@Nullable Held[] held = new Shifting.Held[MAX + 1];
-    /** While taking: the farthest distance still to take (it takes from there towards itself); 0 when not taking. */
+    /** For {@link #todo}: powered, but the line could not be seen yet (the visible world there is not loaded). */
+    static final int UNSEEN = -1;
+
+    /**
+     * While taking: the farthest distance still to take (it takes from there towards itself); 0 when not taking;
+     * {@link #UNSEEN} while it waits to see its line.
+     */
     private int todo;
     /**
      * The game time before which the next block may not move, so a turn around keeps the rhythm. Not saved: game

@@ -89,6 +89,13 @@ public class PhasePortBlock extends Block {
             return;
         }
         int down = PhaseLink.portInput(serverLevel, pos);
+        if (down < 0) {
+            // The visible world at its spot is not loaded (the hidden layer can tick without it: a Creative player
+            // inside it far from here, or the one tick a server that is behind runs the hidden layer after the
+            // visible chunk went). Unknown is not 0: dropping the power would close a hidden door, or toggle a
+            // hidden latch, for no reason. It keeps what it had, and is refreshed when the chunk ticks again.
+            down = state.getValue(POWER);
+        }
         int up = HiddenDimensions.isHidden(serverLevel.dimension()) ? hiddenPowerReaching(serverLevel, pos) : 0;
         if (down != state.getValue(POWER) || up != state.getValue(UP)) {
             boolean upChanged = up != state.getValue(UP);

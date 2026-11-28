@@ -70,6 +70,22 @@ the examples no longer use one.
   kept in memory comes back without loading again, and a hidden chunk read
   early loads before its visible twin. `PhaseLayerRestartPhases` saves a
   port with stale power and checks it is right after the restart.
+- **What a port puts up is told again when its hidden chunk comes.** A
+  visible chunk is there before its hidden twin (which loads a few ticks
+  later, and at the edge of what ticks only once the visible chunk ticks),
+  and until then the visible world reads no power at the port's spot. A
+  wire, door or piston there that anything updates meanwhile loses the
+  power, and the port's `up` has not changed, so nothing told it that the
+  power is back: it stayed off until the next change. Now, when a chunk
+  starts ticking, the visible neighbours of each hidden port in it that
+  puts power up are updated (`MidMoveGameTests`).
+- **A hidden port keeps its power while the visible world at its spot is
+  not loaded** (see "The hidden layer can tick with no visible world"
+  below). What reaches it there is unknown then, not nothing: it used to
+  drop to 0 at the first hidden update beside it and come back on later, a
+  pulse that closes a hidden door or toggles a hidden latch. It is refreshed
+  when its chunk starts ticking with the visible world there. (A port in
+  the visible layer still reads a hidden chunk that is not loaded as empty.)
 
 **Hidden chunks tick with the visible world.** A chunk ticket (`phasecraft:phase_link`)
 in the hidden layer follows each visible chunk's ticking status, so hidden
@@ -110,6 +126,81 @@ its chunks that hold something, and only those get the ticket:
   back (the stale port) and that an old world's files are listed (the
   Nether's hidden layer forgets its index before the restart).
 
+**The hidden layer can tick with no visible world** (found by interrupting
+machines mid-move, 2026-11-27). The ticket above makes a hidden chunk tick
+only while its visible twin does, but there are two ways round it:
+- A Creative player inside the hidden layer: the hidden chunks around them
+  tick as far as the server's simulation distance (10 chunks by default),
+  the visible world is kept loaded for them only 6 chunks out (the inside
+  view's ticket).
+- A server that is behind (no time left between ticks, which is when it
+  matters): the visible level then hears in its own tick that a chunk is no
+  longer wanted, and the hidden level, ticked after it, runs its scheduled
+  ticks once more before it hears. For that one tick the visible chunk is
+  not loaded. (With time between ticks both levels hear before either
+  ticks.)
+
+So every machine that acts on the visible world treats a spot that is not
+loaded as "not now", never as "nothing there", and looks again every tick
+(a scheduled tick, saved with the chunk like any other):
+- a line shifter powered then has not seen its line yet (`todo` -1, saved)
+  and sees it once the line is loaded; one that is taking waits at the block
+  it could not reach instead of skipping it (it used to count the block as
+  done and leave it standing in a line that was otherwise gone: one walk
+  away at the wrong tick on a busy server, one block left in the doorway
+  until the next time the door was used);
+- an area shifter waits while any chunk of its box is not loaded (it used
+  to count the layers it could not reach as done);
+- a phase shifter powered then takes its block once the spot is loaded (it
+  used to stay powered and empty);
+- a phase piston powered then books its extend event all the same, and the
+  event decides when it runs: if the spot in front is still not loaded, it
+  looks again every tick (it used to stay in, powered, until its next
+  update). The event matters on a flying machine: in the one tick of a
+  server that is behind, the observer fires, the phase piston and the
+  engine's sticky piston both hear of it, and vanilla keeps their events,
+  in that order, until the chunk ticks again; so the cargo is pushed before
+  the engine carries the phase piston on. Without an event of its own the
+  phase piston came after the engine's, already moved on, and the engine
+  flew away from its cargo
+  (`aFlyingMachineKeepsItsCargoWhenTheServerIsBehind`);
+- putting back always waited;
+- a hidden port keeps its power (above).
+
+`MidMoveGameTests` checks each: the hidden chunk kept ticking on its own
+with the visible one let go, and, for the line shifter and the flying
+machine, a chunk let go the way a server that is behind does it (the test
+lets go at the start of the hidden level's tick and has the visible level
+hear of it at once). The same tests leave each machine
+mid-move the ordinary way (both layers' chunks written out and dropped,
+then loaded again) across chunk borders, and `PhaseLayerRestartPhases`
+stops the server mid-move: every block is held or in the world, never both
+or neither, and each move goes on by itself.
+
+Not changed, and known (read from the code, not tried): a phase piston that
+retracts where the visible world is not loaded makes vanilla load that
+chunk for the moment, as any block read does, and moves the blocks; and a
+flying machine whose hidden engine flies on where the visible world is not
+loaded (a Creative player inside, more than 6 chunks from them) leaves its
+cargo behind: its phase piston has moved on by the time the chunk is there.
+
+What the same tests found that is vanilla's, not PhaseCraft's:
+- The flying machine's engine (engine A) left at one tick of its cycle
+  stops for good when its chunks come back; the same engine built of
+  vanilla blocks in the visible world, left at the same tick, does too. It
+  is all there, its cargo in front of the phase piston
+  (`aFlyingMachineLeftWhereVanillaStallsLosesNothing` checks that nothing
+  is lost or doubled, not that it flies). Left at the other ticks tried, and
+  stopped by a restart, it flies on.
+- A server that crashes (not one that stops) can save one layer's chunk and
+  not the other's, as it can save one of two vanilla chunks a piston pushed
+  across: a block a shifter took in the unsaved seconds is then held and in
+  the world, or neither. Nothing is done about it.
+- Turning `phasecraft:area_shifters` off puts every box back when its
+  leader next steps, a box being taken included; the GameTest server starts
+  every run with the rule at its default, so the restart test turns it on
+  again before the box's chunk ticks.
+
 **Phase piston / sticky phase piston** (Redstone tab). Placed in the hidden
 layer, powered by hidden redstone exactly like a vanilla piston (including
 quasi-connectivity), it moves the **visible** blocks in front of its
@@ -143,7 +234,8 @@ not placed in the hidden layer, so it never collides with hidden machinery.
   them somewhere else, while the shifter always puts a block back at its
   own spot). Not air, fluids, fragile blocks (torches, flowers) or
   immovable ones (obsidian, bedrock). It takes only when the power arrives,
-  so a block placed in the gap while it is powered stays.
+  so a block placed in the gap while it is powered stays. (Where the visible
+  world is not loaded when the power arrives, it takes once it is.)
 - Contents (2026-11-24, from the person's list): a chest, furnace, barrel...
   goes with what is in it and its name. The block entity is saved with
   `saveWithoutMetadata` (its data and components) into the shifter's
@@ -215,7 +307,10 @@ it, not on its own spot.
   one step, whatever game time does).
 - `LineShifterBlockEntity` saves the held blocks by distance and the distance
   still to take; the step itself is a block tick, saved with the chunk, so a
-  move goes on after a restart. The next step's game time is not saved: a
+  move goes on after a restart, or after its chunks were unloaded
+  (`PhaseLayerRestartPhases`, `MidMoveGameTests`). Where the visible world
+  in its line is not loaded it waits (see "The hidden layer can tick with no
+  visible world"). The next step's game time is not saved: a
   GameTest server's game time starts again after a restart (CI caught a move
   stalled for thousands of ticks).
 - Removed, it puts back everything it holds, nearest first, or drops what
@@ -230,7 +325,8 @@ it, not on its own spot.
   a comparator reading a line shifter as reading a container.
 - `LineShifterGameTests` (order and timing, delay by clicking, turning
   around, a piston's line, contents, waiting, removal), `RecipeGameTests`,
-  and `PhaseLayerRestartPhases` (what a move under way saves: the blocks held and those still to take; put back after the restart).
+  and `PhaseLayerRestartPhases` (what a move under way saves: the blocks held and those still to take; put back after the restart;
+  and two moves stopped by the restart, one taking and one putting back, that go on after it).
 
 **Area shifter** (`phasecraft:area_shifter`, Redstone tab; recipe: Line
 Shifter + diamond block makes two; the person's idea, 2026-11-25: two corners
@@ -276,7 +372,9 @@ default).
   batch on one grid, and a corner looks 15 blocks around, so in a smaller
   structure corners paired with the next test's hut (BUILD_RULES C17);
   `RecipeGameTests`; `PhaseLayerRestartPhases` (a box held across a restart,
-  put back after it).
+  put back after it; a box being taken when the server stops, taken to the
+  end after it); `MidMoveGameTests` (a box over the corner of four chunks,
+  left mid-move both ways).
 
 ## The overlay: seeing the hidden layer from the visible world
 
@@ -1557,6 +1655,13 @@ All of these run on every `./gradlew build`, locally and in CI:
     through a hidden port too (`HiddenPortGameTests`); ports next to or at
     the same spot as other ports stay off; hidden chunks tick exactly where
     the visible world does.
+  - machines left mid-move (`MidMoveGameTests`): a line shifter, an area
+    shifter over the corner of four chunks, a sticky phase piston's sliding
+    block and the flying machine go on, every block there once, after both
+    layers' chunks were written out and loaded again; shifters, pistons
+    and ports wait where the hidden layer ticks with no visible world, and
+    when a server that is behind lets a chunk go; a visible wire gets a
+    port's power back once the port's hidden chunk ticks;
   - editing mode on the server: placing at a visible block's spot, next to a
     hidden block, facing as in vanilla, using a hidden lever, breaking only
     the hidden block, picking the hidden block into the hand; Survival players
@@ -1700,8 +1805,19 @@ All of these run on every `./gradlew build`, locally and in CI:
   in the visible world. That option has no finer switch, so PhaseCraft's
   fabric.mod.json turns it off (`"custom": {"lithium:options":
   {"mixin.block.hopper": false}}`, Lithium's own way for a mod to do this);
-  without it `PhasedItemGameTests` and `SkeletonFarmGameTests` fail. The rest
-  of Lithium stays on and every test passes with it.
+  without it `PhasedItemGameTests` and `SkeletonFarmGameTests` fail.
+  Lithium's redstone wire option (`mixin.block.redstone_wire`: a wire works
+  out its power from its neighbours' blocks itself) reads past the level's
+  signal read, where a hidden port's power is added
+  (`ServerLevelPhaseBridgeMixin`): with it a visible wire beside a port's
+  spot got no power from the port, though a lamp there did (other blocks ask
+  the level). Found 2026-11-27 by the first test that put a visible wire at a port;
+  PhaseCraft turns that option off too, the same way
+  (`hiddenPowerPowersVisibleWireThroughHiddenPort` fails without). It costs
+  Lithium's saving on wire updates (vanilla's speed for wires); the
+  alternative, adding the port's power inside Lithium's own calculation
+  with a mixin compiled against Lithium, would keep it. The rest of Lithium
+  stays on and every test passes with it.
   - screenshots with the overlay on, off, and at higher opacity, compared
     pixel by pixel where each test block appears: a ghost floating in the air,
     a ghost tinting the visible block at its own spot, a ghost inside the
@@ -1729,7 +1845,10 @@ All of these run on every `./gradlew build`, locally and in CI:
   and that a stored phased glowstone lights the visible world after the
   restart (it hung the server before the next-tick chunk scan), and that a
   world a dedicated server switched survival_access off for is not switched
-  off again after the admin turned it on.
+  off again after the admin turned it on. Machines stopped mid-move (a line
+  shifter taking, one putting back, an area shifter, a sticky phase piston's
+  sliding block, a phase shifter waiting to put back, the flying machine in
+  flight) go on by themselves after the restart, every block there once.
 
 Each test was checked by breaking the code on purpose and seeing it fail.
 
