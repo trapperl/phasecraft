@@ -193,12 +193,15 @@ loom {
         // The OPAC claim GameTests (classes named Opac*Checks, which the ordinary filter leaves out: they
         // need the real Open Parties and Claims mod), with OPAC loaded (./gradlew runGameTestOpac, part of
         // build). OPAC's settings: build/run/gameTestOpac/config and world/serverconfig.
+        // -PopacTestFilter=phasecraft-test:opac_claim_checks_opac_claim_stops* runs only some of them, and
+        // -PgameTestVmArgs passes switches as for runGameTest (GameTestStartPosMixin: where the tests stand).
         gameTestOpac {
             inherit gameTest
             configName = 'GameTest: with Open Parties and Claims'
             runDir = 'build/run/gameTestOpac'
-            vmArgs gameTestArgs('gametest-opac', 'phasecraft-test:opac_*')
+            vmArgs gameTestArgs('gametest-opac', (findProperty('opacTestFilter') ?: 'phasecraft-test:opac_*').toString())
             vmArgs offlineTestArgs
+            vmArgs((findProperty('gameTestVmArgs') ?: '').toString().split(' ').findAll { it })
         }
         gameTest {
             // -PgameTestFilter=phasecraft-test:line_shifter_game_tests_* runs only some tests;
@@ -451,7 +454,7 @@ tasks.named('runGameTestOpac') { task ->
     // A filter that matches nothing passes; this run exists for these tests.
     doLast {
         def ran = report.exists() ? (report.text =~ /<testcase /).size() : 0
-        if (ran < 3) {
+        if (ran < 3 && !project.hasProperty('opacTestFilter')) {
             throw new GradleException("runGameTestOpac ran ${ran} OPAC GameTests, expected at least 3 (see ${report})")
         }
     }

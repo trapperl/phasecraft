@@ -65,6 +65,16 @@ blocks, with future vanilla-compatible cross-layer redstone and pistons.
   visible ones, by chance, which made rare late or stalled hidden steps
   (issue #3). To see it: `./gradlew runGameTest -PgameTestVmArgs="-Dphasecraft.test.waitForHiddenChunks=false
   -Dphasecraft.test.hiddenChunkDelay=40"`; `-PgameTestFilter=...` picks tests.
+- The GameTest server puts its tests at a spot picked by chance on every run
+  (logged: "N tests are now running at position x, 4, z"), in a row in the
+  order they run, also by chance: chunk borders fall differently in a test's
+  structure each run, and barrier walls stand around it. A test that works by
+  chunks (OpacClaimChecks: claims cover whole chunks) must set every block it
+  depends on, the end of a line included, never assume air (issue #36: one
+  run in 16 the wall stood behind a line shifter's line). To put a run where
+  a failed one stood: `-PgameTestVmArgs="-Dphasecraft.test.startX=X
+  -Dphasecraft.test.startZ=Z"` (GameTestStartPosMixin; runGameTestOpac takes
+  it too, with `-PopacTestFilter=...` to pick tests).
 - The GameTest server runs ticks as fast as it can, but chunks a ticket asks
   for load in their own time on other threads: a test that waits a number
   of ticks for such chunks passes or fails by luck. Load them in the test

@@ -237,9 +237,23 @@ public class OpacClaimChecks {
         // The first block of the unclaimed chunk; west of it the claim.
         BlockPos shifter = spots.free().west(2);
         BlockPos[] line = {shifter.west(), shifter.west(2)};
+        // The line ends in air, set here. The chunk border falls where it will in the test's structure (the test
+        // server picks its spot by chance: GameTestStartPosMixin), and one run in 16 it put the barrier wall around
+        // the structure right behind the line: an immovable block in the line, so no shifter took anything, the
+        // stranger's rightly for the wrong reason and the owner's never (issue #36). What stood in the three spots
+        // (wall, or air) comes back at the end.
+        BlockPos beyond = shifter.west(3);
+        BlockPos[] changed = {line[0], line[1], beyond};
+        BlockState[] stood = new BlockState[changed.length];
+        for (int i = 0; i < changed.length; i++) {
+            stood[i] = level.getBlockState(changed[i]);
+        }
         for (BlockPos at : line) {
             level.setBlockAndUpdate(at, Blocks.STONE.defaultBlockState());
         }
+        level.setBlockAndUpdate(beyond, Blocks.AIR.defaultBlockState());
+        helper.assertTrue(level.getBlockState(beyond).isAir(), "the line does not end in air: behind it stands "
+                + level.getBlockState(beyond).getBlock() + ", and a line shifter takes nothing from a line it cannot take whole");
         OpacClaims.claim(level, spots.claimed(), owner.id());
         helper.assertTrue(CommonProtection.isProtected(level, line[0]) && !CommonProtection.isProtected(level, shifter),
                 "the line is not in the claim, or the shifter is");
@@ -269,14 +283,13 @@ public class OpacClaimChecks {
                     before[0] = lineShifterState(level, hidden, shifter, line);
                     hidden.setBlock(shifter.east(), Blocks.REDSTONE_BLOCK.defaultBlockState());
                 })
-                // Rare under a busy build (once in many runs): the message says which part did not happen.
                 .thenWaitUntil(() -> helper.assertTrue(hidden.level().getBlockEntity(shifter) instanceof LineShifterBlockEntity entity
                         && entity.holding() == 2, "the owner's line shifter did not take the line: before powering " + before[0] + "; now " + lineShifterState(level, hidden, shifter, line)))
                 .thenExecute(() -> {
                     hidden.removeBlock(shifter.east());
                     hidden.removeBlock(shifter); // puts the line back
-                    for (BlockPos at : line) {
-                        level.setBlockAndUpdate(at, Blocks.AIR.defaultBlockState());
+                    for (int i = 0; i < changed.length; i++) {
+                        level.setBlockAndUpdate(changed[i], stood[i]);
                     }
                     finish(helper, spots);
                 });
